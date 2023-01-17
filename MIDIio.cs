@@ -3,14 +3,14 @@ using SimHub.Plugins;
 using System;
 using System.Windows.Media;
 
-namespace blekenbleu.MIDIio
+namespace blekenbleu.MIDIspace
 {
     [PluginDescription("MIDI slider IO")]
     [PluginAuthor("blekenbleu")]
     [PluginName("MIDIio")]
-    public class DataPluginDemo : IPlugin, IDataPlugin, IWPFSettingsV2
+    public class MIDIio : IPlugin, IDataPlugin, IWPFSettingsV2
     {
-        public DataPluginDemoSettings Settings;
+        public MIDIioSettings Settings;
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -25,7 +25,7 @@ namespace blekenbleu.MIDIio
         /// <summary>
         /// Gets a short plugin title to show in left menu. Return null if you want to use the title as defined in PluginName attribute.
         /// </summary>
-        public string LeftMenuTitle => "Demo plugin";
+        public string LeftMenuTitle => "MIDIio plugin";
 
         /// <summary>
         /// Called one time per game data update, contains all normalized game data,
@@ -70,7 +70,7 @@ namespace blekenbleu.MIDIio
         /// <returns></returns>
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
-            return new SettingsControlDemo(this);
+            return new SettingsControl(this);
         }
 
         /// <summary>
@@ -83,10 +83,10 @@ namespace blekenbleu.MIDIio
             SimHub.Logging.Current.Info("Starting plugin");
 
             // Load settings
-            Settings = this.ReadCommonSettings<DataPluginDemoSettings>("GeneralSettings", () => new DataPluginDemoSettings());
+            Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
-            this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
+            this.AttachDelegate("MIDIDateTime", () => DateTime.Now);
 
             // Declare an event
             this.AddEvent("SpeedWarning");
