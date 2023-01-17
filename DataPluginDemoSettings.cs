@@ -1,4 +1,4 @@
-﻿namespace User.PluginSdkDemo
+﻿namespace blekenbleu.MIDIio
 {
     /// <summary>
     /// Settings class, make sure it can be correctly serialized using JSON.net

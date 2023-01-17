@@ -3,11 +3,11 @@ using SimHub.Plugins;
 using System;
 using System.Windows.Media;
 
-namespace User.PluginSdkDemo
+namespace blekenbleu.MIDIio
 {
-    [PluginDescription("My plugin description")]
-    [PluginAuthor("Author")]
-    [PluginName("Demo plugin")]
+    [PluginDescription("MIDI slider IO")]
+    [PluginAuthor("blekenbleu")]
+    [PluginName("MIDIio")]
     public class DataPluginDemo : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public DataPluginDemoSettings Settings;

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace User.PluginSdkDemo
+namespace blekenbleu.MIDIio
 {
     /// <summary>
     /// Logique d'interaction pour SettingsControlDemo.xaml
