@@ -78,15 +78,24 @@ namespace blekenbleu.MIDIspace
         /// Plugins are rebuilt at game change
         /// </summary>
         /// <param name="pluginManager"></param>
+        private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
-            SimHub.Logging.Current.Info("Starting plugin");
+            SimHub.Logging.Current.Info("Starting MIDIio plugin");
 
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-            // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
-            this.AttachDelegate("MIDIDateTime", () => DateTime.Now);
+            // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
+            this.AttachDelegate("DateTime", () => DateTime.Now);
+            object data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
+            pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
+            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
+            pluginManager.AddProperty("in", this.GetType(), (null == data) ? "unassigned" : data.ToString());
+            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
+            pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());
+            count += 1;		// increments for each Init(), provoked e.g. by game change or restart
+            pluginManager.AddProperty("count", this.GetType(), count);
 
             // Declare an event
             this.AddEvent("SpeedWarning");
