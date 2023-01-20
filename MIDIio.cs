@@ -70,7 +70,8 @@ namespace blekenbleu.MIDIspace
         /// <returns></returns>
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
-            return new SettingsControl(this);
+//          return new SettingsControl(this);
+            return null;
         }
 
         /// <summary>
