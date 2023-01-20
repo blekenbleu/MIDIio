@@ -10,7 +10,8 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin, IWPFSettingsV2
     {
-        public MIDIioSettings Settings;
+        private double speed;
+//      public MIDIioSettings Settings;
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -20,7 +21,8 @@ namespace blekenbleu.MIDIspace
         /// <summary>
         /// Gets the left menu icon. Icon must be 24x24 and compatible with black and white display.
         /// </summary>
-        public ImageSource PictureIcon => this.ToIcon(Properties.Resources.sliders);
+//      public ImageSource PictureIcon => this.ToIcon(Properties.Resources.sliders);
+        public ImageSource PictureIcon => null;
 
         /// <summary>
         /// Gets a short plugin title to show in left menu. Return null if you want to use the title as defined in PluginName attribute.
@@ -43,10 +45,11 @@ namespace blekenbleu.MIDIspace
             {
                 if (data.OldData != null && data.NewData != null)
                 {
-                    if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel)
+                    if (data.OldData.SpeedKmh < speed && data.OldData.SpeedKmh >= speed)
                     {
                         // Trigger an event
-                        this.TriggerEvent("SpeedWarning");
+                        this.TriggerEvent("MIDIioWarning");
+                        speed = data.OldData.SpeedKmh;
                     }
                 }
             }
@@ -60,7 +63,7 @@ namespace blekenbleu.MIDIspace
         public void End(PluginManager pluginManager)
         {
             // Save settings
-            this.SaveCommonSettings("GeneralSettings", Settings);
+//          this.SaveCommonSettings("GeneralSettings", Settings);
         }
 
         /// <summary>
@@ -82,8 +85,9 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
+            speed = 0;
             // Load settings
-            Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
+//          Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
             // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
@@ -101,20 +105,20 @@ namespace blekenbleu.MIDIspace
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
 
             // Declare an event
-            this.AddEvent("SpeedWarning");
+            this.AddEvent("MIDIioWarning");
 
             // Declare an action which can be called
-            this.AddAction("IncrementSpeedWarning",(a, b) =>
-            {
-                Settings.SpeedWarningLevel++;
-                SimHub.Logging.Current.Info("Speed warning changed");
-            });
+//          this.AddAction("IncrementSpeedWarning",(a, b) =>
+//          {
+//              Settings.SpeedWarningLevel++;
+//              SimHub.Logging.Current.Info("Speed warning changed");
+//          });
 
             // Declare an action which can be called
-            this.AddAction("DecrementSpeedWarning", (a, b) =>
-            {
-                Settings.SpeedWarningLevel--;
-            });
+ //         this.AddAction("DecrementSpeedWarning", (a, b) =>
+ //         {
+ //             Settings.SpeedWarningLevel--;
+ //         });
         }
     }
 }
