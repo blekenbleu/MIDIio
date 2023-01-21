@@ -4,7 +4,7 @@
 # User-specific files
 not/
 *.suo
-#*.user
+*.user
 *.userosscache
 *.sln.docstates
 
