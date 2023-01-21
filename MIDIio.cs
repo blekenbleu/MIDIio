@@ -1,7 +1,6 @@
 ﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
-using System.Windows.Media;
 
 namespace blekenbleu.MIDIspace
 {
