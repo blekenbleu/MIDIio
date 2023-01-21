@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "blekenbleu.MIDIio", "blekenbleu.MIDIio.csproj", "{833040C9-FE5E-4CCF-B21D-71979E049B6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "blekenbleu.MIDIio", "blekenbleu.MIDIio.csproj", "{833040C9-FE5E-4CCF-B21D-71979E049B6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {525BB4F5-68EC-431C-9FB6-0788A3D8D7B9}
 	EndGlobalSection
 EndGlobal
