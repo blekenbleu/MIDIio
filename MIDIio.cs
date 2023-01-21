@@ -8,24 +8,14 @@ namespace blekenbleu.MIDIspace
     [PluginDescription("MIDI slider IO")]
     [PluginAuthor("blekenbleu")]
     [PluginName("MIDIio")]
-    public class MIDIio : IPlugin, IDataPlugin, IWPFSettingsV2
+    public class MIDIio : IPlugin, IDataPlugin
     {
-        public MIDIioSettings Settings;
+        private double speed;
 
         /// <summary>
         /// Instance of the current plugin manager
         /// </summary>
         public PluginManager PluginManager { get; set; }
-
-        /// <summary>
-        /// Gets the left menu icon. Icon must be 24x24 and compatible with black and white display.
-        /// </summary>
-        public ImageSource PictureIcon => this.ToIcon(Properties.Resources.sliders);
-
-        /// <summary>
-        /// Gets a short plugin title to show in left menu. Return null if you want to use the title as defined in PluginName attribute.
-        /// </summary>
-        public string LeftMenuTitle => "MIDIio";
 
         /// <summary>
         /// Called one time per game data update, contains all normalized game data,
@@ -43,10 +33,11 @@ namespace blekenbleu.MIDIspace
             {
                 if (data.OldData != null && data.NewData != null)
                 {
-                    if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel)
+                    if (data.OldData.SpeedKmh > speed)
                     {
                         // Trigger an event
-                        this.TriggerEvent("SpeedWarning");
+                        this.TriggerEvent("MIDIioWarning");
+                        speed = data.OldData.SpeedKmh;
                     }
                 }
             }
@@ -59,18 +50,6 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
-            // Save settings
-            this.SaveCommonSettings("GeneralSettings", Settings);
-        }
-
-        /// <summary>
-        /// Returns the settings control, return null if no settings control is required
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns></returns>
-        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
-        {
-            return new SettingsControl(this);
         }
 
         /// <summary>
@@ -81,9 +60,7 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
-            // Load settings
-            Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
-
+            speed = 0;
             // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
@@ -95,24 +72,30 @@ namespace blekenbleu.MIDIspace
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());
             count += 1;		// increments for each Init(), provoked e.g. by game change or restart
             pluginManager.AddProperty("count", this.GetType(), count);
-//          this.AttachDelegate("DateTime", () => DateTime.Now);
+            this.AttachDelegate("speed", () => speed);
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
 
             // Declare an event
-            this.AddEvent("SpeedWarning");
+            this.AddEvent("MIDIioWarning");
 
             // Declare an action which can be called
-            this.AddAction("IncrementSpeedWarning",(a, b) =>
+            this.AddAction("IncrementSpeed",(a, b) =>
             {
-                Settings.SpeedWarningLevel++;
-                SimHub.Logging.Current.Info("Speed warning changed");
+                speed+=10;
+                SimHub.Logging.Current.Info("Speed warning incremented");
             });
 
             // Declare an action which can be called
-            this.AddAction("DecrementSpeedWarning", (a, b) =>
+            this.AddAction("DecrementSpeed", (a, b) =>
             {
-                Settings.SpeedWarningLevel--;
+                speed-=10;
+                SimHub.Logging.Current.Info("Speed warning decremented");
+            });
+            this.AddAction("ReZeroSpeed", (a, b) =>
+            {
+                speed = 0;
+                SimHub.Logging.Current.Info("Speed warning = 0");
             });
         }
     }
