@@ -8,7 +8,7 @@ namespace blekenbleu.MIDIspace
     [PluginDescription("MIDI slider IO")]
     [PluginAuthor("blekenbleu")]
     [PluginName("MIDIio")]
-    public class MIDIio : IPlugin, IDataPlugin, IWPFSettingsV2
+    public class MIDIio : IPlugin, IDataPlugin//, IWPFSettingsV2
     {
         private double speed;
 //      public MIDIioSettings Settings;
@@ -71,12 +71,13 @@ namespace blekenbleu.MIDIspace
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns></returns>
+/*
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
 //          return new SettingsControl(this);
             return null;
         }
-
+*/
         /// <summary>
         /// Called once after plugins startup
         /// Plugins are rebuilt at game change
