@@ -6,9 +6,6 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{833040C9-FE5E-4CCF-B21D-71979E049B6B}</ProjectGuid>
     <OutputType>Library</OutputType>
-  <!-- Don't need no stinkin Settings
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-  -->
     <RootNamespace>blekenbleu.MIDIspace</RootNamespace>
     <AssemblyName>blekenbleu.MIDIio</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -78,40 +75,7 @@
   <ItemGroup>
     <Compile Include="MIDIio.cs" />
     <Compile Include="MIDIioSettings.cs" />
-  <!-- Don't need no stinkin Settings
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="SettingsControl.xaml.cs">
-      <DependentUpon>SettingsControl.xaml</DependentUpon>
-    </Compile>
-  -->
   </ItemGroup>
-  <!-- Don't need no stinkin Settings
-  <ItemGroup>
-    <Page Include="Properties\DesignTimeResources.xaml" Condition="'$(DesignTime)'=='true' OR ('$(SolutionPath)'!='' AND Exists('$(SolutionPath)') AND '$(BuildingInsideVisualStudio)'!='true' AND '$(BuildingInsideExpressionBlend)'!='true')">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-      <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
-    </Page>
-    <Page Include="SettingsControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="sliders.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-  -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
