@@ -1,6 +1,7 @@
 ﻿using System;
-using Melanchall.DryWetMidi;
+using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
+using SimHub.Plugins;
 
 namespace blekenbleu.MIDIspace
 {
@@ -10,6 +11,10 @@ namespace blekenbleu.MIDIspace
     public class MIDIdrywet
     {
         private static IInputDevice _inputDevice;
+
+        public byte[] Slider { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        public byte[] Knob { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
         public void Init(String MIDIin)
         {
@@ -23,7 +28,11 @@ namespace blekenbleu.MIDIspace
             
             catch (Exception)
             {
-                SimHub.Logging.Current.Info($"Failed to find MIDIdrywet input device {MIDIin}.");
+                SimHub.Logging.Current.Info($"Failed to find MIDIdrywet input device {MIDIin};\nKnown devices:");
+                foreach (var inputDevice in InputDevice.GetAll())
+                {
+                    SimHub.Logging.Current.Info(inputDevice.Name);
+                }
             }
         }
 
@@ -37,6 +46,19 @@ namespace blekenbleu.MIDIspace
         {
             var midiDevice = (MidiDevice)sender;
             SimHub.Logging.Current.Info($"Event received from '{midiDevice.Name}': {e.Event}");
+            if (e.Event is ControlChangeEvent foo)
+            {
+//              SimHub.Logging.Current.Info($"ControlNumber = '{foo.ControlNumber}'; ControlValue = '{foo.ControlValue}");
+                if (8 > foo.ControlNumber)
+                {
+                    Slider[foo.ControlNumber] = foo.ControlValue;
+                }
+                else if (16 <= foo.ControlNumber && 24 > foo.ControlNumber)
+                {
+                    int me = foo.ControlNumber - 16;
+                    Knob[me] = foo.ControlValue;
+                }
+            }
         }
     }
 }

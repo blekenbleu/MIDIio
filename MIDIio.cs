@@ -76,6 +76,24 @@ namespace blekenbleu.MIDIspace
             count += 1;		// increments for each Init(), provoked e.g. by game change or restart
             pluginManager.AddProperty("count", this.GetType(), count);
             this.AttachDelegate("speed", () => speed);
+
+            this.AttachDelegate($"slider0", () => Device.Slider[0]);
+            this.AttachDelegate($"knob0", () => Device.Knob[0]);
+            this.AttachDelegate($"slider1", () => Device.Slider[1]);
+            this.AttachDelegate($"knob1", () => Device.Knob[1]);
+            this.AttachDelegate($"slider2", () => Device.Slider[2]);
+            this.AttachDelegate($"knob2", () => Device.Knob[2]);
+            this.AttachDelegate($"slider3", () => Device.Slider[3]);
+            this.AttachDelegate($"knob3", () => Device.Knob[3]);
+            this.AttachDelegate($"slider4", () => Device.Slider[4]);
+            this.AttachDelegate($"knob4", () => Device.Knob[4]);
+            this.AttachDelegate($"slider5", () => Device.Slider[5]);
+            this.AttachDelegate($"knob5", () => Device.Knob[5]);
+            this.AttachDelegate($"slider6", () => Device.Slider[6]);
+            this.AttachDelegate($"knob6", () => Device.Knob[6]);
+            this.AttachDelegate($"slider7", () => Device.Slider[7]);
+            this.AttachDelegate($"knob7", () => Device.Knob[7]);
+
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
 
