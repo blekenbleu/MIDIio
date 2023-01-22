@@ -43,6 +43,9 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
+    <Reference Include="Melanchall.DryWetMidi">
+      <HintPath>..\..\Melanchall.DryWetMidi.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="SimHub.Logging, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">

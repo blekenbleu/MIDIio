@@ -11,6 +11,8 @@ namespace blekenbleu.MIDIspace
     {
         private double speed;
 
+        public MIDIdrywet Device = new MIDIdrywet();
+
         /// <summary>
         /// Instance of the current plugin manager
         /// </summary>
@@ -49,6 +51,7 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
+            Device.End();
         }
 
         /// <summary>
@@ -66,6 +69,7 @@ namespace blekenbleu.MIDIspace
             pluginManager.AddProperty("in", this.GetType(), input);
 
             SimHub.Logging.Current.Info("MIDIio plugin input: " + input);
+            Device.Init(input);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());
