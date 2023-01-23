@@ -4,12 +4,12 @@ using System;
 
 namespace blekenbleu.MIDIspace
 {
-    [PluginDescription("MIDI slider IO")]
+    [PluginDescription("MIDI slider I/O")]
     [PluginAuthor("blekenbleu")]
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-        private double speed;
+        public MIDIioSettings Settings;
 
         public MIDIdrywet Device = new MIDIdrywet();
 
@@ -34,12 +34,6 @@ namespace blekenbleu.MIDIspace
             {
                 if (data.OldData != null && data.NewData != null)
                 {
-                    if (data.OldData.SpeedKmh > speed)
-                    {
-                        // Trigger an event
-                        this.TriggerEvent("MIDIioWarning");
-                        speed = data.OldData.SpeedKmh;
-                    }
                 }
             }
         }
@@ -51,7 +45,8 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
-            Device.End();
+            // Save settings returned by Device.End()
+            this.SaveCommonSettings("GeneralSettings", Device.End());
         }
 
         /// <summary>
@@ -62,37 +57,39 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
-            speed = 0;
+            // Load settings
+            Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
+
             // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
+
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("in", this.GetType(), input);
 
-            SimHub.Logging.Current.Info("MIDIio plugin input: " + input);
-            Device.Init(input);
+            SimHub.Logging.Current.Info("MIDIio input device: " + input);
+            Device.Init(input, Settings);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());
             count += 1;		// increments for each Init(), provoked e.g. by game change or restart
             pluginManager.AddProperty("count", this.GetType(), count);
-            this.AttachDelegate("speed", () => speed);
 
-            this.AttachDelegate($"slider0", () => Device.Slider[0]);
-            this.AttachDelegate($"knob0", () => Device.Knob[0]);
-            this.AttachDelegate($"slider1", () => Device.Slider[1]);
-            this.AttachDelegate($"knob1", () => Device.Knob[1]);
-            this.AttachDelegate($"slider2", () => Device.Slider[2]);
-            this.AttachDelegate($"knob2", () => Device.Knob[2]);
-            this.AttachDelegate($"slider3", () => Device.Slider[3]);
-            this.AttachDelegate($"knob3", () => Device.Knob[3]);
-            this.AttachDelegate($"slider4", () => Device.Slider[4]);
-            this.AttachDelegate($"knob4", () => Device.Knob[4]);
-            this.AttachDelegate($"slider5", () => Device.Slider[5]);
-            this.AttachDelegate($"knob5", () => Device.Knob[5]);
-            this.AttachDelegate($"slider6", () => Device.Slider[6]);
-            this.AttachDelegate($"knob6", () => Device.Knob[6]);
-            this.AttachDelegate($"slider7", () => Device.Slider[7]);
-            this.AttachDelegate($"knob7", () => Device.Knob[7]);
+            this.AttachDelegate($"slider0", () => Device.Settings.Slider[0]);
+            this.AttachDelegate($"knob0", () => Device.Settings.Knob[0]);
+            this.AttachDelegate($"slider1", () => Device.Settings.Slider[1]);
+            this.AttachDelegate($"knob1", () => Device.Settings.Knob[1]);
+            this.AttachDelegate($"slider2", () => Device.Settings.Slider[2]);
+            this.AttachDelegate($"knob2", () => Device.Settings.Knob[2]);
+            this.AttachDelegate($"slider3", () => Device.Settings.Slider[3]);
+            this.AttachDelegate($"knob3", () => Device.Settings.Knob[3]);
+            this.AttachDelegate($"slider4", () => Device.Settings.Slider[4]);
+            this.AttachDelegate($"knob4", () => Device.Settings.Knob[4]);
+            this.AttachDelegate($"slider5", () => Device.Settings.Slider[5]);
+            this.AttachDelegate($"knob5", () => Device.Settings.Knob[5]);
+            this.AttachDelegate($"slider6", () => Device.Settings.Slider[6]);
+            this.AttachDelegate($"knob6", () => Device.Settings.Knob[6]);
+            this.AttachDelegate($"slider7", () => Device.Settings.Slider[7]);
+            this.AttachDelegate($"knob7", () => Device.Settings.Knob[7]);
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
@@ -100,23 +97,18 @@ namespace blekenbleu.MIDIspace
             // Declare an event
             this.AddEvent("MIDIioWarning");
 
-            // Declare an action which can be called
-            this.AddAction("IncrementSpeed",(a, b) =>
+            // Declare actions which can be called
+            this.AddAction("ping0",(a, b) =>
             {
-                speed+=10;
-                SimHub.Logging.Current.Info("Speed warning incremented");
+                SimHub.Logging.Current.Info("MIDIout0 pinged");
             });
-
-            // Declare an action which can be called
-            this.AddAction("DecrementSpeed", (a, b) =>
+            this.AddAction("ping1", (a, b) =>
             {
-                speed-=10;
-                SimHub.Logging.Current.Info("Speed warning decremented");
+                SimHub.Logging.Current.Info("MIDIout1 pinged");
             });
-            this.AddAction("ReZeroSpeed", (a, b) =>
+            this.AddAction("ping2", (a, b) =>
             {
-                speed = 0;
-                SimHub.Logging.Current.Info("Speed warning = 0");
+                SimHub.Logging.Current.Info("MIDIout2 pinged");
             });
         }
     }

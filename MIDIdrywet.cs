@@ -1,7 +1,6 @@
 ﻿using System;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
-using SimHub.Plugins;
 
 namespace blekenbleu.MIDIspace
 {
@@ -11,34 +10,36 @@ namespace blekenbleu.MIDIspace
     public class MIDIdrywet
     {
         private static IInputDevice _inputDevice;
+        public static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
-        public byte[] Slider { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        public MIDIioSettings Settings;
 
-        public byte[] Knob { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-        public void Init(String MIDIin)
+        public void Init(String MIDIin, MIDIioSettings savedSettings )
         {
             try
             {
-                _inputDevice = InputDevice.GetByName(MIDIin);
-                _inputDevice.EventReceived += OnEventReceived;
-                _inputDevice.StartEventsListening();
+                InputDevice = Melanchall.DryWetMidi.Devices.InputDevice.GetByName(MIDIin);
+                InputDevice.EventReceived += OnEventReceived;
+                InputDevice.StartEventsListening();
                 SimHub.Logging.Current.Info($"MIDIdrywet input is listening for {MIDIin} messages.");
             }
             
             catch (Exception)
             {
                 SimHub.Logging.Current.Info($"Failed to find MIDIdrywet input device {MIDIin};\nKnown devices:");
-                foreach (var inputDevice in InputDevice.GetAll())
+                foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
                 {
                     SimHub.Logging.Current.Info(inputDevice.Name);
                 }
             }
+            Settings = savedSettings;
         }
 
-        public void End()
+        public MIDIioSettings End()
         {
-            (_inputDevice as IDisposable)?.Dispose();
+            (InputDevice as IDisposable)?.Dispose();
+
+            return Settings;
         }
 
         // callback
@@ -51,9 +52,9 @@ namespace blekenbleu.MIDIspace
             {
 //              SimHub.Logging.Current.Info($"ControlNumber = '{foo.ControlNumber}'; ControlValue = '{foo.ControlValue}");
                 if (8 > foo.ControlNumber)	// unsigned
-                    Slider[foo.ControlNumber] = foo.ControlValue;
+                    Settings.Slider[foo.ControlNumber] = foo.ControlValue;
                 else if (16 <= foo.ControlNumber && 24 > foo.ControlNumber)
-                    Knob[foo.ControlNumber - 16] = foo.ControlValue;
+                    Settings.Knob[foo.ControlNumber - 16] = foo.ControlValue;
             }
         }
     }
