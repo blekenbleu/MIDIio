@@ -14,7 +14,7 @@ namespace blekenbleu.MIDIspace
 
         public MIDIioSettings Settings;
 
-        public void Init(String MIDIin, MIDIioSettings savedSettings )
+        public void Init(String MIDIin, String MIDIout, MIDIioSettings savedSettings )
         {
             try
             {

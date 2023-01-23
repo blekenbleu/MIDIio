@@ -61,13 +61,15 @@ namespace blekenbleu.MIDIspace
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
             // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
-
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("in", this.GetType(), input);
-
             SimHub.Logging.Current.Info("MIDIio input device: " + input);
-            Device.Init(input, Settings);
+
+            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
+            String output = (null == data) ? "unassigned" : data.ToString();
+            SimHub.Logging.Current.Info("MIDIio output device: " + output);
+            Device.Init(input, output, Settings);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());

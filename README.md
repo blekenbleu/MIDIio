@@ -7,6 +7,8 @@
 [Motivation and How-To here](https://blekenbleu.github.io/MIDI/plugin/)
 
 #### Notes:
+- This plugin is currently (and perhaps always) **incompatible with Midi Controllers Input plugin**  
+    - enabling both causes SimHub to crash!!!   
 - This plugin has no user interface code
     - configure by editing properties in `MIDIio.ini`, which goes in `SimHub\NCalcScripts\` folder 
     - check **System log** for MIDI-related messages:  
