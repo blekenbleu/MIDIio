@@ -23,7 +23,7 @@ namespace blekenbleu.MIDIspace
                 _inputDevice = InputDevice.GetByName(MIDIin);
                 _inputDevice.EventReceived += OnEventReceived;
                 _inputDevice.StartEventsListening();
-                SimHub.Logging.Current.Info($"MIDIdrywet input device {MIDIin} is listening for events.");
+                SimHub.Logging.Current.Info($"MIDIdrywet input is listening for {MIDIin} messages.");
             }
             
             catch (Exception)
@@ -46,18 +46,14 @@ namespace blekenbleu.MIDIspace
         {
             var midiDevice = (MidiDevice)sender;
             SimHub.Logging.Current.Info($"Event received from '{midiDevice.Name}': {e.Event}");
+            // this cute syntax is called pattern matching
             if (e.Event is ControlChangeEvent foo)
             {
 //              SimHub.Logging.Current.Info($"ControlNumber = '{foo.ControlNumber}'; ControlValue = '{foo.ControlValue}");
-                if (8 > foo.ControlNumber)
-                {
+                if (8 > foo.ControlNumber)	// unsigned
                     Slider[foo.ControlNumber] = foo.ControlValue;
-                }
                 else if (16 <= foo.ControlNumber && 24 > foo.ControlNumber)
-                {
-                    int me = foo.ControlNumber - 16;
-                    Knob[me] = foo.ControlValue;
-                }
+                    Knob[foo.ControlNumber - 16] = foo.ControlValue;
             }
         }
     }
