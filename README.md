@@ -1,6 +1,6 @@
 ### blekenbleu.MIDIio SimHub plugin
- [SimHub](https://github.com/SHWotever/SimHub) plugin to read and send MIDI slider
- [Control Change Messages](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2),  
+ [SimHub](https://github.com/SHWotever/SimHub) plugin sends up to 8 MIDI Slider and reads up to 8 each Slider and Knob
+ [Control Change Messages](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2),   
  enabling e.g. on-the-fly tweaking of suitably customized **ShakeIt Bass Shaker** effects.  
  C# code evolved from `User.PluginSdkDemo`, using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi) (SimHub already did)  
 
@@ -8,8 +8,10 @@
 
 #### Notes:
 - This plugin is currently (and perhaps always) **incompatible with Midi Controllers Input plugin**  
-    - enabling both causes SimHub to crash!!!   
-- This plugin has no user interface code
+    - Enabling both causes SimHub to crash!!!   
+    - Unlike Midi Controllers Input plugin, MIDIio automatically sets a CCn property and event  
+      for every CC n message that is neither Slider nor Knob
+- This plugin includes NO user interface code
     - configure by editing properties in `MIDIio.ini`, which goes in `SimHub\NCalcScripts\` folder 
     - check **System log** for MIDI-related messages:  
       ![log messages](log.png)  

@@ -69,29 +69,13 @@ namespace blekenbleu.MIDIspace
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             String output = (null == data) ? "unassigned" : data.ToString();
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
-            Device.Init(input, output, Settings);
+
+            Device.Init(input, output, Settings, this);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : data.ToString());
             count += 1;		// increments for each Init(), provoked e.g. by game change or restart
-            pluginManager.AddProperty("count", this.GetType(), count);
-
-            this.AttachDelegate($"slider0", () => Device.Settings.Slider[0]);
-            this.AttachDelegate($"knob0", () => Device.Settings.Knob[0]);
-            this.AttachDelegate($"slider1", () => Device.Settings.Slider[1]);
-            this.AttachDelegate($"knob1", () => Device.Settings.Knob[1]);
-            this.AttachDelegate($"slider2", () => Device.Settings.Slider[2]);
-            this.AttachDelegate($"knob2", () => Device.Settings.Knob[2]);
-            this.AttachDelegate($"slider3", () => Device.Settings.Slider[3]);
-            this.AttachDelegate($"knob3", () => Device.Settings.Knob[3]);
-            this.AttachDelegate($"slider4", () => Device.Settings.Slider[4]);
-            this.AttachDelegate($"knob4", () => Device.Settings.Knob[4]);
-            this.AttachDelegate($"slider5", () => Device.Settings.Slider[5]);
-            this.AttachDelegate($"knob5", () => Device.Settings.Knob[5]);
-            this.AttachDelegate($"slider6", () => Device.Settings.Slider[6]);
-            this.AttachDelegate($"knob6", () => Device.Settings.Knob[6]);
-            this.AttachDelegate($"slider7", () => Device.Settings.Slider[7]);
-            this.AttachDelegate($"knob7", () => Device.Settings.Knob[7]);
+            pluginManager.AddProperty("Init() count", this.GetType(), count);
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
