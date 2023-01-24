@@ -50,8 +50,7 @@ namespace blekenbleu.MIDIspace
         }
 
         /// <summary>
-        /// Called once after plugins startup
-        /// Plugins are rebuilt at game change
+        /// Called at SimHub start then after game changes
         /// </summary>
         /// <param name="pluginManager"></param>
         private static int count = 0;

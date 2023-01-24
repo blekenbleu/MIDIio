@@ -153,7 +153,7 @@ namespace blekenbleu.MIDIspace
 
         internal void SetProp(MIDIio I, byte CCnumber, byte value)
         {
-       	    SetVal(CCnumber, value);
+            CCvalue[CCnumber] = value;
             switch (CCnumber)       // Initialize CC property and event
             {
                 case 0:

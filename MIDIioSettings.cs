@@ -1,6 +1,6 @@
 ﻿namespace blekenbleu.MIDIspace
 {
-    public class MIDIioSettings
+    public class MIDIioSettings // saved while plugin restarts
     {
         public byte[] Slider { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
 

@@ -63,7 +63,7 @@ namespace blekenbleu.MIDIspace
         public MIDIioSettings End()
         {
             (InputDevice as IDisposable)?.Dispose();
-
+//          SimHub.Logging.Current.Info($"End: CCbits #{Settings.CCbits[0]}, #{Settings.CCbits[1]}");
             return Settings;
         }
 
@@ -114,12 +114,14 @@ namespace blekenbleu.MIDIspace
         {
             ulong mask = 1;
 
+//          SimHub.Logging.Current.Info($"CCrestore(): CCbits #{Settings.CCbits[0]}, #{Settings.CCbits[1]}");
             for (byte i = 0; i < 64; i++)
             {
                 if (0 < (mask & Settings.CCbits[0]))
                     CC.SetProp(M, i, 0);
                 if (0 < (mask & Settings.CCbits[1]))
                     CC.SetProp(M, (byte)(64 + i), 0);
+                mask <<= 1;
             }
         }
     }
