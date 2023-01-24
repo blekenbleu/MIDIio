@@ -3,6 +3,8 @@ using SimHub.Plugins;
 
 namespace blekenbleu.MIDIspace
 {
+    // Dynamically add events and properties for CC buttons as pressed
+    // To Do: save and restore 
     public class MIDIioProperties
     {
         internal readonly static string[] Properties = new string[128]
@@ -137,7 +139,7 @@ namespace blekenbleu.MIDIspace
             "CC127"
         };
        	private Byte[] CCvalue { get; set; } = new byte[128];   // store CCvalues
-        internal void init()
+        public void Init()
         {
             for (int i = 0; i < 127; i++)
                 CCvalue[i] = 0;

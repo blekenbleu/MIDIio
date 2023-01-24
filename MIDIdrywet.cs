@@ -1,4 +1,5 @@
 ﻿using System;
+using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
 using SimHub.Plugins;
@@ -36,7 +37,7 @@ namespace blekenbleu.MIDIspace
                 }
             }
             Settings = savedSettings;
-            CC.init();
+            CC.Init();
             M = that;
             M.AttachDelegate($"slider0", () => Settings.Slider[0]);
             M.AttachDelegate($"knob0", () => Settings.Knob[0]);
@@ -56,6 +57,7 @@ namespace blekenbleu.MIDIspace
             M.AttachDelegate($"knob7", () => Settings.Knob[7]);
             M.AddEvent("Warning");
             M.PluginManager.SetPropertyValue("test", M.GetType(), 10);
+            CCrestore();
         }
 
         public MIDIioSettings End()
@@ -84,20 +86,17 @@ namespace blekenbleu.MIDIspace
         }
 
         // track active CCs
-        private static ulong[] CCbits { get; set; } = { 0, 0 }; // track initialized CCvalue properties
-        private bool CCactive(byte CCnumber, byte value)
+        public bool CCactive(SevenBitNumber CCnumber, SevenBitNumber value)
         {
             ulong mask = 1;
             byte index = 0;
             byte C63 = (byte)(63 & CCnumber);
 
-            CCnumber &= 127;
-
             if (63 < CCnumber)
                 index++;    // switch ulong
 
             mask <<= C63;
-            if (0 < (mask & CCbits[index]))	// already set?
+            if (0 < (mask & Settings.CCbits[index]))	// already set?
             {
                 CC.SetVal(CCnumber, value);
                 if (0 < value)
@@ -105,9 +104,23 @@ namespace blekenbleu.MIDIspace
                 return false;			// do not log
             }
 
-            CCbits[index] |= mask;
+            Settings.CCbits[index] |= mask;
             CC.SetProp(M, CCnumber, value);
             return true;
+        }
+
+        // restore active CCs after restart
+        internal void CCrestore()
+        {
+            ulong mask = 1;
+
+            for (byte i = 0; i < 64; i++)
+            {
+                if (0 < (mask & Settings.CCbits[0]))
+                    CC.SetProp(M, i, 0);
+                if (0 < (mask & Settings.CCbits[1]))
+                    CC.SetProp(M, (byte)(64 + i), 0);
+            }
         }
     }
 }
