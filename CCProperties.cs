@@ -5,7 +5,7 @@ namespace blekenbleu.MIDIspace
 {
     // Dynamically add events and properties for CC buttons as pressed
     // To Do: save and restore 
-    public class MIDIioProperties
+    public class CCProperties
     {
         internal readonly static string[] Properties = new string[128]
         {
@@ -396,12 +396,280 @@ namespace blekenbleu.MIDIspace
                     I.AttachDelegate(Properties[59], () => CCvalue[59]);
                     I.AddEvent(Properties[59]);
                     break;
+                case 60:
+                    I.AttachDelegate(Properties[60], () => CCvalue[60]);
+                    I.AddEvent(Properties[60]);
+                    break;
+                case 61:
+                    I.AttachDelegate(Properties[61], () => CCvalue[61]);
+                    I.AddEvent(Properties[61]);
+                    break;
+                case 62:
+                    I.AttachDelegate(Properties[62], () => CCvalue[62]);
+                    I.AddEvent(Properties[62]);
+                    break;
+                case 63:
+                    I.AttachDelegate(Properties[63], () => CCvalue[63]);
+                    I.AddEvent(Properties[63]);
+                    break;
+                case 64:
+                    I.AttachDelegate(Properties[64], () => CCvalue[64]);
+                    I.AddEvent(Properties[64]);
+                    break;
+                case 65:
+                    I.AttachDelegate(Properties[65], () => CCvalue[65]);
+                    I.AddEvent(Properties[65]);
+                    break;
+                case 66:
+                    I.AttachDelegate(Properties[66], () => CCvalue[66]);
+                    I.AddEvent(Properties[66]);
+                    break;
+                case 67:
+                    I.AttachDelegate(Properties[67], () => CCvalue[67]);
+                    I.AddEvent(Properties[67]);
+                    break;
+                case 68:
+                    I.AttachDelegate(Properties[68], () => CCvalue[68]);
+                    I.AddEvent(Properties[68]);
+                    break;
+                case 69:
+                    I.AttachDelegate(Properties[69], () => CCvalue[69]);
+                    I.AddEvent(Properties[69]);
+                    break;
+                case 70:
+                    I.AttachDelegate(Properties[70], () => CCvalue[70]);
+                    I.AddEvent(Properties[70]);
+                    break;
+                case 71:
+                    I.AttachDelegate(Properties[71], () => CCvalue[71]);
+                    I.AddEvent(Properties[71]);
+                    break;
+                case 72:
+                    I.AttachDelegate(Properties[72], () => CCvalue[72]);
+                    I.AddEvent(Properties[72]);
+                    break;
+                case 73:
+                    I.AttachDelegate(Properties[73], () => CCvalue[73]);
+                    I.AddEvent(Properties[73]);
+                    break;
+                case 74:
+                    I.AttachDelegate(Properties[74], () => CCvalue[74]);
+                    I.AddEvent(Properties[74]);
+                    break;
+                case 77:
+                    I.AttachDelegate(Properties[75], () => CCvalue[75]);
+                    I.AddEvent(Properties[75]);
+                    break;
+                case 76:
+                    I.AttachDelegate(Properties[76], () => CCvalue[76]);
+                    I.AddEvent(Properties[76]);
+                    break;
+                case 77:
+                    I.AttachDelegate(Properties[77], () => CCvalue[77]);
+                    I.AddEvent(Properties[77]);
+                    break;
+                case 78:
+                    I.AttachDelegate(Properties[78], () => CCvalue[78]);
+                    I.AddEvent(Properties[78]);
+                    break;
+                case 79:
+                    I.AttachDelegate(Properties[79], () => CCvalue[79]);
+                    I.AddEvent(Properties[79]);
+                    break;
+                case 80:
+                    I.AttachDelegate(Properties[80], () => CCvalue[80]);
+                    I.AddEvent(Properties[80]);
+                    break;
+                case 81:
+                    I.AttachDelegate(Properties[81], () => CCvalue[81]);
+                    I.AddEvent(Properties[81]);
+                    break;
+                case 82:
+                    I.AttachDelegate(Properties[82], () => CCvalue[82]);
+                    I.AddEvent(Properties[82]);
+                    break;
+                case 83:
+                    I.AttachDelegate(Properties[83], () => CCvalue[83]);
+                    I.AddEvent(Properties[83]);
+                    break;
+                case 84:
+                    I.AttachDelegate(Properties[84], () => CCvalue[84]);
+                    I.AddEvent(Properties[84]);
+                    break;
+                case 85:
+                    I.AttachDelegate(Properties[85], () => CCvalue[85]);
+                    I.AddEvent(Properties[85]);
+                    break;
+                case 86:
+                    I.AttachDelegate(Properties[86], () => CCvalue[86]);
+                    I.AddEvent(Properties[86]);
+                    break;
+                case 87:
+                    I.AttachDelegate(Properties[87], () => CCvalue[87]);
+                    I.AddEvent(Properties[87]);
+                    break;
+                case 88:
+                    I.AttachDelegate(Properties[88], () => CCvalue[88]);
+                    I.AddEvent(Properties[88]);
+                    break;
+                case 89:
+                    I.AttachDelegate(Properties[89], () => CCvalue[89]);
+                    I.AddEvent(Properties[89]);
+                    break;
+                case 90:
+                    I.AttachDelegate(Properties[90], () => CCvalue[90]);
+                    I.AddEvent(Properties[90]);
+                    break;
+                case 91:
+                    I.AttachDelegate(Properties[91], () => CCvalue[91]);
+                    I.AddEvent(Properties[91]);
+                    break;
+                case 92:
+                    I.AttachDelegate(Properties[92], () => CCvalue[92]);
+                    I.AddEvent(Properties[92]);
+                    break;
+                case 93:
+                    I.AttachDelegate(Properties[93], () => CCvalue[93]);
+                    I.AddEvent(Properties[93]);
+                    break;
+                case 94:
+                    I.AttachDelegate(Properties[94], () => CCvalue[94]);
+                    I.AddEvent(Properties[94]);
+                    break;
+                case 95:
+                    I.AttachDelegate(Properties[95], () => CCvalue[95]);
+                    I.AddEvent(Properties[95]);
+                    break;
+                case 96:
+                    I.AttachDelegate(Properties[96], () => CCvalue[96]);
+                    I.AddEvent(Properties[96]);
+                    break;
+                case 97:
+                    I.AttachDelegate(Properties[97], () => CCvalue[97]);
+                    I.AddEvent(Properties[97]);
+                    break;
+                case 98:
+                    I.AttachDelegate(Properties[98], () => CCvalue[98]);
+                    I.AddEvent(Properties[98]);
+                    break;
+                case 99:
+                    I.AttachDelegate(Properties[99], () => CCvalue[99]);
+                    I.AddEvent(Properties[99]);
+                    break;
+                case 100:
+                    I.AttachDelegate(Properties[100], () => CCvalue[100]);
+                    I.AddEvent(Properties[100]);
+                    break;
+                case 101:
+                    I.AttachDelegate(Properties[101], () => CCvalue[101]);
+                    I.AddEvent(Properties[101]);
+                    break;
+                case 102:
+                    I.AttachDelegate(Properties[102], () => CCvalue[102]);
+                    I.AddEvent(Properties[102]);
+                    break;
+                case 103:
+                    I.AttachDelegate(Properties[103], () => CCvalue[103]);
+                    I.AddEvent(Properties[103]);
+                    break;
+                case 104:
+                    I.AttachDelegate(Properties[104], () => CCvalue[104]);
+                    I.AddEvent(Properties[104]);
+                    break;
+                case 105:
+                    I.AttachDelegate(Properties[105], () => CCvalue[105]);
+                    I.AddEvent(Properties[105]);
+                    break;
+                case 106:
+                    I.AttachDelegate(Properties[106], () => CCvalue[106]);
+                    I.AddEvent(Properties[106]);
+                    break;
+                case 107:
+                    I.AttachDelegate(Properties[107], () => CCvalue[107]);
+                    I.AddEvent(Properties[107]);
+                    break;
+                case 108:
+                    I.AttachDelegate(Properties[108], () => CCvalue[108]);
+                    I.AddEvent(Properties[108]);
+                    break;
+                case 109:
+                    I.AttachDelegate(Properties[109], () => CCvalue[109]);
+                    I.AddEvent(Properties[109]);
+                    break;
+                case 110:
+                    I.AttachDelegate(Properties[110], () => CCvalue[110]);
+                    I.AddEvent(Properties[110]);
+                    break;
+                case 111:
+                    I.AttachDelegate(Properties[111], () => CCvalue[111]);
+                    I.AddEvent(Properties[111]);
+                    break;
+                case 112:
+                    I.AttachDelegate(Properties[112], () => CCvalue[112]);
+                    I.AddEvent(Properties[112]);
+                    break;
+                case 113:
+                    I.AttachDelegate(Properties[113], () => CCvalue[113]);
+                    I.AddEvent(Properties[113]);
+                    break;
+                case 114:
+                    I.AttachDelegate(Properties[114], () => CCvalue[114]);
+                    I.AddEvent(Properties[114]);
+                    break;
+                case 115:
+                    I.AttachDelegate(Properties[115], () => CCvalue[115]);
+                    I.AddEvent(Properties[115]);
+                    break;
+                case 116:
+                    I.AttachDelegate(Properties[116], () => CCvalue[116]);
+                    I.AddEvent(Properties[116]);
+                    break;
+                case 117:
+                    I.AttachDelegate(Properties[117], () => CCvalue[117]);
+                    I.AddEvent(Properties[117]);
+                    break;
+                case 118:
+                    I.AttachDelegate(Properties[118], () => CCvalue[118]);
+                    I.AddEvent(Properties[118]);
+                    break;
+                case 119:
+                    I.AttachDelegate(Properties[119], () => CCvalue[119]);
+                    I.AddEvent(Properties[119]);
+                    break;
+                case 120:
+                    I.AttachDelegate(Properties[120], () => CCvalue[120]);
+                    I.AddEvent(Properties[120]);
+                    break;
+                case 121:
+                    I.AttachDelegate(Properties[121], () => CCvalue[121]);
+                    I.AddEvent(Properties[121]);
+                    break;
+                case 122:
+                    I.AttachDelegate(Properties[122], () => CCvalue[122]);
+                    I.AddEvent(Properties[122]);
+                    break;
+                case 123:
+                    I.AttachDelegate(Properties[123], () => CCvalue[123]);
+                    I.AddEvent(Properties[123]);
+                    break;
+                case 124:
+                    I.AttachDelegate(Properties[124], () => CCvalue[124]);
+                    I.AddEvent(Properties[124]);
+                    break;
+                case 125:
+                    I.AttachDelegate(Properties[125], () => CCvalue[125]);
+                    I.AddEvent(Properties[125]);
+                    break;
+                case 126:
+                    I.AttachDelegate(Properties[126], () => CCvalue[126]);
+                    I.AddEvent(Properties[126]);
+                    break;
                 case 127:
                     I.AttachDelegate(Properties[127], () => CCvalue[127]);
                     I.AddEvent(Properties[127]);
                     break;
                 default:
-                    SimHub.Logging.Current.Info($"not set: CC{CCnumber}");
+                    SimHub.Logging.Current.Info($"SetProp() not set: CC{CCnumber}");
                     break;
             }
             if (0 < value)

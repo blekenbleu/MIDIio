@@ -16,7 +16,7 @@ namespace blekenbleu.MIDIspace
         public static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
         public MIDIioSettings Settings;
-        public MIDIioProperties CC = new MIDIioProperties();
+        public CCProperties CC = new CCProperties();
 
         public void Init(String MIDIin, String MIDIout, MIDIioSettings savedSettings, MIDIio that )
         {
@@ -100,7 +100,7 @@ namespace blekenbleu.MIDIspace
             {
                 CC.SetVal(CCnumber, value);
                 if (0 < value)
-                    M.TriggerEvent(MIDIioProperties.Properties[CCnumber]);
+                    M.TriggerEvent(CCProperties.Properties[CCnumber]);
                 return false;			// do not log
             }
 
