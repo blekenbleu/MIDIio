@@ -456,7 +456,7 @@ namespace blekenbleu.MIDIspace
                     I.AttachDelegate(Properties[74], () => CCvalue[74]);
                     I.AddEvent(Properties[74]);
                     break;
-                case 77:
+                case 75:
                     I.AttachDelegate(Properties[75], () => CCvalue[75]);
                     I.AddEvent(Properties[75]);
                     break;
