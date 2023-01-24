@@ -14,28 +14,30 @@ namespace blekenbleu.MIDIspace
         private static MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
-        public ControlChangeEvent GetFoo;
         private bool Connected;
         private MIDIioSettings Settings;
         public String SendName;     // source property prefix 
         private String CCout;       // Output MIDI destination
 
-        public void SendCC(byte number, byte value)
-        {
-            GetFoo.ControlNumber = (SevenBitNumber)number;
-            GetFoo.ControlValue = (SevenBitNumber)value;
-            OutputDevice.SendEvent(GetFoo);
+        public void SendCC(byte control, byte value)
+        {   // wasted a day not finding this documented
+            OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value));
         }
 
         private static byte val = 63;
-        public void Ping(SevenBitNumber num)
+        public bool Ping(SevenBitNumber num) // gets called (indirectly, event->action) by INdrywet()
         {
-            SendCC(num, val);
-            SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {val}");
-            val = (byte)((63 == val) ? 127 : 63);
+            if (Connected) {
+                SendCC(num, val);
+                SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {val}");
+                val = (byte)((63 == val) ? 127 : 63);
+                return true;
+            }
+            else SimHub.Logging.Current.Info($"{CCout} disabled");
+            return false;
         }
 
-        public void SendProp(byte i)
+        public bool SendProp(byte i)
         {
             if (Connected)
             {
@@ -45,18 +47,16 @@ namespace blekenbleu.MIDIspace
                 String input = data?.ToString();
                 if ((null != input) && Settings.Sent[i] != Convert.ToByte(input))
                     SendCC(0, Settings.Sent[i] = Convert.ToByte(input));
+                else return false;
+                return true;
             }
+            else return false;
         }
 
         public void Init(String MIDIout, MIDIioSettings savedSettings, MIDIio that )
         {
             M = that;
             CCout = MIDIout;
-            if (null == SendName)
-            {
-                Connected = false;  // missing data source
-                return;
-            }
             Connected = true;       // assume the best
             // Load settings
             Settings = savedSettings;

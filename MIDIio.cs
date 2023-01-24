@@ -31,7 +31,8 @@ namespace blekenbleu.MIDIspace
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             for (byte b = 0; b < 8; b++)
-                Outer.SendProp(b);
+                if (!Outer.SendProp(b))
+                    break;
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
             }
@@ -59,34 +60,33 @@ namespace blekenbleu.MIDIspace
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-            // Declare a property available in the property list; this gets evaluated "on demand" (when shown or used in formulas)
-            object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
-            String input = (null == data) ? "unassigned" : data.ToString();
-            pluginManager.AddProperty("in", this.GetType(), input);
-            SimHub.Logging.Current.Info("MIDIio input device: " + input);
-
-            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
-            SimHub.Logging.Current.Info("MIDIio output device: " + input);
-            Reader = new INdrywet();
-            Reader.Init(input, Settings, this);
-
-            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
+            // Make properties available in the property list; these get evaluated "on demand" (when shown or used in formulas)
+            // open Outer before Reader, which tries to send stored MIDI CC messages
+            object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             String output = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
+            SimHub.Logging.Current.Info("MIDIio output device: " + output);
             Outer = new OUTdrywet();
-            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIsend");
+            string MIDIsend = "DataCorePlugin.ExternalScript.MIDIsend";
+            data = pluginManager.GetPropertyValue(MIDIsend);
             if (null == data)
             {
-                SimHub.Logging.Current.Info("MIDIio unassigned output data source property");
+                SimHub.Logging.Current.Info("MIDIio unassigned output data source property: " + MIDIsend);
                 Outer.SendName = null;
-                Outer.Init(output, Settings, this);
             }
             else
             {
-                Outer.SendName = data.ToString();
+                SimHub.Logging.Current.Info("MIDIio send property: " + (Outer.SendName = data.ToString()));
                 SimHub.Logging.Current.Info("MIDIio output device: " + output + " sending CC0-7 from: " + Outer.SendName + "0-7");
-                Outer.Init(output, Settings, this);
             }
+            Outer.Init(output, Settings, this);
+
+            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
+            String input = (null == data) ? "unassigned" : data.ToString();
+            pluginManager.AddProperty("in", this.GetType(), input);
+            SimHub.Logging.Current.Info("MIDIio input device: " + input);
+            Reader = new INdrywet();
+            Reader.Init(input, Settings, this);
 
             count += 1;		// increments for each Init(), provoked e.g. by game change or restart
             pluginManager.AddProperty("Init() count", this.GetType(), count);
@@ -100,25 +100,21 @@ namespace blekenbleu.MIDIspace
             // Declare actions which can be called
             this.AddAction("ping0",(a, b) =>
             {
-                SimHub.Logging.Current.Info("MIDIout0 pinged");
                 Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)0);
             });
 
             this.AddAction("ping1", (a, b) =>
             {
-                SimHub.Logging.Current.Info("MIDIout1 pinged");
                 Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)1);
             });
 
             this.AddAction("ping2", (a, b) =>
             {
-                SimHub.Logging.Current.Info("MIDIout2 pinged");
                 Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)2);
             });
 
             this.AddAction("ping3", (a, b) =>
             {
-                SimHub.Logging.Current.Info("MIDIout3 pinged");
                 Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)3);
             });
         }
