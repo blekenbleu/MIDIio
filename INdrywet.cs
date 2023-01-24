@@ -9,7 +9,7 @@ namespace blekenbleu.MIDIspace
     /// <summary>
     /// from Input device https://melanchall.github.io/drywetmidi/articles/devices/Input-device.html
     /// </summary>
-    public class MIDIdrywet
+    public class INdrywet
     {
         private static MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
         private static IInputDevice _inputDevice;
@@ -18,19 +18,19 @@ namespace blekenbleu.MIDIspace
         public MIDIioSettings Settings;
         public CCProperties CC = new CCProperties();
 
-        public void Init(String MIDIin, String MIDIout, MIDIioSettings savedSettings, MIDIio that )
+        public void Init(String MIDIin, MIDIioSettings savedSettings, MIDIio that )
         {
             try
             {
                 InputDevice = Melanchall.DryWetMidi.Devices.InputDevice.GetByName(MIDIin);
                 InputDevice.EventReceived += OnEventReceived;
                 InputDevice.StartEventsListening();
-                SimHub.Logging.Current.Info($"MIDIdrywet input is listening for {MIDIin} messages.");
+                SimHub.Logging.Current.Info($"INdrywet input is listening for {MIDIin} messages.");
             }
             
             catch (Exception)
             {
-                SimHub.Logging.Current.Info($"Failed to find MIDIdrywet input device {MIDIin};\nKnown devices:");
+                SimHub.Logging.Current.Info($"Failed to find INdrywet input device {MIDIin};\nKnown devices:");
                 foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
                 {
                     SimHub.Logging.Current.Info(inputDevice.Name);
