@@ -13,14 +13,14 @@
     - Like SimHub's **Midi Controllers Input** plugin, **MIDIio** can automatically set CCn properties  
       for received CC n messages not already configured, but from only a single configured MIDI device.
 - This plugin includes NO user interface code
-    - configure by editing properties in `MIDIio.ini`, which goes in `SimHub\NCalcScripts\` folder 
-    - **check **System log** for MIDI-related messages:**  
+    - configure **MIDIio** plugin by editing properties in `MIDIio.ini`, which goes in `SimHub\NCalcScripts\` folder 
+    - **check System log for MIDI-related messages:**  
       ![log messages](log.png)  
 
-    - **check **Available properties** for MIDI-related values**:
+    - **check Available properties for MIDI-related values**:
       ![Properties values](properties.png)
 
-    - **`button` configuration for events:**  
+    - **Configure button `CCn` Source events:**  
       ![button event names and actions](events.png)  
     - this is *not* (nor can it become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).

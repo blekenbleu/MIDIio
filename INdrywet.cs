@@ -9,16 +9,15 @@ namespace blekenbleu.MIDIspace
     /// <summary>
     /// from Input device https://melanchall.github.io/drywetmidi/articles/devices/Input-device.html
     /// </summary>
-    public class INdrywet
+    internal class INdrywet
     {
-        private static MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
+        private MIDIio M;	    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
+        private CCProperties CC; 
+        private MIDIioSettings Settings;
         private static IInputDevice _inputDevice;
-        public static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
+        private static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
-        public MIDIioSettings Settings;
-        public CCProperties CC = new CCProperties();
-
-        public void Init(String MIDIin, MIDIioSettings savedSettings, MIDIio that )
+        internal void Init(String MIDIin, MIDIioSettings savedSettings, MIDIio that )
         {
             try
             {
@@ -37,8 +36,8 @@ namespace blekenbleu.MIDIspace
                 }
             }
             Settings = savedSettings;
-            CC.Init();
             M = that;
+            CC = M.CCProperties;
             M.AttachDelegate($"slider0", () => Settings.Slider[0]);
             M.AttachDelegate($"knob0", () => Settings.Knob[0]);
             M.AttachDelegate($"slider1", () => Settings.Slider[1]);
@@ -60,7 +59,7 @@ namespace blekenbleu.MIDIspace
             CCrestore();
         }
 
-        public MIDIioSettings End()
+        internal MIDIioSettings End()
         {
             (InputDevice as IDisposable)?.Dispose();
 //          SimHub.Logging.Current.Info($"End: CCbits #{Settings.CCbits[0]}, #{Settings.CCbits[1]}");
@@ -86,7 +85,7 @@ namespace blekenbleu.MIDIspace
         }
 
         // track active CCs
-        public bool CCactive(SevenBitNumber CCnumber, SevenBitNumber value)
+        private bool CCactive(SevenBitNumber CCnumber, SevenBitNumber value)
         {
             ulong mask = 1;
             byte index = 0;
@@ -100,7 +99,7 @@ namespace blekenbleu.MIDIspace
             {
                 CC.SetVal(CCnumber, value);
                 if (0 < value)
-                    M.TriggerEvent(CCProperties.Properties[CCnumber]);
+                    M.TriggerEvent(CC.CCname[CCnumber]);
                 return false;			// do not log
             }
 
@@ -110,7 +109,7 @@ namespace blekenbleu.MIDIspace
         }
 
         // restore active CCs after restart
-        internal void CCrestore()
+        private void CCrestore()
         {
             ulong mask = 1;
 

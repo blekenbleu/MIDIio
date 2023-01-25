@@ -9,10 +9,11 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-        public MIDIioSettings Settings;
+        internal MIDIioSettings Settings;
+        internal CCProperties CCProperties;
 
-        public INdrywet Reader;
-        public OUTdrywet Outer;
+        internal INdrywet Reader;
+        internal OUTdrywet Outer;
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -61,25 +62,21 @@ namespace blekenbleu.MIDIspace
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
             // Make properties available in the property list; these get evaluated "on demand" (when shown or used in formulas)
-            // open Outer before Reader, which tries to send stored MIDI CC messages
+            CCProperties = new CCProperties();
+            // Init Outer before Reader, which tries to send stored MIDI CC messages
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             String output = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
-            Outer = new OUTdrywet();
             string MIDIsend = "DataCorePlugin.ExternalScript.MIDIsend";
+            string SendName = null;
             data = pluginManager.GetPropertyValue(MIDIsend);
             if (null == data)
-            {
                 SimHub.Logging.Current.Info("MIDIio unassigned output data source property: " + MIDIsend);
-                Outer.SendName = null;
-            }
             else
-            {
-                SimHub.Logging.Current.Info("MIDIio send property: " + (Outer.SendName = data.ToString()));
-                SimHub.Logging.Current.Info("MIDIio output device: " + output + " sending CC0-7 from: " + Outer.SendName + "0-7");
-            }
-            Outer.Init(output, Settings, this);
+                SimHub.Logging.Current.Info("MIDIio send property: " + (SendName = data.ToString()));
+            Outer = new OUTdrywet();
+            Outer.Init(output, SendName, Settings, this);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
@@ -93,30 +90,6 @@ namespace blekenbleu.MIDIspace
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
-
-            // Declare an event
-            this.AddEvent("MIDIioWarning");
-
-            // Declare actions which can be called
-            this.AddAction("ping0",(a, b) =>
-            {
-                Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)0);
-            });
-
-            this.AddAction("ping1", (a, b) =>
-            {
-                Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)1);
-            });
-
-            this.AddAction("ping2", (a, b) =>
-            {
-                Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)2);
-            });
-
-            this.AddAction("ping3", (a, b) =>
-            {
-                Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)3);
-            });
         }
     }
 }

@@ -25,5 +25,5 @@
                    else (`MIDIecho > 0`) unconfigured MIDI messages are forwarded from `MIDIin` to `MIDIout`.
 
 To avoid conficts, `MIDIecho` will remap `MIDIin` CCm for `m <=` highest defined `n` among `MIDIsendn`.  
-CC messages most recently sent to `MIDIout` are saved, then resent when SimHub  next launches the MIDIio plugin.
-This is intended to enable resuming a MIDI configuration from time to time.
+CC messages most recently sent to `MIDIout` are saved, then resent when SimHub next launches the MIDIio plugin.  
+This is intended to enable resuming a MIDI configuration from time to time.  

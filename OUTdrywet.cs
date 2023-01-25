@@ -9,23 +9,23 @@ namespace blekenbleu.MIDIspace
     /// <summary>
     /// from Output device https://melanchall.github.io/drywetmidi/articles/devices/Output-device.html
     /// </summary>
-    public class OUTdrywet
+    internal class OUTdrywet
     {
-        private static MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
-        private bool Connected;
+        private MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
         private MIDIioSettings Settings;
-        public String SendName;     // source property prefix 
+        private bool Connected;
+        private byte val = 63;
+        private String SendName;     // source property prefix 
         private String CCout;       // Output MIDI destination
 
-        public void SendCC(byte control, byte value)
+        private void SendCC(byte control, byte value)
         {   // wasted a day not finding this documented
             OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value));
         }
 
-        private static byte val = 63;
-        public bool Ping(SevenBitNumber num) // gets called (indirectly, event->action) by INdrywet()
+        internal bool Ping(SevenBitNumber num) // gets called (indirectly, event->action) by INdrywet()
         {
             if (Connected) {
                 SendCC(num, val);
@@ -37,7 +37,7 @@ namespace blekenbleu.MIDIspace
             return false;
         }
 
-        public bool SendProp(byte i)
+        internal bool SendProp(byte i)
         {
             if (Connected)
             {
@@ -53,13 +53,13 @@ namespace blekenbleu.MIDIspace
             else return false;
         }
 
-        public void Init(String MIDIout, MIDIioSettings savedSettings, MIDIio that )
+        internal void Init(String MIDIout, String sName, MIDIioSettings savedSettings, MIDIio that )
         {
             M = that;
             CCout = MIDIout;
-            Connected = true;       // assume the best
-            // Load settings
-            Settings = savedSettings;
+            SendName = sName;
+            Connected = true;       	// assume the best
+            Settings = savedSettings;	// Loaded settings
             try
             {
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
@@ -67,7 +67,6 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.PrepareForEventsSending();
                 SimHub.Logging.Current.Info($"OUTdrywet output is ready for {MIDIout} messages.");
                 // resend saved CCs
-                ControlChangeEvent foo = new ControlChangeEvent();
                 for (byte i = 0; i < 8; i++)
                     SendCC(i, Settings.Sent[i]);    // time may have passed;  reinitialize MIDI destination
             }
@@ -81,10 +80,9 @@ namespace blekenbleu.MIDIspace
             }
         }
 
-        public void End()
+        internal void End()
         {
             (_outputDevice as IDisposable)?.Dispose();
-            SimHub.Logging.Current.Info($"OUTdrywet.End()");
         }
 
         // callback
