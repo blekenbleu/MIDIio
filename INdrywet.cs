@@ -34,6 +34,7 @@ namespace blekenbleu.MIDIspace
                     SimHub.Logging.Current.Info("   " + inputDevice.Name);
                 }
             }
+
             Settings = savedSettings;
             M = that;
             M.CCProperties.Attach(M);		// AttachDelegate buttons, sliders and knobs
@@ -54,7 +55,7 @@ namespace blekenbleu.MIDIspace
             if (e.Event is ControlChangeEvent foo)
             {
 //              SimHub.Logging.Current.Info($"MIDIio ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
-                M.CCProperties.Active(foo.ControlNumber, foo.ControlValue);	// potentially add unconfigured CC properties
+                M.CCProperties.Active(M, (byte)foo.ControlNumber, (byte)foo.ControlValue);	// potentially add unconfigured CC properties
             }
             else SimHub.Logging.Current.Info($"MIDIio ignoring {e.Event} received from {midiDevice.Name}");
         }

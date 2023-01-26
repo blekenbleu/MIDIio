@@ -17,7 +17,6 @@ namespace blekenbleu.MIDIspace
         private MIDIioSettings Settings;
         private bool Connected;
         private byte val = 63;
-        private String SendName;     // source property prefix 
         private String CCout;       // Output MIDI destination
 
         private void SendCC(byte control, byte value)
@@ -37,27 +36,29 @@ namespace blekenbleu.MIDIspace
             return false;
         }
 
-        internal bool SendProp(byte i)
+        internal bool SendProp(byte i, string SendName)
         {
             if (Connected)
             {
                 // Send available properties, if changed
-                // append '0' - '7' to SendName for properties to send via MIDIout
-                object data = M.PluginManager.GetPropertyValue($"{SendName}{i}");
+                object data = M.PluginManager.GetPropertyValue(SendName);
                 String input = data?.ToString();
-                if ((null != input) && Settings.Sent[i] != Convert.ToByte(input))
+                if (null == input)
+                {
+                    SimHub.Logging.Current.Info("MIDIio SendProp(" + SendName + ") failed");
+                    return false;
+                }
+                else if (Settings.Sent[i] != Convert.ToByte(input))
                     SendCC(0, Settings.Sent[i] = Convert.ToByte(input));
-                else return false;
                 return true;
             }
             else return false;
         }
 
-        internal void Init(String MIDIout, String sName, MIDIioSettings savedSettings, MIDIio that )
+        internal void Init(String MIDIout, MIDIioSettings savedSettings, MIDIio that )
         {
             M = that;
             CCout = MIDIout;
-            SendName = sName;
             Connected = true;       	// assume the best
             Settings = savedSettings;	// Loaded settings
             try
@@ -65,7 +66,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                SimHub.Logging.Current.Info($"OUTdrywet output is ready for {MIDIout} messages.");
+                SimHub.Logging.Current.Info($"MIDIio OUTdrywet output is ready to send {MIDIout} messages.");
                 // resend saved CCs
                 for (byte i = 0; i < 8; i++)
                     SendCC(i, Settings.Sent[i]);    // time may have passed;  reinitialize MIDI destination

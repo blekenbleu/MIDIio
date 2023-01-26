@@ -31,11 +31,10 @@ namespace blekenbleu.MIDIspace
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            for (byte b = 0; b < 8; b++)
-                if (!Outer.SendProp(b))
-                    break;
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
+                for (byte b = 0; b < CCProperties.SendCt; b++)
+                    Outer.SendProp(b, CCProperties.Send[b]);
             }
         }
 
@@ -63,20 +62,14 @@ namespace blekenbleu.MIDIspace
 
             // Make properties available in the property list; these get evaluated "on demand" (when shown or used in formulas)
             CCProperties = new CCProperties();
-            // Init Outer before Reader, which tries to send stored MIDI CC messages
+            CCProperties.Init();
+            // Launch Outer before Reader, which tries to send stored MIDI CC messages
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             String output = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
-            string MIDIsend = "DataCorePlugin.ExternalScript.MIDIsend";
-            string SendName = null;
-            data = pluginManager.GetPropertyValue(MIDIsend);
-            if (null == data)
-                SimHub.Logging.Current.Info("MIDIio unassigned output data source property: " + MIDIsend);
-            else
-                SimHub.Logging.Current.Info("MIDIio send property: " + (SendName = data.ToString()));
             Outer = new OUTdrywet();
-            Outer.Init(output, SendName, Settings, this);
+            Outer.Init(output, Settings, this);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
