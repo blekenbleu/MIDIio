@@ -9,8 +9,10 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
+        internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
         internal MIDIioSettings Settings;
         internal CCProperties CCProperties;
+        internal bool DoEcho = false;
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
@@ -29,22 +31,28 @@ namespace blekenbleu.MIDIspace
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <param name="data">Current game data, including current and previous data frame.</param>
-        private bool[] once = {true, true, true, true, true, true, true, true };
+        private bool[] Once { get; set; } = {true, true, true, true, true, true, true, true };
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
+                // first SendCt CC numbers have been reserved for Send CC numbers
                 for (byte b = 0; b < CCProperties.SendCt; b++)
                 {
                     string prop = CCProperties.Send[b];
-                    object val = pluginManager.GetPropertyValue(prop);
-                    String input = val?.ToString();
+                    object get = pluginManager.GetPropertyValue(prop);
+                    String send = get?.ToString();
 
-                    if ((null != input) && Settings.Sent[b] != Convert.ToByte(input))
-                        Outer.SendProp(CCProperties.Remove[b], Settings.Sent[b] = Convert.ToByte(input));
-                    else if (once[b])
+                    if (null != send)
                     {
-                         once[b] = false;
+                        byte val = Convert.ToByte(send);
+
+                        if (Settings.Sent[b] != val)
+                            Outer.SendCCvalue(b, Settings.Sent[b] = val);
+                    }
+                    else if (Once[b])
+                    {
+                         Once[b] = false;
                          SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
                     }
                 }
@@ -73,20 +81,22 @@ namespace blekenbleu.MIDIspace
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-            // Make properties available in the property list;
+            // Make properties available
             // these get evaluated "on demand" (when shown or used in formulas)
             CCProperties = new CCProperties();
-            CCProperties.Init();
+            CCProperties.Init(this);		// set SendCt before Outer
 
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
-            object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
-            String output = (null == data) ? "unassigned" : data.ToString();
+            object data = pluginManager.GetPropertyValue(Ini + "out");
+            String output = data?.ToString();
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
             Outer = new OUTdrywet();
-            Outer.Init(output, Settings);
+            Outer.Init(this, output);
 
-            data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
+            DoEcho = (0 < (int)pluginManager.GetPropertyValue(Ini + "echo"));
+
+            data = pluginManager.GetPropertyValue(Ini + "in");
             String input = (null == data) ? "unassigned" : data.ToString();
             pluginManager.AddProperty("in", this.GetType(), input);
             SimHub.Logging.Current.Info("MIDIio input device: " + input);
@@ -122,19 +132,22 @@ namespace blekenbleu.MIDIspace
                     return false;
             }
             if (CCnumber < CCProperties.SendCt)
-                CCnumber = CCProperties.moved[CCnumber];             // sends use CCvalue[] entries below SendCt
+                CCnumber = CCProperties.Moved[CCnumber];    	// sends use CCvalue[] entries below SendCt
+
+            if (DoEcho)
+                return !Outer.SendCCvalue(CCnumber, value);	// do not log
 
             if (63 < CCnumber)
-                index++;                                // switch ulong
-
+                index++;                			// switch ulong
             mask <<= (63 & CCnumber);
-            if (mask == (mask & Settings.CCbits[index]))      // already set?
+
+            if (mask == (mask & Settings.CCbits[index]))      	// already set?
             {
                 CCProperties.CCvalue[CCnumber] = value;
-                return false;                           // do not log
+                return false;                           	// do not log
             }
 
-                                                        // First time CC number seen
+                                                        	// First time CC number seen
             Settings.CCbits[index] |= mask;
             CCProperties.SetProp(this, CCnumber, value);
             return true;
