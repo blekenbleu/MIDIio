@@ -15,12 +15,12 @@
 - This plugin includes NO user interface code
     - configure **MIDIio** plugin by editing properties in `MIDIio.ini`, which goes in `SimHub\NCalcScripts\` folder 
     - **check System log for MIDI-related messages:**  
-      ![log messages](log.png)  
+      ![log messages](docs/log.png)  
 
     - **check Available properties for MIDI-related values**:
-      ![Properties values](properties.png)
+      ![Properties values](docs/properties.png)
 
     - **Configure button `CCn` Source events:**  
-      ![button event names and actions](events.png)  
+      ![button event names and actions](docs/events.png)  
     - this is *not* (nor can it become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).

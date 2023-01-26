@@ -24,6 +24,22 @@
                    (in `MIDIsliders`, `MIDIknobs` or `MIDIbuttons`) are automatically created as `CCn` properties,  
                    else (`MIDIecho > 0`) unconfigured MIDI messages are forwarded from `MIDIin` to `MIDIout`.
 
-To avoid conficts, `MIDIecho` will remap `MIDIin` CCm for `m <=` highest defined `n` among `MIDIsendn`.  
-CC messages most recently sent to `MIDIout` are saved, then resent when SimHub next launches the MIDIio plugin.  
+To avoid conficts with configured sends,  
+`MIDIecho 1` remaps unconfigured `MIDIin` CC messages and forwards them to `MIDIout`.  
+Un-echoed CC messages most recently sent to `MIDIout` are saved,  
+then resent when SimHub next launches the MIDIio plugin.  
 This is intended to enable resuming a MIDI configuration from time to time.  
+Duplicated send CC messages are NOT sent, to minimize traffic and CPU overhead.  
+In `MIDIecho 1` mode, only valid configured input and send CC message sources  
+  are configured as SimHub properties, also to minimize CPU overhead.  
+In `MIDIecho 0` mode, SimHub properties are dynamically generated for unconfigured input CC numbers.  
+This allows learning (by checking SimHUb's **Property** window)  
+what previously unconfigured CC numbers may want adding to `SimHub/NCalcScripts/MIDIio.ini`.  
+
+Here is evidence of operational success (*26 Jan 2023*):  
+- **[MidiView](https://hautetechnique.com/midi/midiview/) trace screen**:  
+![](MidiView.png)  
+
+- ... for this game replay:  
+![](replay.png)  
+
