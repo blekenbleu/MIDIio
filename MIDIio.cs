@@ -45,7 +45,7 @@ namespace blekenbleu.MIDIspace
 
                     if (null != send)
                     {
-                        byte val = Convert.ToByte(send);
+                        byte val = (byte)Convert.ToDouble(send);
 
                         if (Settings.Sent[b] != val)
                             Outer.SendCCvalue(b, Settings.Sent[b] = val);
@@ -94,7 +94,12 @@ namespace blekenbleu.MIDIspace
             Outer = new OUTdrywet();
             Outer.Init(this, output);
 
-            DoEcho = (0 < (int)pluginManager.GetPropertyValue(Ini + "echo"));
+            data = pluginManager.GetPropertyValue(Ini + "echo");
+            output = data?.ToString();
+            int val = Int32.Parse(output);
+            SimHub.Logging.Current.Info($"MIDIio {Ini}echo = {output} AKA {val}");
+            if (!(DoEcho = (0 < val)))
+               SimHub.Logging.Current.Info("MIDIio: unconfigured CCs will not be echo'ed"); 
 
             data = pluginManager.GetPropertyValue(Ini + "in");
             String input = (null == data) ? "unassigned" : data.ToString();

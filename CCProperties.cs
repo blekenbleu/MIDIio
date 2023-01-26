@@ -335,7 +335,7 @@ namespace blekenbleu.MIDIspace
 
                 // bless the Internet
                 byte[] array = output.Split(',').Select(byte.Parse).ToArray();
-                SimHub.Logging.Current.Info($"MIDIio: '{I.Ini + setting[s - 1]}'{string.Join(",", array.Select(p => p.ToString()).ToArray())}");
+                SimHub.Logging.Current.Info($"MIDIio Attach(): '{I.Ini + setting[s - 1]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
 
                 byte k = 0;                 		// index Remap[], Which[],
                 foreach (byte cc in array)			// array has CC numbers assigned for this type

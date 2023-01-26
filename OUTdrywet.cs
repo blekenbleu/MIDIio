@@ -2,6 +2,7 @@
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
+//using Melanchall.DryWetMidi.Multimedia;
 using SimHub.Plugins;
 
 namespace blekenbleu.MIDIspace
@@ -19,7 +20,17 @@ namespace blekenbleu.MIDIspace
 
         private bool SendCC(byte control, byte value)
         {   // wasted a day not finding this documented
-            OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value));
+            try
+            {
+//              SimHub.Logging.Current.Info($"MIDIio OutputDevice.SendEvent() {control} {value} 0");
+                OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
+            }
+            catch (Exception e)
+            {
+                string oops = e?.ToString();
+                SimHub.Logging.Current.Info($"MIDIio SendCC()Failed: {oops}");
+                return Connected = false;
+            }
             return true;
         }
 
@@ -66,6 +77,8 @@ namespace blekenbleu.MIDIspace
 
         internal void End()
         {
+            Connected = false;
+            SimHub.Logging.Current.Info($"MIDIio OUTdrywet.END()");
             (_outputDevice as IDisposable)?.Dispose();
         }
 
@@ -76,7 +89,7 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent foo)
             {
-//              SimHub.Logging.Current.Info($"ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
+//              SimHub.Logging.Current.Info($"MIDIio ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
                 if (7 < foo.ControlNumber)	// unsigned
                     SimHub.Logging.Current.Info($"Mystery {CCout} ControlChangeEvent : {foo}");
             }
