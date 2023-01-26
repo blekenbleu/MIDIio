@@ -178,11 +178,12 @@ namespace blekenbleu.MIDIspace
              "knob7"
         }; 
 
-       	private Byte[] CCvalue { get; set; } = new byte[128];   // store CCvalues
-       	private Byte[] Remap { get; set; } = new byte[128];     // remap configured CC numbers
-       	private Byte[] Which { get; set; } = new byte[128];     // remap configured CC number assigned types
+       	internal Byte[] CCvalue { get; set; } = new byte[128];   // store CCvalues
+       	internal Byte[] Remap { get; set; } = new byte[128];     // remap configured CC numbers
+       	internal Byte[] Which { get; set; } = new byte[128];     // remap configured CC number assigned types
+        internal byte[] Remove { get; set; } = new byte[8];      // original send CC number before skipping undefineds
         internal byte[] Moved { get => moved; set => moved = value; }
-        private byte[] moved = { 0, 0, 0, 0, 0, 0, 0, 0 };      // move unassigned CC numbers < 8 
+        internal byte[] moved = { 0, 0, 0, 0, 0, 0, 0, 0 };      // move unassigned CC numbers < 8 
 
         internal void Init()
         {
@@ -345,7 +346,10 @@ namespace blekenbleu.MIDIspace
                 object data = I.PluginManager.GetPropertyValue($"{foo}send{i}");
                 String output = data?.ToString();
                 if (null != output)
+                {
+                    Remove[SendCt] = i;
                     Send[SendCt++] = output;
+                }
             }
             SimHub.Logging.Current.Info($"MIDIio: {foo}send{SendCt}");
 
@@ -357,49 +361,9 @@ namespace blekenbleu.MIDIspace
                     SetProp(I, (byte)(64 + i), 0);
                 mask <<= 1;
             }
-        }
+        }	// Attach()
 
-        // track active CCs and save values
-        internal bool Active(MIDIio I, byte CCnumber, byte value)
-        {
-            ulong mask = 1;
-            byte index = 0;
-            byte remapped = Remap[CCnumber];
-
-            switch (Which[CCnumber])
-            {
-                case 1:
-                    I.Settings.Slider[remapped] = value;
-                    return false;
-                case 2:
-                    I.Settings.Knob[remapped] = value;
-                    return false;
-                case 3:
-                    I.Settings.Button[remapped] = value;
-                    if (0 < value)
-                        I.TriggerEvent(CCname[remapped]);
-                    return false;
-            }
-            if (CCnumber < SendCt)
-                CCnumber = moved[CCnumber];     	// sends use CCvalue[] entries below SendCt
-
-            if (63 < CCnumber)
-                index++;    				// switch ulong
-
-            mask <<= (63 & CCnumber);
-            if (mask == (mask & I.Settings.CCbits[index]))	// already set?
-            {
-                CCvalue[CCnumber] = value;
-                return false;                  		// do not log
-            }
-
-            						// First time CC number seen
-            I.Settings.CCbits[index] |= mask;
-            SetProp(I, CCnumber, value);
-            return true;
-        }
-
-        private void SetProp(MIDIio I, byte CCnumber, byte value)
+        internal void SetProp(MIDIio I, byte CCnumber, byte value)
         {
             CCvalue[CCnumber] = value;
             switch (CCnumber)       // Initialize CC property and event

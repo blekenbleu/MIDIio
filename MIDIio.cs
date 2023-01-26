@@ -29,17 +29,24 @@ namespace blekenbleu.MIDIspace
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <param name="data">Current game data, including current and previous data frame.</param>
+        private bool[] once = {true, true, true, true, true, true, true, true };
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
                 for (byte b = 0; b < CCProperties.SendCt; b++)
                 {
-                    object val = pluginManager.GetPropertyValue(CCProperties.Send[b]);
+                    string prop = CCProperties.Send[b];
+                    object val = pluginManager.GetPropertyValue(prop);
                     String input = val?.ToString();
 
                     if ((null != input) && Settings.Sent[b] != Convert.ToByte(input))
-                        Outer.SendProp(b, Settings.Sent[b] = Convert.ToByte(input));  // b should be original suffix
+                        Outer.SendProp(CCProperties.Remove[b], Settings.Sent[b] = Convert.ToByte(input));
+                    else if (once[b])
+                    {
+                         once[b] = false;
+                         SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
+                    }
                 }
             }
         }
@@ -66,9 +73,11 @@ namespace blekenbleu.MIDIspace
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-            // Make properties available in the property list; these get evaluated "on demand" (when shown or used in formulas)
+            // Make properties available in the property list;
+            // these get evaluated "on demand" (when shown or used in formulas)
             CCProperties = new CCProperties();
             CCProperties.Init();
+
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
             object data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIout");
             String output = (null == data) ? "unassigned" : data.ToString();
@@ -90,5 +99,47 @@ namespace blekenbleu.MIDIspace
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
         }
+
+        // track active CCs and save values
+        internal bool Active(byte CCnumber, byte value)
+        {
+            ulong mask = 1;
+            byte index = 0;
+            byte remapped = CCProperties.Remap[CCnumber];
+
+            switch (CCProperties.Which[CCnumber])
+            {
+                case 1:
+                    Settings.Slider[remapped] = value;
+                    return false;
+                case 2:
+                    Settings.Knob[remapped] = value;
+                    return false;
+                case 3:
+                    Settings.Button[remapped] = value;
+                    if (0 < value)
+                        this.TriggerEvent(CCProperties.CCname[remapped]);
+                    return false;
+            }
+            if (CCnumber < CCProperties.SendCt)
+                CCnumber = CCProperties.moved[CCnumber];             // sends use CCvalue[] entries below SendCt
+
+            if (63 < CCnumber)
+                index++;                                // switch ulong
+
+            mask <<= (63 & CCnumber);
+            if (mask == (mask & Settings.CCbits[index]))      // already set?
+            {
+                CCProperties.CCvalue[CCnumber] = value;
+                return false;                           // do not log
+            }
+
+                                                        // First time CC number seen
+            Settings.CCbits[index] |= mask;
+            CCProperties.SetProp(this, CCnumber, value);
+            return true;
+        }
+
+
     }
 }
