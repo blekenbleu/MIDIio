@@ -13,7 +13,6 @@ namespace blekenbleu.MIDIspace
     {
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
-        private MIDIio M;    // needed for AttachDelegate(), AddEvent() and TriggerEvent()
         private MIDIioSettings Settings;
         private bool Connected;
         private byte val = 63;
@@ -36,28 +35,18 @@ namespace blekenbleu.MIDIspace
             return false;
         }
 
-        internal bool SendProp(byte i, string SendName)
+        internal bool SendProp(byte i, byte input)
         {
             if (Connected)
             {
-                // Send available properties, if changed
-                object data = M.PluginManager.GetPropertyValue(SendName);
-                String input = data?.ToString();
-                if (null == input)
-                {
-                    SimHub.Logging.Current.Info("MIDIio SendProp(" + SendName + ") failed");
-                    return false;
-                }
-                else if (Settings.Sent[i] != Convert.ToByte(input))
-                    SendCC(0, Settings.Sent[i] = Convert.ToByte(input));
+                SendCC(i, input);
                 return true;
             }
             else return false;
         }
 
-        internal void Init(String MIDIout, MIDIioSettings savedSettings, MIDIio that )
+        internal void Init(String MIDIout, MIDIioSettings savedSettings)
         {
-            M = that;
             CCout = MIDIout;
             Connected = true;       	// assume the best
             Settings = savedSettings;	// Loaded settings

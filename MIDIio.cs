@@ -34,7 +34,13 @@ namespace blekenbleu.MIDIspace
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
                 for (byte b = 0; b < CCProperties.SendCt; b++)
-                    Outer.SendProp(b, CCProperties.Send[b]);
+                {
+                    object val = pluginManager.GetPropertyValue(CCProperties.Send[b]);
+                    String input = val?.ToString();
+
+                    if ((null != input) && Settings.Sent[b] != Convert.ToByte(input))
+                        Outer.SendProp(b, Settings.Sent[b] = Convert.ToByte(input));  // b should be original suffix
+                }
             }
         }
 
@@ -69,7 +75,7 @@ namespace blekenbleu.MIDIspace
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
             Outer = new OUTdrywet();
-            Outer.Init(output, Settings, this);
+            Outer.Init(output, Settings);
 
             data = pluginManager.GetPropertyValue("DataCorePlugin.ExternalScript.MIDIin");
             String input = (null == data) ? "unassigned" : data.ToString();
