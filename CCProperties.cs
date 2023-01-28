@@ -140,7 +140,7 @@ namespace blekenbleu.MIDIspace
             "CC127"
         };
         internal string[] Send = { "", "", "", "", "", "", "", "" };	// these will be used at 60Hz
-        internal byte SendCt = 0;
+        internal byte SendCt = 0, MySendCt = 0;
 
         private readonly static string[] Action = new string[8]
         {
@@ -315,69 +315,6 @@ namespace blekenbleu.MIDIspace
                     break;
               }
         }
-
-        internal void Attach(MIDIio I)	// AttachDelegate() based on ExternalScript.MIDI* properties
-        {
-            string [] setting = {"sliders", "knobs", "buttons"};	// Which type 1, 2, 3
-            string send = I.Ini + "out";
-            ulong mask = 1;
-            byte mv = 0;			// index Moved[]
-
-            for (byte s = 1; s < 4; s++) // reserve s == 0 for sends and unassigned CCs
-            {
-                string type = I.Ini + setting[s - 1];
-                object data = I.PluginManager.GetPropertyValue(type);
-                String output = data?.ToString();
-                if (null == output) {
-                    SimHub.Logging.Current.Info($"MIDIio: '{type}' not found");
-                    break;
-                }
-
-                // bless the Internet
-                byte[] array = output.Split(',').Select(byte.Parse).ToArray();
-                SimHub.Logging.Current.Info($"MIDIio Attach(): '{I.Ini + setting[s - 1]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
-
-                byte k = 0;                 		// index Remap[], Which[],
-                foreach (byte cc in array)			// array has CC numbers assigned for this type
-                {
-                    // deactivate for restore
-                    I.Settings.CCbits[(63 < cc) ? 1 : 0] &= ~(mask << (63 & cc));
-                    if (cc < SendCt && mv < SendCt) {	// configured Sends take priority
-                        Moved[mv++] = cc; 		// snag repurposed CC numbers for Sends
-                    }
-                    Remap[cc] = k;			// replace identity (i) with index into configured properties values
-                    Which[cc] = s;			// index of configured property type
-
-                    if (1 == s)
-                        DelegateSlider(I, k++);
-                    else if (2 == s)
-                        DelegateKnob(I, k++);
-                    else DelegateButton(I, k++);
-                }
-            }
-
-            if (mv < SendCt)
-                SimHub.Logging.Current.Info($"MIDIio CCProperties.Attach(): allocated send CC {mv} < SendCt {SendCt}");
-
-            for (byte cv = 0; cv < 64; cv++)				// restore previous unconfigured CC values
-            {
-                if (mask == (mask & I.Settings.CCbits[0]))
-                {
-                    if (cv >= SendCt)	 
-                        SetProp(I, cv, 0);			// disallow dynamic CC numbers < SendCT
-                    else
-                    {
-                        I.Settings.CCbits[0] &= ~mask;		// configured sends take priority over unconfigured CCs
-                        if (mv < SendCt)
-                            Moved[mv++] = cv;
-                    }
-                }
-
-                if (mask == (mask & I.Settings.CCbits[1]))
-                    SetProp(I, (byte)(64 + cv), 0);
-                mask <<= 1;
-            }
-        }	// Attach()
 
         internal void SetProp(MIDIio I, byte CCnumber, byte value)
         {
@@ -773,5 +710,88 @@ namespace blekenbleu.MIDIspace
                     break;
             }
         }	// SetProp()
+
+        internal void Attach(MIDIio I)	// AttachDelegate() based on ExternalScript.MIDI* properties
+        {
+            string [] setting = {"sliders", "knobs", "buttons"};	// Which type 1, 2, 3
+            string send = I.Ini + "out";
+            ulong mask = 1;
+            byte mc = 0;			// index Moved[]
+
+            for (byte s = 1; s < 4; s++) // reserve s == 0 for sends and unassigned CCs
+            {
+                string type = I.Ini + setting[s - 1];
+                object data = I.PluginManager.GetPropertyValue(type);
+                String output = data?.ToString();
+                if (null == output) {
+                    SimHub.Logging.Current.Info($"MIDIio: '{type}' not found");
+                    break;
+                }
+
+                // bless the Internet
+                byte[] array = output.Split(',').Select(byte.Parse).ToArray();
+                SimHub.Logging.Current.Info($"MIDIio Attach(): '{I.Ini + setting[s - 1]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
+
+                byte cn = 0;                 		// index Remap[], Which[],
+                foreach (byte cc in array)		// array has CC numbers assigned for this type
+                {
+                    I.Settings.CCbits[(63 < cc) ? 1 : 0] &= ~(mask << (63 & cc));	// deactivate for restore
+
+                    if (cc < SendCt && mc < SendCt)	// configured Sends take priority
+                        Moved[mc++] = cc; 		// snag repurposed CC numbers for Sends
+
+                    Remap[cc] = cn;			// replace identity (i) with index into configured properties values
+                    Which[cc] = s;			// index for configured property type
+
+                    if (1 == s)
+                        DelegateSlider(I, cn++);
+                    else if (2 == s)
+                        DelegateKnob(I, cn++);
+                    else DelegateButton(I, cn++);
+                }
+            }
+            // Configured properties are now complete
+
+            // Configured input CC number count may be < configured outputs;  potential for configured output number collisions with low unconfigured input CC number
+            if (mc < SendCt)
+                SimHub.Logging.Current.Info($"MIDIio CCProperties.Attach(): allocated send CC {mc} < SendCt {SendCt}");
+
+            private byte mi = 0;
+            for (byte cv = 0; cv < 64; cv++)			// restore previous session unconfigured CC values
+            {
+                if (mask == (mask & I.Settings.CCbits[0]))	// CC0-63
+                {
+                    if (cv >= SendCt)	 
+                        SetProp(I, cv, I.Settings.Sent[cv]);			// allow dynamic CC numbers >= SendCT
+                    else
+                    {
+                        I.Settings.CCbits[0] &= ~mask;		// configured sends take priority over unconfigured CCs
+                        if (mc < SendCt) {
+                            Remap[cv] = Moved[mi++];		// remap a unconfigured low input CC to one from a configured input CC
+                            if (63 < Remap[cv])  {
+                                I.Settings.CCbits[1] |= (1 << (63 & Remap[cv]));
+                                I.Settings.Sent[Remap[cv]] = I.Settings.Sent[cv];	// SetProp() with other I.Settings.CCbits[1]
+                            }
+                            else
+                            {
+                                I.Settings.CCbits[0] |= (1 << Remap[cv]);
+                                SetProp(I, Remap[cv], I.Settings.Sent[cv]);
+                            }
+                        }
+                        else
+                        {
+                            Remap[cv] = 127;
+                            SimHub.Logging.Current.Info($"MIDIio CCProperties.Attach(): unconfigured input CC{cv} remapped to CC127");
+                            I.Settings.CCbits[1]  |= (1<<63);
+                            I.Settings.Sent[127] = I.Settings.Sent[cv];
+                        }
+                    }
+                }
+
+                if (mask == (mask & I.Settings.CCbits[1]))
+                    SetProp(I, Remap[64 + cv], I.Settings.Sent[cv]);
+                mask <<= 1;
+            }
+        }	// Attach()
     }
 }

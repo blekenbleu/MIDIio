@@ -34,9 +34,11 @@ namespace blekenbleu.MIDIspace
             return true;
         }
 
+        internal bool SendCCval(byte sv, byte input) => (Connected) && SendCC(sv, input);
+
         internal bool Ping(SevenBitNumber num) // gets called (indirectly, event->action) by INdrywet()
         {
-            if (SendCCvalue(num, val)) {
+            if (SendCCval(num, val)) {
                 SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {val}");
                 val = (byte)((63 == val) ? 127 : 63);
                 return true;
@@ -45,10 +47,7 @@ namespace blekenbleu.MIDIspace
             return false;
         }
 
-        // used Only for i < SendCt
-        internal bool SendCCvalue(byte sv, byte input) => (Connected) && SendCC(sv, input);
-
-        internal void Init(MIDIio M, String MIDIout)
+        internal void Init(MIDIio M, String MIDIout, int count)
         {
             if (null == MIDIout)
                 return;
@@ -61,7 +60,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
                 SimHub.Logging.Current.Info($"MIDIio OUTdrywet output is ready to send {MIDIout} messages.");
-                for (byte i = 0; i < M.CCProperties.SendCt; i++)	// resend saved CCs
+                for (byte i = 0; i < count; i++)	// resend saved CCs
                     SendCC(i, M.Settings.Sent[i]);    // time may have passed;  reinitialize MIDI destination
             }
             

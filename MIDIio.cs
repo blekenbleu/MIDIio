@@ -16,6 +16,31 @@ namespace blekenbleu.MIDIspace
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
+        private bool[] Once { get; set; } = {true, true, true, true, true, true, true, true };
+
+        private void DoSend(PluginManager pluginManager, byte b, byte to)
+        {
+            // Lowest MIDIout CC numbers are reserved for MIDIsend0 to (SendCt-1)
+            for ( ; b < to; b++)
+            {
+                string prop = CCProperties.Send[b];
+ //             object get = pluginManager.GetPropertyValue(prop);
+                String send = pluginManager.GetPropertyValue(prop)?.ToString();
+
+                if (null != send)
+                {
+                    byte value = (byte)Convert.ToDouble(send);
+
+                    if (Settings.Sent[b] != value)
+                        Outer.SendCCval(b, Settings.Sent[b] = value);
+                }
+                else if (Once[b])
+                {
+                     Once[b] = false;
+                     SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
+                }
+            }
+        }
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -31,33 +56,13 @@ namespace blekenbleu.MIDIspace
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <param name="data">Current game data, including current and previous data frame.</param>
-        private bool[] Once { get; set; } = {true, true, true, true, true, true, true, true };
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
-            {
-            }
+                DoSend(pluginManager, CCProperties.MySendCt, CCProperties.SendCt);
 
-            // Lowest MIDIout CC numbers are reserved for MIDIsend0 to (SendCt-1)
-            for (byte b = 0; b < CCProperties.SendCt; b++)
-            {
-                string prop = CCProperties.Send[b];
-                object get = pluginManager.GetPropertyValue(prop);
-                String send = get?.ToString();
-
-                if (null != send)
-                {
-                    byte value = (byte)Convert.ToDouble(send);
-
-                    if (Settings.Sent[b] != value)
-                        Outer.SendCCvalue(b, Settings.Sent[b] = value);
-                }
-                else if (Once[b])
-                {
-                     Once[b] = false;
-                     SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
-                }
-            }
+            // Send MIDIio property messages anytime (echo)
+            DoSend(pluginManager, 0, CCProperties.MySendCt);
         }
 
         /// <summary>
@@ -93,7 +98,7 @@ namespace blekenbleu.MIDIspace
             pluginManager.AddProperty("out", this.GetType(), (null == data) ? "unassigned" : output);
             SimHub.Logging.Current.Info("MIDIio output device: " + output);
             Outer = new OUTdrywet();
-            Outer.Init(this, output);
+            Outer.Init(this, output, CCProperties.SendCt);
 
             data = pluginManager.GetPropertyValue(Ini + "echo");
             output = data?.ToString();
@@ -123,7 +128,7 @@ namespace blekenbleu.MIDIspace
             byte index = 0;
             byte remapped = CCProperties.Remap[CCnumber];
 
-            switch (CCProperties.Which[CCnumber])
+            switch (CCProperties.Which[CCnumber])	// Which[] is not remapped
             {
                 case 1:
                     Settings.Slider[remapped] = value;
@@ -137,11 +142,9 @@ namespace blekenbleu.MIDIspace
                         this.TriggerEvent(CCProperties.CCname[remapped]);
                     return false;
             }
-            if (CCnumber < CCProperties.SendCt)
-                CCnumber = CCProperties.Moved[CCnumber];    	// sends use CCvalue[] entries below SendCt
 
             if (DoEcho)
-                return !Outer.SendCCvalue(CCnumber, value);	// do not log
+                return !Outer.SendCCval(remapped, value);	// do not log
 
             if (63 < CCnumber)
                 index++;                			// switch ulong

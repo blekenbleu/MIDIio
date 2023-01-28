@@ -80,4 +80,7 @@
   </Target>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
   </Target>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy bin\Release\net48\blekenbleu.MIDIio.dll ..\..\&#xD;&#xA;copy NCalcScripts\MIDIio.ini ..\..\NCalcScripts\" />
+  </Target>
 </Project>
