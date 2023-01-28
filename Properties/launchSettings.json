@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "blekenbleu.MIDIio": {
+      "commandName": "Executable",
+      "executablePath": "..\\SimHubWPF.exe",
+      "workingDirectory": "..\\"
+    }
+  }
+}
