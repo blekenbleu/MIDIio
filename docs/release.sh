@@ -3,9 +3,15 @@ if [ -z "$2" ] ; then
   ns="'""$1 Beta'"
 else
   ns="'""$1 $2'"
+  if [ -z "$3" ] ; then
+     ts='Release by gh'
+  else
+    ts="$3"
+  fi
 fi
+
 if [ -z "$1" ] ; then
-  echo $0 v0.0.1
+  echo $0 v0.0.1 'notes' 'title'
   echo gh release list
   gh release list
 else
