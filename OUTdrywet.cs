@@ -61,8 +61,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
                 SimHub.Logging.Current.Info($"MIDIio OUTdrywet output is ready to send {MIDIout} messages.");
-                // resend saved CCs
-                for (byte i = 0; i < M.CCProperties.SendCt; i++)
+                for (byte i = 0; i < M.CCProperties.SendCt; i++)	// resend saved CCs
                     SendCC(i, M.Settings.Sent[i]);    // time may have passed;  reinitialize MIDI destination
             }
             
