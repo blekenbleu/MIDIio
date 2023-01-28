@@ -13,6 +13,6 @@ else
   echo 7z u bin/Release/MIDIio.zip NCalcScripts/*ini blekenbleu.MIDIio.dll
   7z u bin/Release/MIDIio.zip NCalcScripts/*ini blekenbleu.MIDIio.dll
   echo gh release create $1 -n "$ns" -p bin/Release/MIDIio.zip
-  gh release create $1 -n "$ns" -p bin/Release/MIDIio.zip
+  gh release create $1 -n "$ns" -t 'Release by gh'  bin/Release/MIDIio.zip
   rm blekenbleu.MIDIio.dll
 fi
