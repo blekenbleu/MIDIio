@@ -36,25 +36,26 @@ namespace blekenbleu.MIDIspace
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
             {
-                // first SendCt CC numbers have been reserved for Send CC numbers
-                for (byte b = 0; b < CCProperties.SendCt; b++)
+            }
+
+            // Lowest MIDIout CC numbers are reserved for MIDIsend0 to (SendCt-1)
+            for (byte b = 0; b < CCProperties.SendCt; b++)
+            {
+                string prop = CCProperties.Send[b];
+                object get = pluginManager.GetPropertyValue(prop);
+                String send = get?.ToString();
+
+                if (null != send)
                 {
-                    string prop = CCProperties.Send[b];
-                    object get = pluginManager.GetPropertyValue(prop);
-                    String send = get?.ToString();
+                    byte value = (byte)Convert.ToDouble(send);
 
-                    if (null != send)
-                    {
-                        byte val = (byte)Convert.ToDouble(send);
-
-                        if (Settings.Sent[b] != val)
-                            Outer.SendCCvalue(b, Settings.Sent[b] = val);
-                    }
-                    else if (Once[b])
-                    {
-                         Once[b] = false;
-                         SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
-                    }
+                    if (Settings.Sent[b] != value)
+                        Outer.SendCCvalue(b, Settings.Sent[b] = value);
+                }
+                else if (Once[b])
+                {
+                     Once[b] = false;
+                     SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
                 }
             }
         }
