@@ -59,9 +59,23 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                SimHub.Logging.Current.Info($"MIDIio OUTdrywet output is ready to send {MIDIout} messages.");
-                for (byte i = 0; i < count; i++)	// resend saved CCs
-                    SendCC(i, M.Settings.Sent[i]);    // time may have passed;  reinitialize MIDI destination
+                SimHub.Logging.Current.Info($"MIDIio.out is ready to send CC messages to {MIDIout}.");
+                ulong mask = 1;
+                byte j = 0;
+                for (byte i = 0; j < count && i < 64; i++)		// resend saved CCs
+                {
+                    if (mask == (M.Settings.CCbits[0] & mask))
+                    {
+                        SendCC(i, M.Settings.Sent[i]);		// time may have passed;  reinitialize MIDIout
+                        j++;
+                    }
+                    if (mask == (M.Settings.CCbits[1] & mask))
+                    {
+                        SendCC(i, M.Settings.Sent[64 + i]);	// time may have passed;  reinitialize MIDIout
+                        j++;
+                    }
+                    mask <<= 1;
+                }
             }
             
             catch (Exception)

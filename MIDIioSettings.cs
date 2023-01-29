@@ -8,8 +8,8 @@
 
         internal byte[] Button { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        internal byte[] Sent { get; set; } = { 0, 0, 0, 0, 0, 0, 0, 0 };	// track values from SimHub
+        internal byte[] Sent { get; set; } = new byte[128];	// track values from SimHub
 
-        internal ulong[] CCbits { get; set; } = { 0, 0 };	// track other initialized CCvalue properties
+        internal ulong[] CCbits { get; set; } = { 0, 0 };	// track unconfigured initialized CCvalue properties
     }
 }
