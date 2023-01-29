@@ -16,7 +16,7 @@ namespace blekenbleu.MIDIspace
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
-        private bool[] Once { get; set; } = {true, true, true, true, true, true, true, true };
+        private bool[] Once { get; set; } = { true, true, true, true, true, true, true, true };
 
         private void DoSend(PluginManager pluginManager, byte b, byte to)
         {
@@ -103,7 +103,7 @@ namespace blekenbleu.MIDIspace
             data = pluginManager.GetPropertyValue(Ini + "echo");
             output = data?.ToString();
             int val = Int32.Parse(output);
-            SimHub.Logging.Current.Info($"MIDIio {Ini}echo = {output} AKA {val}");
+//          SimHub.Logging.Current.Info($"MIDIio {Ini}echo = {output} AKA {val}");
             if (!(DoEcho = (0 < val)))
                SimHub.Logging.Current.Info("MIDIio: unconfigured CCs will not be echo'ed"); 
 
