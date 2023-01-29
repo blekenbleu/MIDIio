@@ -11,11 +11,11 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <OutputPath>bin\$(Configuration)\</OutputPath>
+    <OutDir>..\..\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>
     <StartProgram>E:\my\Sim\SimHub\SimHub\SimHubWPF.exe</StartProgram>
-    <DefineConstants>SENDCT 8</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectView>ShowAllFiles</ProjectView>
@@ -82,6 +82,6 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
   </Target>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy obj\Debug\net48\blekenbleu.MIDIio.dll ..\..\&#xD;&#xA;copy NCalcScripts\MIDIio.ini ..\..\NCalcScripts\" />
+    <Exec Command="copy NCalcScripts\MIDIio.ini ..\..\NCalcScripts\" />
   </Target>
 </Project>
