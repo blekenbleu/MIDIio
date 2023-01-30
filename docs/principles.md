@@ -25,8 +25,8 @@ Search for `midi` in **SimHub Available properties**:
    `== 0`:&nbsp; dynamically generates:
 
     -  properties `MIDIio.CC[0-127]` for unconfigured `MIDIin` CC messages received  
-       with numbers not specified in `MIDIio.knob[0-7]`, `slider[0-7]` or `button[0-7]`  
-       when `ExternalScript.MIDIecho == 0`.&nbsp; These can be used for discovering CC numbers to configure.
+       with numbers not configured by `MIDIio.knob[0-7]`, `slider[0-7]` or `button[0-7]`  
+       when `ExternalScript.MIDIecho == 0`.&nbsp; `MIDIio.CC[0-127]` can be used to identify CC numbers for configuring.
 
 -  `ExternalScript.MIDIsend[0-7]` configure properties for which value changes
    become CC messages to `MIDIout`.  
@@ -55,7 +55,7 @@ MIDIio maps `MIDIsend[0-7]` properties *not* configured for `MIDIio.*`
 Anytime *non*-`MIDIio.*` properties configured as `MIDIsend[0-7] >` configured `MIDIin` properties,  
 excess `MIDIsend[0-7]` properties will appropriate lowest unconfigured CC numbers, risking potential mixing.
 
-If/when e.g. a MIDIsend0 definition is removed from `NCalcScripts/MIDIio.ini`  
+If/when e.g. a `MIDIsend0` definition is removed from `NCalcScripts/MIDIio.ini`  
 then other configured `MIDIsend1-7]` properties not set to `MIDIio.*` will send *changed* CC numbers to `MIDIout`.
 
 When restarted by SimHub, MIDIio resends saved values for configured `MIDIin.*` properties,  
