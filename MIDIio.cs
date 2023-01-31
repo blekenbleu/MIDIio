@@ -14,9 +14,10 @@ namespace blekenbleu.MIDIspace
         private byte[] Sent;
 
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
+        internal string my = "MIDIio.";					// PluginName + '.'
         internal MIDIioSettings Settings;
-        internal CCProperties CCProperties;
-        private  bool DoEcho = false;
+        internal CCProperties Properties;
+        internal bool DoEcho = false;
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
@@ -25,18 +26,18 @@ namespace blekenbleu.MIDIspace
         {
             for ( ; b < to; b++)
             {
-                byte cc = CCProperties.Remap[b];	// MIDIout CC numbers
+                byte cc = Properties.Remap[b];	// MIDIout CC numbers
 
                 if (!Once[cc])
                    return;
 
-                string prop = CCProperties.Send[cc];
+                string prop = Properties.Send[cc];
                 string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
                 if (null == send)
                 {
                      Once[cc] = false;
-                     SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
+                     SimHub.Logging.Current.Info(my + "DataUpdate(): null " + prop);
                 }
                 else if (0 < send.Length)
                 {
@@ -66,10 +67,10 @@ namespace blekenbleu.MIDIspace
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
-                DoSend(pluginManager, CCProperties.MySendCt, CCProperties.SendCt);
+                DoSend(pluginManager, Properties.MySendCt, Properties.SendCt);
 
-            // Send MIDIio property messages anytime (echo)
-            DoSend(pluginManager, 0, CCProperties.MySendCt);
+            // Send my property messages anytime (echo)
+            DoSend(pluginManager, 0, Properties.MySendCt);
         }
 
         /// <summary>
@@ -79,9 +80,18 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
+            byte ct;
+
             Reader.End();
             Outer.End();
-            this.SaveCommonSettings("GeneralSettings", CCProperties.End());	// Save Settings
+            for (byte i = ct = 0; i < 128; i++)
+                if (4 == Properties.Which[i])
+                {
+                    Settings.Sent[i] |= 0x80; // flag unconfigured CCs to restore
+                    ct++;
+                }
+            SimHub.Logging.Current.Info($"{my}End():  {ct} unconfigured CCs");
+            this.SaveCommonSettings("GeneralSettings", Settings);
         }
 
         /// <summary>
@@ -103,37 +113,33 @@ namespace blekenbleu.MIDIspace
             }
             // Make properties available
             // these get evaluated "on demand" (when shown or used in formulas)
-            CCProperties = new CCProperties();
-            CCProperties.Init(this);		// set SendCt before Outer
+            Properties = new CCProperties();
+            Properties.Init(this);		// set SendCt before Outer
 
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
             string output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
                 output = "unassigned";
-                SimHub.Logging.Current.Info("MIDIio.out: " + output);
+                SimHub.Logging.Current.Info(my + ".out: " + output);
             }
             pluginManager.AddProperty("out", this.GetType(), output);
             Outer = new OUTdrywet();
-            Outer.Init(this, output, CCProperties.SendCt);
+            Outer.Init(this, output, Properties.SendCt);
 
-            output = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
-            int val = Int32.Parse(output);
-//          SimHub.Logging.Current.Info($"MIDIio {Ini}echo = {output} AKA {val}");
-            if (!(DoEcho = (0 < val)))
-               SimHub.Logging.Current.Info("MIDIio(): unconfigured CCs will not be echo'ed"); 
+            DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
+            SimHub.Logging.Current.Info(my + "Init(): unconfigured CCs will " + (DoEcho ? "" : "not") + " be echo'ed"); 
 
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
-            if (0 == input.Length)
-                input = "unassigned";
-            else {
+            if (0 < input.Length)
+            {
                 pluginManager.AddProperty("in", this.GetType(), input);
                 Reader = new INdrywet();
                 Reader.Init(input, Settings, this);
             }
-            SimHub.Logging.Current.Info("MIDIio.in: " + input);
+            else SimHub.Logging.Current.Info(my + "Init(): " + Ini + "in is invalid: '" + input +"'" );
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
-            pluginManager.AddProperty("MIDIio().count", this.GetType(), count);
+            pluginManager.AddProperty(my + "Init().count", this.GetType(), count);
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
@@ -142,16 +148,16 @@ namespace blekenbleu.MIDIspace
         // track active CCs and save values
         internal bool Active(byte CCnumber, byte value)		// returns true if first time
         {
-            byte which = CCProperties.Which[CCnumber];
+            byte which = Properties.Which[CCnumber];
 
             if (0 < which)	// Configured?
             {
-                CCProperties.CCvalue[CCnumber] = value;
+                Properties.CCvalue[CCnumber] = value;
                 if (3 <= which && 0 < value)			// button or CC?
                 {
                     Outer.Latest = value;			// drop pass to Ping()
                     if (4 == which || 0 < value)
-                        this.TriggerEvent(CCProperties.CCname[CCnumber]);
+                        this.TriggerEvent(Properties.CCname[CCnumber]);
                 }   
                 return false;
             }
@@ -160,10 +166,10 @@ namespace blekenbleu.MIDIspace
                 return !Outer.SendCCval(CCnumber, value);	// do not log
 
             // First time CC number seen
-            CCProperties.Which[CCnumber] = 4;			// dynamic CC configuration
-            this.AddEvent(CCProperties.CCname[CCnumber]);	// Users may assign CCn events to e.g. Ping()
-            this.TriggerEvent(CCProperties.CCname[CCnumber]);
-            return CCProperties.SetProp(this, CCnumber, value);
+            Properties.Which[CCnumber] = 4;			// dynamic CC configuration
+            this.AddEvent(Properties.CCname[CCnumber]);	// Users may assign CCn events to e.g. Ping()
+            this.TriggerEvent(Properties.CCname[CCnumber]);
+            return Properties.SetProp(this, CCnumber, value);
         }
     }
 }

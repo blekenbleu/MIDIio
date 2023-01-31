@@ -1,7 +1,18 @@
 ﻿namespace blekenbleu.MIDIspace
 {
-    internal class MIDIioSettings // saved while plugin restarts
+    // these must be public
+    public class MIDIioSettings // saved while plugin restarts
     {
-        internal byte[] Sent { get; set; } = new byte[128];	// track values from MIDIio.DoSend()
+        public byte[] Sent { get; set; } = 	// track values from MIDIio.DoSend()
+        {
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        };
     }
 }

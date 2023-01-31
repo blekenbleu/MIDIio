@@ -14,6 +14,7 @@ namespace blekenbleu.MIDIspace
     {
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
+        private MIDIio I;
         private bool Connected = false;
         private String CCout;       	// Output MIDI destination, used by Log message
 
@@ -21,13 +22,13 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-//              SimHub.Logging.Current.Info($"MIDIio OutputDevice.SendEvent() {control} {value} 0");
+//              SimHub.Logging.Current.Info($"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
             {
                 string oops = e?.ToString();
-                SimHub.Logging.Current.Info($"MIDIio SendCC()Failed: {oops}");
+                SimHub.Logging.Current.Info($"{I.my}SendCC()Failed: {oops}");
                 return Connected = false;
             }
             return true;
@@ -37,7 +38,7 @@ namespace blekenbleu.MIDIspace
         internal byte Latest = 0;		// needs to get set by INdrywet()
         internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
-            if (SendCCval(num, Latest)) {					// drop pass from MIDIio.Active()
+            if (SendCCval(num, Latest)) {					// drop pass from Active()
                 SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {Latest}");
                 return true;
             }
@@ -47,6 +48,7 @@ namespace blekenbleu.MIDIspace
 
         internal void Init(MIDIio M, String MIDIout, int count)
         {
+            I = M;			// only for logging
             if (null == MIDIout)
                 return;
             CCout = MIDIout;
@@ -57,11 +59,11 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                SimHub.Logging.Current.Info($"MIDIio.out is ready to send CC messages to {MIDIout}.");
+                SimHub.Logging.Current.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
                 for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
-                    if (3 < M.CCProperties.Which[i])		// unconfigured CC number?
+                    if (3 < M.Properties.Which[i])		// unconfigured CC number?
                     {
                         SendCC(i, M.Settings.Sent[i]);		// time may have passed;  reinitialize MIDIout
                         j++;
@@ -91,11 +93,11 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent foo)
             {
-//              SimHub.Logging.Current.Info($"MIDIio ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
+//              SimHub.Logging.Current.Info($"{I.my}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
                 if (7 < foo.ControlNumber)	// unsigned
-                    SimHub.Logging.Current.Info($"Mystery {CCout} ControlChangeEvent : {foo}");
+                    SimHub.Logging.Current.Info($"{I.my}OnEventSent(): Mystery {CCout} ControlChangeEvent : {foo}");
             }
-            else SimHub.Logging.Current.Info($"Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+            else SimHub.Logging.Current.Info($"{I.my}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
     }
 }

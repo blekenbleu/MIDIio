@@ -23,20 +23,18 @@ namespace blekenbleu.MIDIspace
                 InputDevice = Melanchall.DryWetMidi.Devices.InputDevice.GetByName(MIDIin);
                 InputDevice.EventReceived += OnEventReceived;
                 InputDevice.StartEventsListening();
-                SimHub.Logging.Current.Info($"MIDIio INdrywet input is listening for {MIDIin} messages.");
+                SimHub.Logging.Current.Info($"{that.my}INdrywet() is listening for {MIDIin} messages.");
             }
             
             catch (Exception)
             {
-                SimHub.Logging.Current.Info($"MIDIio Failed to find INdrywet input device {MIDIin};\nKnown devices:");
+                SimHub.Logging.Current.Info($"{that.my}INdrywet() Failed to find {MIDIin};\nKnown devices:");
                 foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
-                {
-                    SimHub.Logging.Current.Info("   " + inputDevice.Name);
-                }
+                    SimHub.Logging.Current.Info("\t" + inputDevice.Name);
             }
 
             M = that;
-            M.CCProperties.Attach(M);		// AttachDelegate buttons, sliders and knobs
+            M.Properties.Attach(M);		// AttachDelegate buttons, sliders and knobs
         }
 
         internal void End()
@@ -51,10 +49,10 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (e.Event is ControlChangeEvent foo)
             {
-//              SimHub.Logging.Current.Info($"MIDIio ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
+//              SimHub.Logging.Current.Info($"{M.my}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
                 M.Active((byte)foo.ControlNumber, (byte)foo.ControlValue);	// add unconfigured CC properties
             }
-            else SimHub.Logging.Current.Info($"MIDIio ignoring {e.Event} received from {midiDevice.Name}");
+            else SimHub.Logging.Current.Info($"{M.my}INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
         }
     }
 }
