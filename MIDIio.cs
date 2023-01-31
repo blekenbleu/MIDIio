@@ -9,14 +9,17 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
+        internal byte size = 8;			// Maximum MIDIio.Sent, ping, etc to configure
+        private bool[] Once;
+        private byte[] Sent;
+
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
         internal MIDIioSettings Settings;
         internal CCProperties CCProperties;
-        internal bool DoEcho = false;
+        private  bool DoEcho = false;
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
-        private bool[] Once { get; set; } = { true, true, true, true, true, true, true, true };
 
         private void DoSend(PluginManager pluginManager, byte b, byte to)
         {
@@ -30,17 +33,18 @@ namespace blekenbleu.MIDIspace
                 string prop = CCProperties.Send[cc];
                 string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
-                if (null == send )
+                if (null == send)
                 {
                      Once[cc] = false;
                      SimHub.Logging.Current.Info("MIDIio DataUpdate(): null " + prop);
                 }
-                else
+                else if (0 < send.Length)
                 {
                     byte value = (byte)Convert.ToDouble(send);
 
-                    if (Settings.Sent[cc] != value)
-                        Outer.SendCCval(cc, Settings.Sent[cc] = value);
+                    value &= 0x7F;
+                    if (Sent[cc] != value)			// send only changed values
+                        Outer.SendCCval(cc, Sent[cc] = value);
                 }
             }
         }
@@ -75,9 +79,9 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
-            // Save settings returned by Device.End()
+            Reader.End();
             Outer.End();
-            this.SaveCommonSettings("GeneralSettings", Reader.End());
+            this.SaveCommonSettings("GeneralSettings", CCProperties.End());	// Save Settings
         }
 
         /// <summary>
@@ -89,7 +93,14 @@ namespace blekenbleu.MIDIspace
         {
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
+            Once = new bool[size];
+            Sent = new byte[size];
 
+            for (int i = 0; i < size; i++)
+            {
+                Once[i] = true;
+                Sent[i] = 129;			// impossible value will mismatch and force first send
+            }
             // Make properties available
             // these get evaluated "on demand" (when shown or used in formulas)
             CCProperties = new CCProperties();
@@ -121,41 +132,37 @@ namespace blekenbleu.MIDIspace
             }
             SimHub.Logging.Current.Info("MIDIio.in: " + input);
 
-            count += 1;		// increments for each Init(), provoked e.g. by game change or restart
-            pluginManager.AddProperty("Init() count", this.GetType(), count);
+            count += 1;		// increments for each restart, provoked e.g. by game change or restart
+            pluginManager.AddProperty("MIDIio().count", this.GetType(), count);
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
         }
 
         // track active CCs and save values
-        internal bool Active(byte CCnumber, byte value)	// returns true if first time
+        internal bool Active(byte CCnumber, byte value)		// returns true if first time
         {
             byte which = CCProperties.Which[CCnumber];
 
             if (0 < which)	// Configured?
             {
                 CCProperties.CCvalue[CCnumber] = value;
-                if (3 == which && 0 < value)	// button?
-                    this.TriggerEvent(CCProperties.CCname[CCnumber]);
+                if (3 <= which && 0 < value)			// button or CC?
+                {
+                    Outer.Latest = value;			// drop pass to Ping()
+                    if (4 == which || 0 < value)
+                        this.TriggerEvent(CCProperties.CCname[CCnumber]);
+                }   
                 return false;
             }
 
             if (DoEcho)
                 return !Outer.SendCCval(CCnumber, value);	// do not log
 
-            ulong mask = 1;
-            byte index = 0;
-
-            if (63 < CCnumber)					// convert from 0-127 to 0-63, index
-                index++;                			// switch ulong
-            mask <<= (63 & CCnumber);
-
-            if (mask == (mask & Settings.CCbits[index]))      	// already set?
-                return (255 < (CCProperties.CCvalue[CCnumber] = value));
-
             // First time CC number seen
-            Settings.CCbits[index] |= mask;
+            CCProperties.Which[CCnumber] = 4;			// dynamic CC configuration
+            this.AddEvent(CCProperties.CCname[CCnumber]);	// Users may assign CCn events to e.g. Ping()
+            this.TriggerEvent(CCProperties.CCname[CCnumber]);
             return CCProperties.SetProp(this, CCnumber, value);
         }
     }

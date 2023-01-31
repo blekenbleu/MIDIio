@@ -15,7 +15,6 @@ namespace blekenbleu.MIDIspace
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
         private bool Connected = false;
-        private byte val = 63;		// used in Ping()
         private String CCout;       	// Output MIDI destination, used by Log message
 
         private bool SendCC(byte control, byte value)
@@ -35,12 +34,11 @@ namespace blekenbleu.MIDIspace
         }
 
         internal bool SendCCval(byte sv, byte input) => (Connected) && SendCC(sv, input);
-
-        internal bool Ping(SevenBitNumber num) // gets called (indirectly, event->action) by INdrywet()
+        internal byte Latest = 0;		// needs to get set by INdrywet()
+        internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
-            if (SendCCval(num, val)) {
-                SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {val}");
-                val = (byte)((63 == val) ? 127 : 63);
+            if (SendCCval(num, Latest)) {					// drop pass from MIDIio.Active()
+                SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {Latest}");
                 return true;
             }
             else SimHub.Logging.Current.Info($"{CCout} disabled");
@@ -60,21 +58,14 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
                 SimHub.Logging.Current.Info($"MIDIio.out is ready to send CC messages to {MIDIout}.");
-                ulong mask = 1;
                 byte j = 0;
-                for (byte i = 0; j < count && i < 64; i++)		// resend saved CCs
+                for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
-                    if (mask == (M.Settings.CCbits[0] & mask))
+                    if (3 < M.CCProperties.Which[i])		// unconfigured CC number?
                     {
                         SendCC(i, M.Settings.Sent[i]);		// time may have passed;  reinitialize MIDIout
                         j++;
                     }
-                    if (mask == (M.Settings.CCbits[1] & mask))
-                    {
-                        SendCC(i, M.Settings.Sent[64 + i]);	// time may have passed;  reinitialize MIDIout
-                        j++;
-                    }
-                    mask <<= 1;
                 }
             }
             
@@ -90,7 +81,6 @@ namespace blekenbleu.MIDIspace
         internal void End()
         {
             Connected = false;
-            SimHub.Logging.Current.Info($"MIDIio OUTdrywet.END()");
             (_outputDevice as IDisposable)?.Dispose();
         }
 

@@ -17,7 +17,7 @@ Search for `midi` in **SimHub Available properties**:
    for which MIDiio generates respectively:
 
    -  properties `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`,  
-      which track values received from configured `MIDIin` CC numbers.  
+      which track values received from these configuration arrays of `MIDIin` CC numbers.  
       Each configured `button[0-7]` also generates a [**Source** (`Event`) for **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).
 
 -  `ExternalScript.MIDIecho`:  

@@ -13,7 +13,6 @@ namespace blekenbleu.MIDIspace
     internal class INdrywet
     {
         private MIDIio M;	    	// needed for e.g. CCProperties()
-        private MIDIioSettings Settings;
         private static IInputDevice _inputDevice;
         private static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
@@ -36,16 +35,13 @@ namespace blekenbleu.MIDIspace
                 }
             }
 
-            Settings = savedSettings;
             M = that;
             M.CCProperties.Attach(M);		// AttachDelegate buttons, sliders and knobs
         }
 
-        internal MIDIioSettings End()
+        internal void End()
         {
-            SimHub.Logging.Current.Info($"MIDIio MIDIioSettings End: CCbits #{Settings.CCbits[0]}, #{Settings.CCbits[1]}");
             (InputDevice as IDisposable)?.Dispose();
-            return Settings;
         }
 
         // callback
