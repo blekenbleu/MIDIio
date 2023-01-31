@@ -16,19 +16,19 @@ namespace blekenbleu.MIDIspace
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
         private MIDIio I;
         private bool Connected = false;
-        private String CCout;       	// Output MIDI destination, used by Log message
+        private String CCout;       	// Output MIDI destination, used by log messages
 
         private bool SendCC(byte control, byte value)
         {   // wasted a day not finding this documented
             try
             {
-//              SimHub.Logging.Current.Info($"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
+//              I.Info($"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
             {
                 string oops = e?.ToString();
-                SimHub.Logging.Current.Info($"{I.my}SendCC()Failed: {oops}");
+                I.Info($"{I.my}SendCC()Failed: {oops}");
                 return Connected = false;
             }
             return true;
@@ -39,10 +39,10 @@ namespace blekenbleu.MIDIspace
         internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
             if (SendCCval(num, Latest)) {					// drop pass from Active()
-                SimHub.Logging.Current.Info($"{CCout} CC{num} pinged {Latest}");
+                I.Info($"{CCout} CC{num} pinged {Latest}");
                 return true;
             }
-            else SimHub.Logging.Current.Info($"{CCout} disabled");
+            else I.Info($"{CCout} disabled");
             return false;
         }
 
@@ -59,7 +59,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                SimHub.Logging.Current.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
+                I.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
                 for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
@@ -74,9 +74,9 @@ namespace blekenbleu.MIDIspace
             catch (Exception)
             {
                 Connected = false;
-                SimHub.Logging.Current.Info($"Failed to find OUTdrywet output device {MIDIout};\nKnown devices:");
+                I.Info($"Failed to find OUTdrywet output device {MIDIout};\nKnown devices:");
                 foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
-                    SimHub.Logging.Current.Info(outputDevice.Name);
+                    I.Info(outputDevice.Name);
             }
         }
 
@@ -93,11 +93,11 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent foo)
             {
-//              SimHub.Logging.Current.Info($"{I.my}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
+//              I.Info($"{I.my}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
                 if (7 < foo.ControlNumber)	// unsigned
-                    SimHub.Logging.Current.Info($"{I.my}OnEventSent(): Mystery {CCout} ControlChangeEvent : {foo}");
+                    I.Info($"{I.my}OnEventSent(): Mystery {CCout} ControlChangeEvent : {foo}");
             }
-            else SimHub.Logging.Current.Info($"{I.my}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+            else I.Info($"{I.my}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
     }
 }

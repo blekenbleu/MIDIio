@@ -22,11 +22,16 @@ namespace blekenbleu.MIDIspace
         internal INdrywet Reader;
         internal OUTdrywet Outer;
 
+        internal void Info(string str)
+        {
+            SimHub.Logging.Current.Info(str);
+        }
+
         private void DoSend(PluginManager pluginManager, byte b, byte to)
         {
             for ( ; b < to; b++)
             {
-                byte cc = Properties.Remap[b];	// MIDIout CC numbers
+                byte cc = Properties.Map[b];	// MIDIout CC numbers
 
                 if (!Once[cc])
                    return;
@@ -37,11 +42,11 @@ namespace blekenbleu.MIDIspace
                 if (null == send)
                 {
                      Once[cc] = false;
-                     SimHub.Logging.Current.Info(my + "DataUpdate(): null " + prop);
+                     Info(my + "DataUpdate(): null " + prop);
                 }
                 else if (0 < send.Length)
                 {
-                    byte value = (byte)Convert.ToDouble(send);
+                    byte value = (byte)(0.5 + Convert.ToDouble(send));
 
                     value &= 0x7F;
                     if (Sent[cc] != value)			// send only changed values
@@ -80,17 +85,9 @@ namespace blekenbleu.MIDIspace
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
         {
-            byte ct;
-
             Reader.End();
             Outer.End();
-            for (byte i = ct = 0; i < 128; i++)
-                if (4 == Properties.Which[i])
-                {
-                    Settings.Sent[i] |= 0x80; // flag unconfigured CCs to restore
-                    ct++;
-                }
-            SimHub.Logging.Current.Info($"{my}End():  {ct} unconfigured CCs");
+            Properties.End(this);
             this.SaveCommonSettings("GeneralSettings", Settings);
         }
 
@@ -101,6 +98,7 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
+            Info(my + "Init()");
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
             Once = new bool[size];
@@ -120,23 +118,24 @@ namespace blekenbleu.MIDIspace
             string output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
                 output = "unassigned";
-                SimHub.Logging.Current.Info(my + ".out: " + output);
+                Info(my + ".out: " + output);
+            //  Info(my + ".out: " + output);
             }
             pluginManager.AddProperty("out", this.GetType(), output);
             Outer = new OUTdrywet();
             Outer.Init(this, output, Properties.SendCt);
 
             DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
-            SimHub.Logging.Current.Info(my + "Init(): unconfigured CCs will " + (DoEcho ? "" : "not") + " be echo'ed"); 
+            Info(my + "Init(): unconfigured CCs will " + (DoEcho ? "" : "not") + " be echo'ed"); 
 
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
             if (0 < input.Length)
             {
                 pluginManager.AddProperty("in", this.GetType(), input);
                 Reader = new INdrywet();
-                Reader.Init(input, Settings, this);
+                Reader.Init(input, this);
             }
-            else SimHub.Logging.Current.Info(my + "Init(): " + Ini + "in is invalid: '" + input +"'" );
+            else Info(my + "Init(): " + Ini + "in is invalid: '" + input +"'" );
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
             pluginManager.AddProperty(my + "Init().count", this.GetType(), count);
