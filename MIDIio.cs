@@ -9,9 +9,8 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-        internal byte size = 8;			// Maximum MIDIio.Sent, ping, etc to configure
+        internal byte size = 8;			// Maximum ping, etc to configure
         private bool[] Once;
-        private byte[] Sent;
 
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
         internal string my = "MIDIio.";					// PluginName + '.'
@@ -33,15 +32,15 @@ namespace blekenbleu.MIDIspace
             {
                 byte cc = Properties.Map[b];	// MIDIout CC numbers
 
-                if (!Once[cc])
+                if (!Once[b])
                    return;
 
-                string prop = Properties.Send[cc];
+                string prop = Properties.Send[b];
                 string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
                 if (null == send)
                 {
-                     Once[cc] = false;
+                     Once[b] = false;
                      Info(my + "DataUpdate(): null " + prop);
                 }
                 else if (0 < send.Length)
@@ -49,8 +48,8 @@ namespace blekenbleu.MIDIspace
                     byte value = (byte)(0.5 + Convert.ToDouble(send));
 
                     value &= 0x7F;
-                    if (Sent[cc] != value)			// send only changed values
-                        Outer.SendCCval(cc, Sent[cc] = value);
+                    if (Settings.Sent[cc] != value)			// send only changed values
+                        Outer.SendCCval(cc, Settings.Sent[cc] = value);
                 }
             }
         }
@@ -98,17 +97,11 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
-            Info(my + "Init()");
+ //         Info(my + "Init()");
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
             Once = new bool[size];
-            Sent = new byte[size];
 
-            for (int i = 0; i < size; i++)
-            {
-                Once[i] = true;
-                Sent[i] = 129;			// impossible value will mismatch and force first send
-            }
             // Make properties available
             // these get evaluated "on demand" (when shown or used in formulas)
             Properties = new CCProperties();
@@ -117,16 +110,16 @@ namespace blekenbleu.MIDIspace
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
             string output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
-                output = "unassigned";
-                Info(my + ".out: " + output);
-            //  Info(my + ".out: " + output);
+                Info(my + ".out: unassigned");
+                pluginManager.AddProperty("out", this.GetType(), "unassigned");
             }
-            pluginManager.AddProperty("out", this.GetType(), output);
-            Outer = new OUTdrywet();
-            Outer.Init(this, output, Properties.SendCt);
+            else pluginManager.AddProperty("out", this.GetType(), output);
 
             DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
             Info(my + "Init(): unconfigured CCs will " + (DoEcho ? "" : "not") + " be echo'ed"); 
+
+            Outer = new OUTdrywet();
+            Outer.Init(this, output, Properties.SendCt);
 
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
             if (0 < input.Length)
@@ -139,6 +132,12 @@ namespace blekenbleu.MIDIspace
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
             pluginManager.AddProperty(my + "Init().count", this.GetType(), count);
+
+            for (int i = 0; i < size; i++)
+            {
+                Settings.Sent[Properties.Map[i]] = 129;	// impossible first Send[i] values
+                Once[i] = true;
+            }
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());

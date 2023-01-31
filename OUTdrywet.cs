@@ -91,11 +91,11 @@ namespace blekenbleu.MIDIspace
         {
             var midiDevice = (MidiDevice)sender;
             // this cute syntax is called pattern matching
-            if (Connected && e.Event is ControlChangeEvent foo)
+            if (Connected && e.Event is ControlChangeEvent CC)
             {
-//              I.Info($"{I.my}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
-                if (7 < foo.ControlNumber)	// unsigned
-                    I.Info($"{I.my}OnEventSent(): Mystery {CCout} ControlChangeEvent : {foo}");
+//              I.Info($"{I.my}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                if ((I.Properties.SendCt <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
+                    I.Info($"{I.my}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
             }
             else I.Info($"{I.my}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
