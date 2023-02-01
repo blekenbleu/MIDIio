@@ -26,7 +26,7 @@ namespace blekenbleu.MIDIspace
             SimHub.Logging.Current.Info(str);
         }
 
-        private void DoSend(PluginManager pluginManager, byte b, byte to)
+        private void DoSendCC(PluginManager pluginManager, byte b, byte to)
         {
             for ( ; b < to; b++)
             {
@@ -49,7 +49,7 @@ namespace blekenbleu.MIDIspace
 
                     value &= 0x7F;
                     if (Settings.Sent[cc] != value)			// send only changed values
-                        Outer.SendCCval(cc, Settings.Sent[cc] = value);
+                        Outer.SendCCval(cc, Settings.Sent[cc] = value);	// DoSendCC()
                 }
             }
         }
@@ -71,10 +71,10 @@ namespace blekenbleu.MIDIspace
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
-                DoSend(pluginManager, Properties.MySendCt, Properties.SendCt);
+                DoSendCC(pluginManager, Properties.MySendCt, Properties.SendCt);
 
             // Send my property messages anytime (echo)
-            DoSend(pluginManager, 0, Properties.MySendCt);
+            DoSendCC(pluginManager, 0, Properties.MySendCt);
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace blekenbleu.MIDIspace
             else pluginManager.AddProperty("out", this.GetType(), output);
 
             DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
-            Info(my + "Init(): unconfigured CCs will " + (DoEcho ? "" : "not") + " be echo'ed"); 
+            Info(my + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed"); 
 
             Outer = new OUTdrywet();
             Outer.Init(this, output, Properties.SendCt);
@@ -147,7 +147,8 @@ namespace blekenbleu.MIDIspace
         internal bool Active(byte CCnumber, byte value)		// returns true if first time
         {
             byte which = Properties.Which[CCnumber];
-
+//          if (5 == CCnumber)
+//              Info(Properties.CCname[CCnumber]);		// just a debugging breakpoint
             if (0 < which)	// Configured?
             {
                 Properties.CCvalue[CCnumber] = value;
@@ -156,12 +157,14 @@ namespace blekenbleu.MIDIspace
                     Outer.Latest = value;			// drop pass to Ping()
                     if (4 == which || 0 < value)
                         this.TriggerEvent(Properties.CCname[CCnumber]);
+                    if (DoEcho && 4 == which)
+                        return !Outer.SendCCval(CCnumber, value); // 4 may also be appropriated configured
                 }   
                 return false;
             }
 
             if (DoEcho)
-                return !Outer.SendCCval(CCnumber, value);	// do not log
+                return !Outer.SendCCval(CCnumber, value);	// Activate(): do not SetProp()
 
             // First time CC number seen
             Properties.Which[CCnumber] = 4;			// dynamic CC configuration
