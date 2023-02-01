@@ -22,7 +22,7 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-//              I.Info($"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
+                I.Log(4, $"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
@@ -59,7 +59,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-//              I.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
+                I.Log(4, $"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
                 for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
@@ -93,7 +93,7 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent CC)
             {
-//              I.Info($"{I.my}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                I.Log(4, $"{I.my}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
                 if ((I.Properties.SendCt <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
                     I.Info($"{I.my}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
             }

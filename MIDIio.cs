@@ -20,38 +20,17 @@ namespace blekenbleu.MIDIspace
 
         internal INdrywet Reader;
         internal OUTdrywet Outer;
+        internal byte Level = 0;
 
         internal void Info(string str)
         {
             SimHub.Logging.Current.Info(str);
         }
 
-        private void DoSendCC(PluginManager pluginManager, byte b, byte to)
+        internal void Log(byte level, string str)
         {
-            for ( ; b < to; b++)
-            {
-                byte cc = Properties.Map[b];	// MIDIout CC numbers
-
-                if (!Once[b])
-                   return;
-
-                string prop = Properties.Send[b];
-                string send = pluginManager.GetPropertyValue(prop)?.ToString();
-
-                if (null == send)
-                {
-                     Once[b] = false;
-                     Info(my + "DataUpdate(): null " + prop);
-                }
-                else if (0 < send.Length)
-                {
-                    byte value = (byte)(0.5 + Convert.ToDouble(send));
-
-                    value &= 0x7F;
-                    if (Settings.Sent[cc] != value)			// send only changed values
-                        Outer.SendCCval(cc, Settings.Sent[cc] = value);	// DoSendCC()
-                }
-            }
+            if (0 < (level & Level))
+                SimHub.Logging.Current.Info(str);
         }
 
         /// <summary>
@@ -97,7 +76,7 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
- //         Info(my + "Init()");
+            Log(4, my + "Init()");
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
             Once = new bool[size];
@@ -107,8 +86,13 @@ namespace blekenbleu.MIDIspace
             Properties = new CCProperties();
             Properties.Init(this);		// set SendCt before Outer
 
+            string output = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
+            // Log() level configuration
+            if (null != output && 0 < output.Length)
+                Level = (byte)(0.5 + Convert.ToDouble(output));
+
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
-            string output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
+            output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
                 Info(my + ".out: unassigned");
                 pluginManager.AddProperty("out", this.GetType(), "unassigned");
@@ -147,8 +131,8 @@ namespace blekenbleu.MIDIspace
         internal bool Active(byte CCnumber, byte value)		// returns true if first time
         {
             byte which = Properties.Which[CCnumber];
-//          if (5 == CCnumber)
-//              Info(Properties.CCname[CCnumber]);		// just a debugging breakpoint
+            if (5 == CCnumber)
+                Log(8, Properties.CCname[CCnumber]);		// just a debugging breakpoint
             if (0 < which)	// Configured?
             {
                 Properties.CCvalue[CCnumber] = value;
@@ -171,6 +155,34 @@ namespace blekenbleu.MIDIspace
             this.AddEvent(Properties.CCname[CCnumber]);	// Users may assign CCn events to e.g. Ping()
             this.TriggerEvent(Properties.CCname[CCnumber]);
             return Properties.SetProp(this, CCnumber, value);
+        }
+
+        private void DoSendCC(PluginManager pluginManager, byte b, byte to)
+        {
+            for ( ; b < to; b++)
+            {
+                byte cc = Properties.Map[b];	// MIDIout CC numbers
+
+                if (!Once[b])
+                   return;
+
+                string prop = Properties.Send[b];
+                string send = pluginManager.GetPropertyValue(prop)?.ToString();
+
+                if (null == send)
+                {
+                     Once[b] = false;
+                     Info(my + "DataUpdate(): null " + prop);
+                }
+                else if (0 < send.Length)
+                {
+                    byte value = (byte)(0.5 + Convert.ToDouble(send));
+
+                    value &= 0x7F;
+                    if (Settings.Sent[cc] != value)			// send only changed values
+                        Outer.SendCCval(cc, Settings.Sent[cc] = value);	// DoSendCC()
+                }
+            }
         }
     }
 }

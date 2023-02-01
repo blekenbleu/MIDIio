@@ -30,7 +30,7 @@ namespace blekenbleu.MIDIspace
                     Which[i] = 4;
                 }
                 else Which[i] = 0;
-//          I.Info($"{I.my}CCProperties.Init():  {ct} unconfigured CCs");
+            I.Log(4, $"{I.my}CCProperties.Init():  {ct} unconfigured CCs");
 
             Unmap = new byte[128];			// OnEventSent() warns of unexpected CC numbers sent
             Map = new byte[I.size];			// first MySendCt entries will be for I.my properties
@@ -55,7 +55,7 @@ namespace blekenbleu.MIDIspace
                 if (ok[i] = (null != prop[i] && 0 < prop[i].Length))
                     if ((3 + I.my.Length) < prop[i].Length && I.my == (prop[i].Substring(0, I.my.Length)))
                     {
-//                      I.Info(I.my + "CCProperties(): '{prop[i].Substring(0, I.my.Length)}' == '{I.my.Length}'  ");
+                        I.Log(4, I.my + "CCProperties(): '{prop[i].Substring(0, I.my.Length)}' == '{I.my.Length}'  ");
                         ok[i] = false;
                         Send[MySendCt] = prop[i];
                         MySendCt++;         		// configured I.my CC's get echo'ed
@@ -81,7 +81,7 @@ namespace blekenbleu.MIDIspace
                     I.Settings.Sent[i] |= 0x80; // flag unconfigured CCs to restore
                     ct++;
                 }
-//          I.Info($"{I.my}Properties.End():  {ct} unconfigured CCs");
+            I.Log(4, $"{I.my}Properties.End():  {ct} unconfigured CCs");
         }
 
         private void Button(MIDIio I, byte bn, byte CCnumber)
@@ -523,11 +523,13 @@ namespace blekenbleu.MIDIspace
             string send = I.Ini + "out";
             int L = I.my.Length;
             byte my = 0;
-/*
-            I.Info(I.my + "Attach() my Send:");           
-            for (byte i = 0; i < MySendCt; i++)
-                I.Info("\t" + Send[i] + " AKA " + Send[i].Substring(l, Send[i].Length - l));
- */
+
+            if (0 < (4 & I.Level))
+            {
+                I.Info(I.my + "Attach() my Send:");           
+                for (byte i = 0; i < MySendCt; i++)
+                    I.Info("\t" + Send[i] + " AKA " + Send[i].Substring(L, Send[i].Length - L));
+            }
             for (byte s = 1; s < setting.Length; s++)		// reserve s == 0 for sends and unassigned CCs
             {
                 string type = I.Ini + setting[s] + 's';
@@ -539,14 +541,15 @@ namespace blekenbleu.MIDIspace
 
                 // bless the Internet
                 byte[] array = value.Split(',').Select(byte.Parse).ToArray();
-//              I.Info($"{I.my}Attach(): '{I.Ini + setting[s]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
+                I.Log(4, $"{I.my}Attach(): '{I.Ini + setting[s]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
 
                 byte cn = 0;                 			// index settings[]
                 foreach (byte cc in array)		        // array has cc numbers assigned for this type
                 {
                     Which[cc] = s;          			// index for configured property type
                     CCname[cc] = setting[s] + cn;       // lacks I.Ini
-                                                        //                  I.Info($"{I.my}Attach():  CCname[{cc}] = {CCname[cc]}");
+
+                    I.Log(4, $"{I.my}Attach():  CCname[{cc}] = {CCname[cc]}");
                     for (byte mi = 0; mi < MySendCt; mi++)
                         if (CCname[cc].Length == (Send[mi].Length - L) && CCname[cc] == Send[mi].Substring(L, CCname[cc].Length))
                         {
@@ -590,7 +593,7 @@ namespace blekenbleu.MIDIspace
                 }
             }
             if (ct < SendCt)
-                    I.Info($"{I.my}Attach(): '{prop[ct]}' not Map[]ed");
+                I.Info($"{I.my}Attach(): '{prop[ct]}' not Map[]ed");
         }	// Attach()
     }
 }
