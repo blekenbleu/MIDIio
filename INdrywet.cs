@@ -23,7 +23,7 @@ namespace blekenbleu.MIDIspace
                 InputDevice = Melanchall.DryWetMidi.Devices.InputDevice.GetByName(MIDIin);
                 InputDevice.EventReceived += OnEventReceived;
                 InputDevice.StartEventsListening();
-                that.Info($"{that.my}INdrywet() is listening for {MIDIin} messages.");
+//              that.Info($"{that.my}INdrywet() is listening for {MIDIin} messages.");
             }
             
             catch (Exception)

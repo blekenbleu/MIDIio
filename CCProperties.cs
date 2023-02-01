@@ -20,7 +20,7 @@ namespace blekenbleu.MIDIspace
         {
             prop = new string[I.size];			// accumulate 'send' entries in the order received
             byte ct;
-            Which = new byte[128];
+            Which = new byte[128];			// initialize for OUTwetdry.Init()
 
             for (byte i = ct = 0; i < 128; i++)		// extract unconfigured CC flags
                 if (0 < (0x80 & I.Settings.Sent[i]))
@@ -519,7 +519,7 @@ namespace blekenbleu.MIDIspace
         // Init() identified valid send entries and sorted prop[] names into Send[] with I.my first
         internal void Attach(MIDIio I)	// call SetProp to AttachDelegate() MIDIin properties based on ExternalScript.MIDI* properties
         {
-            string[] setting = {"unconfigured", "slider", "knob", "button"};	// Which type 1, 2, 3
+            string[] setting = {"unconfigured", "slider", "knob", "button"};	// type 1, 2, 3 (4 == previous unconfigured CC)
             string send = I.Ini + "out";
             int L = I.my.Length;
             byte my = 0;
@@ -580,7 +580,8 @@ namespace blekenbleu.MIDIspace
             for (my = 0; my < mc && ct < SendCt; my++) 
                 Map[ct++] = Configured[my];			// recycle configured MIDIin CC numbers
 
-            for (my = MySendCt; my < 128 && ct < SendCt; my++)		// configure CC numbers for MySendCt <= i < SendCt
+            // appropriate previously unconfigured CC numbers;  those controls will be unavailable in DeEcho mode..
+            for (my = 127; MySendCt <= my && ct < SendCt; my--)	// configure CC numbers for MySendCt <= i < SendCt
             {
                 if (0 == Which[my])
                 {
