@@ -38,7 +38,7 @@ namespace blekenbleu.MIDIspace
         internal byte Latest = 0;		// needs to get set by INdrywet()
         internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
-            if (SendCCval(num, Latest)) {					// drop pass from Active()
+            if (SendCCval(num, Latest)) {        		// Ping(): drop pass from Active()
                 I.Info($"{CCout} CC{num} pinged {Latest}");
                 return true;
             }
@@ -59,13 +59,13 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                I.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
+//              I.Info($"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
                 for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
-                    if (3 < M.Properties.Which[i])		// unconfigured CC number?
+                    if (3 < M.Properties.Which[i] && I.DoEcho)	// unconfigured CC number?
                     {
-                        SendCC(i, M.Settings.Sent[i]);		// time may have passed;  reinitialize MIDIout
+                        SendCC(i, M.Settings.Sent[i]);		// Init() time may have passed;  reinitialize MIDIout
                         j++;
                     }
                 }
