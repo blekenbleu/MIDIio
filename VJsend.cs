@@ -16,18 +16,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define ROBUST
-#define FFB
-#define DUMP_FFB_FRAME
+//#define FFB
+//#define DUMP_FFB_FRAME
 
 using System;
-using System.Collections.Generic;
+//using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
+//using System.Text;
 
 // Don't forget to add this
 using vJoyInterfaceWrap;
 
-namespace FeederDemoCS
+//namespace FeederDemoCS
+namespace blekenbleu.MIDIspace
 {
     public class vJoyFFBReceiver
     {
