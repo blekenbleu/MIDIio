@@ -1,15 +1,12 @@
 ﻿/////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// This project demonstrates how to write a simple vJoy feeder in C#
-//
-// You can compile it with either #define ROBUST OR #define EFFICIENT
-// The fuctionality is similar - 
+// This project is ripped from the original simple C# vJoy feeder
+// Since MIDIio will generally handle only a single button or axis at a time, EFFICIENT would not be.
 // The ROBUST section demonstrate the usage of functions that are easy and safe to use but are less efficient
-// The EFFICIENT ection demonstrate the usage of functions that are more efficient
 //
 // Functionality:
 //	The program starts with creating one joystick object. 
-//	Then it petches the device id from the command-line and makes sure that it is within range
+//	Then it fetches the device id from the command-line and makes sure that it is within range
 //	After testing that the driver is enabled it gets information about the driver
 //	Gets information about the specified virtual device
 //	This feeder uses only a few axes. It checks their existence and 
@@ -19,7 +16,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define ROBUST
-//#define EFFICIENT
 #define FFB
 #define DUMP_FFB_FRAME
 
@@ -80,7 +76,7 @@ namespace FeederDemoCS
 
         protected void LogFormat(string text, params object[] args)
         {
-            Console.WriteLine(String.Format(text, args));
+            SimHub.Logging.Current.Info(String.Format(text, args));
         }
 
 #if DUMP_FFB_FRAME
@@ -595,7 +591,7 @@ namespace FeederDemoCS
             return 0;
         }
 
-        static void Main(string[] args)
+        static void Init(MIDIio that)
         {
             // Create one joystick object and a position structure.
             joystick = new vJoy();
@@ -603,37 +599,37 @@ namespace FeederDemoCS
             FFBReceiver = new vJoyFFBReceiver();
 
             // Device ID can only be in the range 1-16
-            if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
-                id = Convert.ToUInt32(args[0]);
+//          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
+                id = 1 // Convert.ToUInt32(args[0]);
             if (id <= 0 || id > 16) {
-                Console.WriteLine("Illegal device ID {0}\nExit!", id);
+                SimHub.Logging.Current.Info("Illegal device ID {0}\nExit!", id);
                 return;
             }
 
             // Get the driver attributes (Vendor ID, Product ID, Version Number)
             if (!joystick.vJoyEnabled()) {
-                Console.WriteLine("vJoy driver not enabled: Failed Getting vJoy attributes.");
+                SimHub.Logging.Current.Info("vJoy driver not enabled: Failed Getting vJoy attributes.");
                 return;
             } else
-                Console.WriteLine("Vendor: {0}\nProduct :{1}\nVersion Number:{2}", joystick.GetvJoyManufacturerString(), joystick.GetvJoyProductString(), joystick.GetvJoySerialNumberString());
+                SimHub.Logging.Current.Info("Vendor: {0}\nProduct :{1}\nVersion Number:{2}", joystick.GetvJoyManufacturerString(), joystick.GetvJoyProductString(), joystick.GetvJoySerialNumberString());
 
             // Get the state of the requested device
             VjdStat status = joystick.GetVJDStatus(id);
             switch (status) {
                 case VjdStat.VJD_STAT_OWN:
-                    Console.WriteLine("vJoy Device {0} is already owned by this feeder", id);
+                    SimHub.Logging.Current.Info("vJoy Device {0} is already owned by this feeder", id);
                     break;
                 case VjdStat.VJD_STAT_FREE:
-                    Console.WriteLine("vJoy Device {0} is free", id);
+                    SimHub.Logging.Current.Info("vJoy Device {0} is free", id);
                     break;
                 case VjdStat.VJD_STAT_BUSY:
-                    Console.WriteLine("vJoy Device {0} is already owned by another feeder\nCannot continue", id);
+                    SimHub.Logging.Current.Info("vJoy Device {0} is already owned by another feeder\nCannot continue", id);
                     return;
                 case VjdStat.VJD_STAT_MISS:
-                    Console.WriteLine("vJoy Device {0} is not installed or disabled\nCannot continue", id);
+                    SimHub.Logging.Current.Info("vJoy Device {0} is not installed or disabled\nCannot continue", id);
                     return;
                 default:
-                    Console.WriteLine("vJoy Device {0} general error\nCannot continue", id);
+                    SimHub.Logging.Current.Info("vJoy Device {0} general error\nCannot continue", id);
                     return;
             };
 
@@ -649,35 +645,35 @@ namespace FeederDemoCS
             int DiscPovNumber = joystick.GetVJDDiscPovNumber(id);
 
             // Print results
-            Console.WriteLine("\nvJoy Device {0} capabilities:", id);
-            Console.WriteLine("Numner of buttons\t\t{0}", nButtons);
-            Console.WriteLine("Numner of Continuous POVs\t{0}", ContPovNumber);
-            Console.WriteLine("Numner of Descrete POVs\t\t{0}", DiscPovNumber);
-            Console.WriteLine("Axis X\t\t{0}", AxisX ? "Yes" : "No");
-            Console.WriteLine("Axis Y\t\t{0}", AxisX ? "Yes" : "No");
-            Console.WriteLine("Axis Z\t\t{0}", AxisX ? "Yes" : "No");
-            Console.WriteLine("Axis Rx\t\t{0}", AxisRX ? "Yes" : "No");
-            Console.WriteLine("Axis Rz\t\t{0}", AxisRZ ? "Yes" : "No");
+            SimHub.Logging.Current.Info("\nvJoy Device {0} capabilities:", id);
+            SimHub.Logging.Current.Info("Numner of buttons\t\t{0}", nButtons);
+            SimHub.Logging.Current.Info("Numner of Continuous POVs\t{0}", ContPovNumber);
+            SimHub.Logging.Current.Info("Numner of Descrete POVs\t\t{0}", DiscPovNumber);
+            SimHub.Logging.Current.Info("Axis X\t\t{0}", AxisX ? "Yes" : "No");
+            SimHub.Logging.Current.Info("Axis Y\t\t{0}", AxisX ? "Yes" : "No");
+            SimHub.Logging.Current.Info("Axis Z\t\t{0}", AxisX ? "Yes" : "No");
+            SimHub.Logging.Current.Info("Axis Rx\t\t{0}", AxisRX ? "Yes" : "No");
+            SimHub.Logging.Current.Info("Axis Rz\t\t{0}", AxisRZ ? "Yes" : "No");
 
             // Test if DLL matches the driver
             UInt32 DllVer = 0, DrvVer = 0;
             bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
             if (match)
-                Console.WriteLine("Version of Driver Matches DLL Version ({0:X})", DllVer);
+                SimHub.Logging.Current.Info("Version of Driver Matches DLL Version ({0:X})", DllVer);
             else
-                Console.WriteLine("Version of Driver ({0:X}) does NOT match DLL Version ({1:X})", DrvVer, DllVer);
+                SimHub.Logging.Current.Info("Version of Driver ({0:X}) does NOT match DLL Version ({1:X})", DrvVer, DllVer);
 
 
             // Acquire the target
             if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id)))) {
-                Console.WriteLine("Failed to acquire vJoy device number {0}.", id);
+                SimHub.Logging.Current.Info("Failed to acquire vJoy device number {0}.", id);
                 return;
             } else
-                Console.WriteLine("Acquired: vJoy device number {0}.", id);
+                SimHub.Logging.Current.Info("Acquired: vJoy device number {0}.", id);
 
             StartAndRegisterFFB();
 
-            Console.WriteLine("\npress enter to stat feeding");
+            SimHub.Logging.Current.Info("\npress enter to stat feeding");
             Console.ReadKey(true);
 
             int X, Y, Z, ZR, XR;
@@ -756,73 +752,7 @@ namespace FeederDemoCS
             } // While (Robust)
 
 #endif // ROBUST
-#if EFFICIENT
 
-            byte[] pov = new byte[4];
-
-      while (true)
-            {
-            iReport.bDevice = (byte)id;
-            iReport.AxisX = X;
-            iReport.AxisY = Y;
-            iReport.AxisZ = Z;
-            iReport.AxisZRot = ZR;
-            iReport.AxisXRot = XR;
-
-            // Set buttons one by one
-            iReport.Buttons = (uint)(0x1 <<  (int)(count / 20));
-
-        if (ContPovNumber>0)
-        {
-            // Make Continuous POV Hat spin
-            iReport.bHats		= (count*70);
-            iReport.bHatsEx1	= (count*70)+3000;
-            iReport.bHatsEx2	= (count*70)+5000;
-            iReport.bHatsEx3	= 15000 - (count*70);
-            if ((count*70) > 36000)
-            {
-                iReport.bHats =    0xFFFFFFFF; // Neutral state
-                iReport.bHatsEx1 = 0xFFFFFFFF; // Neutral state
-                iReport.bHatsEx2 = 0xFFFFFFFF; // Neutral state
-                iReport.bHatsEx3 = 0xFFFFFFFF; // Neutral state
-            };
-        }
-        else
-        {
-            // Make 5-position POV Hat spin
-            
-            pov[0] = (byte)(((count / 20) + 0)%4);
-            pov[1] = (byte)(((count / 20) + 1) % 4);
-            pov[2] = (byte)(((count / 20) + 2) % 4);
-            pov[3] = (byte)(((count / 20) + 3) % 4);
-
-            iReport.bHats		= (uint)(pov[3]<<12) | (uint)(pov[2]<<8) | (uint)(pov[1]<<4) | (uint)pov[0];
-            if ((count) > 550)
-                iReport.bHats = 0xFFFFFFFF; // Neutral state
-        };
-
-        /*** Feed the driver with the position packet - is fails then wait for input then try to re-acquire device ***/
-        if (!joystick.UpdateVJD(id, ref iReport))
-        {
-            Console.WriteLine("Feeding vJoy device number {0} failed - try to enable device then press enter\n", id);
-            Console.ReadKey(true);
-            joystick.AcquireVJD(id);
-        }
-
-        System.Threading.Thread.Sleep(20);
-        count++;
-        if (count > 640) count = 0;
-
-        X += 150; if (X > maxval) X = 0;
-        Y += 250; if (Y > maxval) Y = 0;
-        Z += 350; if (Z > maxval) Z = 0;
-        XR += 220; if (XR > maxval) XR = 0;
-        ZR += 200; if (ZR > maxval) ZR = 0;  
-         
-      }; // While
-
-#endif // EFFICIENT
-
-        } // Main
-    } // class Program
+        } // Init
+    } // class VJsend
 } // namespace FeederDemoCS
