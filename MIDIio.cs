@@ -27,10 +27,13 @@ namespace blekenbleu.MIDIspace
             SimHub.Logging.Current.Info(str);
         }
 
-        internal void Log(byte level, string str)
+        internal bool Log(byte level, string str)
         {
-            if (0 < (level & Level))
+            bool b = 0 < (level & Level);
+
+            if (b)
                 SimHub.Logging.Current.Info(str);
+            return b;
         }
 
         /// <summary>

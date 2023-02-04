@@ -17,6 +17,7 @@
  ;-----------------------------------------------------------------------------------------------------*/
 #define ROBUST
 //#define FFB
+//#define POV
 //#define DUMP_FFB_FRAME
 
 using System;
@@ -30,6 +31,7 @@ using vJoyInterfaceWrap;
 //namespace FeederDemoCS
 namespace blekenbleu.MIDIspace
 {
+#if FFB
     public class VJoyFFBReceiver
     {
         protected bool isRegistered = false;
@@ -89,10 +91,10 @@ namespace blekenbleu.MIDIspace
                 int command = (int)FfbData->Command;
                 byte* bytes = (byte*)FfbData->PtrToData;
                 StringBuilder line = new StringBuilder();
-                line.AppendFormat(String.Format("FFB Size {0}", size));
-                line.AppendFormat(" Cmd:" + String.Format("{0:X08}", (int)FfbData->Command));
-                line.AppendFormat(" ID:" + String.Format("{0:X02}", command));
-                line.AppendFormat(" Size:" + String.Format("{0:D02}", (int)(size - 8)));
+                line.AppendFormat(String.Format("FFB Size {size}"));
+                line.AppendFormat(" Cmd:" + String.Format("{(int)FfbData->Command:X08}"));
+                line.AppendFormat(" ID:" + String.Format("{command:X02}"));
+                line.AppendFormat(" Size:" + String.Format("{(int)(size - 8):D02}"));
                 line.AppendFormat(" -");
                 for (uint i = 0; i < size - 8; i++)
                     line.AppendFormat(String.Format(" {0:X02}", (uint)(bytes[i])));
@@ -343,7 +345,7 @@ namespace blekenbleu.MIDIspace
 //          DumpFrame(data);
             LogFormat("======================================");
 
-        }
+        }	// FfbFunction1()
 
 
 
@@ -408,7 +410,7 @@ namespace blekenbleu.MIDIspace
             }
 
             return stat;
-        }
+        }	// PacketType2Str()
 
         // Convert Effect type to String
         public static bool EffectType2Str(FFBEType Type, out string Str)
@@ -561,20 +563,23 @@ namespace blekenbleu.MIDIspace
                 return (int)inb;
         }
 
-    }
+    }	// class VJoyFFBReceiver
+#endif // FFB
 
     class VJsend
     {
         // Declaring one joystick (Device id 1) and a position structure. 
         static public vJoy joystick;
-        static public vJoy.JoystickState iReport;
+        static public vJoy.JoystickState iState;
+#if FFB
         static public VJoyFFBReceiver FFBReceiver;
-        static public uint id = 1;
+#endif // FFB
+        static private uint id = 1;
 
         static public int StartAndRegisterFFB()
         {
-            // Start FFB
 #if FFB
+            // Start FFB
             if (joystick.IsDeviceFfb(id)) {
 
                 // Register Generic callback function
@@ -592,16 +597,21 @@ namespace blekenbleu.MIDIspace
             return 0;
         }
 
-        static void Init(MIDIio that)
+        private MIDIio M;
+        private static uint count;
+        internal void Init(MIDIio that, uint ID)
         {
+            M = that;
             // Create one joystick object and a position structure.
             joystick = new vJoy();
-            iReport = new vJoy.JoystickState();
+            iState = new vJoy.JoystickState();
+#if FFB
             FFBReceiver = new VJoyFFBReceiver();
+#endif // FFB
 
             // Device ID can only be in the range 1-16
             //          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
-            id = 1; // Convert.ToUInt32(args[0]);
+            id = ID; // Convert.ToUInt32(args[0]);
             if (id <= 0 || id > 16) {
                 SimHub.Logging.Current.Info($"Illegal device ID {id}\nExit!");
                 return;
@@ -609,28 +619,28 @@ namespace blekenbleu.MIDIspace
 
             // Get the driver attributes (Vendor ID, Product ID, Version Number)
             if (!joystick.vJoyEnabled()) {
-                SimHub.Logging.Current.Info("vJoy driver not enabled: Failed Getting vJoy attributes.");
+                SimHub.Logging.Current.Info($"vJoy driver not enabled: Failed Getting vJoy attributes.");
                 return;
             } else
-                SimHub.Logging.Current.Info($"Vendor: {joystick.GetvJoyManufacturerString()}\nProduct :{joystick.GetvJoyProductString()}\nVersion Number:{joystick.GetvJoySerialNumberString()}");
+                M.Log(4, $"Vendor: {joystick.GetvJoyManufacturerString()}\nProduct :{joystick.GetvJoyProductString()}\nVersion Number:{joystick.GetvJoySerialNumberString()}");
 
             // Get the state of the requested device
             VjdStat status = joystick.GetVJDStatus(id);
             switch (status) {
                 case VjdStat.VJD_STAT_OWN:
-                    SimHub.Logging.Current.Info("vJoy Device {0} is already owned by this feeder", id);
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by this feeder");
                     break;
                 case VjdStat.VJD_STAT_FREE:
-                    SimHub.Logging.Current.Info("vJoy Device {0} is free", id);
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is free");
                     break;
                 case VjdStat.VJD_STAT_BUSY:
-                    SimHub.Logging.Current.Info("vJoy Device {0} is already owned by another feeder\nCannot continue", id);
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
                     return;
                 case VjdStat.VJD_STAT_MISS:
-                    SimHub.Logging.Current.Info("vJoy Device {0} is not installed or disabled\nCannot continue", id);
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
                     return;
                 default:
-                    SimHub.Logging.Current.Info("vJoy Device {0} general error\nCannot continue", id);
+                    SimHub.Logging.Current.Info($"vJoy Device {id} general error\nCannot continue");
                     return;
             };
 
@@ -642,42 +652,57 @@ namespace blekenbleu.MIDIspace
             bool AxisRZ = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_RZ);
             // Get the number of buttons and POV Hat switchessupported by this vJoy device
             int nButtons = joystick.GetVJDButtonNumber(id);
+#if POV
             int ContPovNumber = joystick.GetVJDContPovNumber(id);
             int DiscPovNumber = joystick.GetVJDDiscPovNumber(id);
-
             // Print results
-            SimHub.Logging.Current.Info("\nvJoy Device {0} capabilities:", id);
-            SimHub.Logging.Current.Info("Numner of buttons\t\t{0}", nButtons);
-            SimHub.Logging.Current.Info("Numner of Continuous POVs\t{0}", ContPovNumber);
-            SimHub.Logging.Current.Info("Numner of Descrete POVs\t\t{0}", DiscPovNumber);
-            SimHub.Logging.Current.Info("Axis X\t\t{0}", AxisX ? "Yes" : "No");
-            SimHub.Logging.Current.Info("Axis Y\t\t{0}", AxisX ? "Yes" : "No");
-            SimHub.Logging.Current.Info("Axis Z\t\t{0}", AxisX ? "Yes" : "No");
-            SimHub.Logging.Current.Info("Axis Rx\t\t{0}", AxisRX ? "Yes" : "No");
-            SimHub.Logging.Current.Info("Axis Rz\t\t{0}", AxisRZ ? "Yes" : "No");
+            SimHub.Logging.Current.Info($"Number of Continuous POVs\t{ContPovNumber}");
+            SimHub.Logging.Current.Info($"Number of Descrete POVs\t\t{DiscPovNumber}");
+#endif
+            if (M.Log(4, $"\nvJoy Device {id} capabilities:"))
+            {
+                SimHub.Logging.Current.Info($"Number of buttons:\t\t{nButtons}");
+                string s = AxisX ? "Yes" : "No";
+                SimHub.Logging.Current.Info($"Axis X\t\t{s}");
+                s = AxisY ? "Yes" : "No";
+                SimHub.Logging.Current.Info($"Axis Y\t\t{s}");
+                s = AxisZ ? "Yes" : "No";
+                SimHub.Logging.Current.Info($"Axis Z\t\t{s}");
+                s = AxisRX ? "Yes" : "No";
+                SimHub.Logging.Current.Info($"Axis Rx\t\t{s}");
+                s = AxisRZ ? "Yes" : "No";
+                SimHub.Logging.Current.Info($"Axis Rz\t\t{s}");
+            }
 
             // Test if DLL matches the driver
             UInt32 DllVer = 0, DrvVer = 0;
             bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
             if (match)
-                SimHub.Logging.Current.Info("Version of Driver Matches DLL Version ({0:X})", DllVer);
+                M.Log(4, $"Version of Driver Matches DLL Version ({DllVer:X})");
             else SimHub.Logging.Current.Info($"Version of Driver ({DrvVer:X}) does NOT match DLL Version ({DllVer:X})");
 
 
             // Acquire the target
             if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id)))) {
-                SimHub.Logging.Current.Info("Failed to acquire vJoy device number {0}.", id);
+                SimHub.Logging.Current.Info($"Failed to acquire vJoy device number {id}.");
                 return;
             } else
-                SimHub.Logging.Current.Info("Acquired: vJoy device number {0}.", id);
+                M.Log(4, $"Acquired: vJoy device number {id}.");
 
+#if FFB
             StartAndRegisterFFB();
+#endif
+//          SimHub.Logging.Current.Info("\npress enter to stat feeding");
+//          Console.ReadKey(true);
+            count = 0;
 
-            SimHub.Logging.Current.Info("\npress enter to stat feeding");
-            Console.ReadKey(true);
+            // Reset this device to default values
+            joystick.ResetVJD(id);
+    }		// Init()
 
+    internal void Run()
+    {
             int X, Y, Z, ZR, XR;
-            uint count = 0;
             long maxval = 0;
 
             X = 20;
@@ -690,11 +715,9 @@ namespace blekenbleu.MIDIspace
 
 #if ROBUST
             bool res;
-            // Reset this device to default values
-            joystick.ResetVJD(id);
 
             // Feed the device in endless loop
-            while (true) {
+//          while (true) {
                 // Set position of 4 axes
                 res = joystick.SetAxis(X, id, HID_USAGES.HID_USAGE_X);
                 res = joystick.SetAxis(Y, id, HID_USAGES.HID_USAGE_Y);
@@ -706,6 +729,7 @@ namespace blekenbleu.MIDIspace
                 res = joystick.SetBtn(true, id, count / 50);
                 res = joystick.SetBtn(false, id, 1 + count / 50);
 
+#if POV
                 // If Continuous POV hat switches installed - make them go round
                 // For high values - put the switches in neutral state
                 if (ContPovNumber>0) {
@@ -737,8 +761,8 @@ namespace blekenbleu.MIDIspace
                         joystick.SetDiscPov(-1, id, 4);
                     };
                 };
-
                 System.Threading.Thread.Sleep(20);
+ #endif
                 X += 150; if (X > maxval) X = 0;
                 Y += 250; if (Y > maxval) Y = 0;
                 Z += 350; if (Z > maxval) Z = 0;
@@ -749,10 +773,15 @@ namespace blekenbleu.MIDIspace
                 if (count > 640)
                     count = 0;
 
-            } // While (Robust)
+//          } // While (Robust)
 
 #endif // ROBUST
 
-        } // Init
+        } // Run()
+
+        internal void End()
+        {
+            joystick.RelinquishVJD(id);
+        }
     } // class VJsend
 } // namespace FeederDemoCS
