@@ -15,18 +15,12 @@
  ;	Here starts and endless loop that feedes data into the virtual device
  ;
  ;-----------------------------------------------------------------------------------------------------*/
-#define ROBUST
 //#define FFB
-//#define POV
 //#define DUMP_FFB_FRAME
 
 using System;
-//using System.Collections.Generic;
 using System.Runtime.InteropServices;
-//using System.Text;
-
-// Don't forget to add this
-using vJoyInterfaceWrap;
+using vJoyInterfaceWrap;		// Don't forget to add this
 
 //namespace FeederDemoCS
 namespace blekenbleu.MIDIspace
@@ -568,17 +562,14 @@ namespace blekenbleu.MIDIspace
 
     class VJsend
     {
-        // Declaring one joystick (Device id 1) and a position structure. 
-        static public vJoy joystick;
+        private uint id;
+        static public vJoy joystick;		// Declare one joystick (Device id 1) and a position structure. 
         static public vJoy.JoystickState iState;
 #if FFB
         static public VJoyFFBReceiver FFBReceiver;
-#endif // FFB
-        static private uint id = 1;
 
         static public int StartAndRegisterFFB()
         {
-#if FFB
             // Start FFB
             if (joystick.IsDeviceFfb(id)) {
 
@@ -593,24 +584,26 @@ namespace blekenbleu.MIDIspace
                 // loosing/desynchronizing FFB packets from the third party application.
                 FFBReceiver.RegisterBaseCallback(joystick, id);
             }
-#endif // FFB
             return 0;
         }
+#endif // FFB
 
         private MIDIio M;
-        private static uint count;
+        private uint count;
         private long maxval;
         private int X, Y, Z, ZR, XR;
+        private uint nButtons;
 
         internal void Init(MIDIio that, uint ID)
         {
             M = that;
-            maxval = 0;
+            id = ID;	// Device ID can only be in the range 1-16
             X = 20;
             Y = 30;
             Z = 40;
             XR = 60;
             ZR = 80;
+            maxval = 0;
 
             // Create one joystick object and a position structure.
             joystick = new vJoy();
@@ -619,11 +612,8 @@ namespace blekenbleu.MIDIspace
             FFBReceiver = new VJoyFFBReceiver();
 #endif // FFB
 
-            // Device ID can only be in the range 1-16
-            //          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
-            id = ID; // Convert.ToUInt32(args[0]);
             if (id <= 0 || id > 16) {
-                SimHub.Logging.Current.Info($"Illegal device ID {id}\nExit!");
+                SimHub.Logging.Current.Info($"Invalid device ID;  must be 0 < {id} <= 16");
                 return;
             }
 
@@ -660,15 +650,9 @@ namespace blekenbleu.MIDIspace
             bool AxisZ = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_Z);
             bool AxisRX = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_RX);
             bool AxisRZ = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_RZ);
+
             // Get the number of buttons and POV Hat switchessupported by this vJoy device
-            int nButtons = joystick.GetVJDButtonNumber(id);
-#if POV
-            int ContPovNumber = joystick.GetVJDContPovNumber(id);
-            int DiscPovNumber = joystick.GetVJDDiscPovNumber(id);
-            // Print results
-            SimHub.Logging.Current.Info($"Number of Continuous POVs\t{ContPovNumber}");
-            SimHub.Logging.Current.Info($"Number of Descrete POVs\t\t{DiscPovNumber}");
-#endif
+            nButtons = (uint)joystick.GetVJDButtonNumber(id);
             if (M.Log(4, $"\nvJoy Device {id} capabilities:"))
             {
                 SimHub.Logging.Current.Info($"Number of buttons:\t\t{nButtons}");
@@ -688,104 +672,62 @@ namespace blekenbleu.MIDIspace
             UInt32 DllVer = 0, DrvVer = 0;
             bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
             if (match)
-                M.Log(4, $"Version of Driver Matches DLL Version ({DllVer:X})");
-            else SimHub.Logging.Current.Info($"Version of Driver ({DrvVer:X}) does NOT match DLL Version ({DllVer:X})");
+                M.Log(4, $"Driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
+            else SimHub.Logging.Current.Info($"Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
 
 
             // Acquire the target
-            if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id)))) {
+            if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
+            {
                 SimHub.Logging.Current.Info($"Failed to acquire vJoy device number {id}.");
                 return;
-            } else
-                M.Log(4, $"Acquired: vJoy device number {id}.");
-
+            }
+            else M.Log(4, $"Acquired: vJoy device number {id}.");
 #if FFB
             StartAndRegisterFFB();
 #endif
-//          SimHub.Logging.Current.Info("\npress enter to stat feeding");
-//          Console.ReadKey(true);
             count = 0;
             joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
 
             // Reset this device to default values
             joystick.ResetVJD(id);
-    }		// Init()
+        }		// Init()
 
-    internal void Run()
-    {
-                count++;
-        if (0 < (255 & count))
-            return;
-        M.Log(4, $"VJd.Run(): count = {count}");
-                if (count > 640)
-                    count = 0;
+        internal void Run()
+        {
+            if (0 == maxval)
+                return;
 
+            count++;
+            if (0 < (31 & count))
+                return;
+            M.Log(8, $"VJd.Run(): count = {count}");
 
-#if ROBUST
-            bool res;
 
             // Feed the device in endless loop
-//          while (true) {
-                // Set position of 4 axes
-                res = joystick.SetAxis(X, id, HID_USAGES.HID_USAGE_X);
-                res = joystick.SetAxis(Y, id, HID_USAGES.HID_USAGE_Y);
-                res = joystick.SetAxis(Z, id, HID_USAGES.HID_USAGE_Z);
-                res = joystick.SetAxis(XR, id, HID_USAGES.HID_USAGE_RX);
-                res = joystick.SetAxis(ZR, id, HID_USAGES.HID_USAGE_RZ);
+            // Set position of 4 axes
+            joystick.SetAxis(X, id, HID_USAGES.HID_USAGE_X);
+            joystick.SetAxis(Y, id, HID_USAGES.HID_USAGE_Y);
+            joystick.SetAxis(Z, id, HID_USAGES.HID_USAGE_Z);
+            joystick.SetAxis(XR, id, HID_USAGES.HID_USAGE_RX);
+            joystick.SetAxis(ZR, id, HID_USAGES.HID_USAGE_RZ);
 
-                // Press/Release Buttons
-                res = joystick.SetBtn(true, id, count / 50);
-                res = joystick.SetBtn(false, id, 1 + count / 50);
+            X += 150; if (X > maxval) X = 0;
+            Y += 250; if (Y > maxval) Y = 0;
+            Z += 350; if (Z > maxval) Z = 0;
+            XR += 220; if (XR > maxval) XR = 0;
+            ZR += 200; if (ZR > maxval) ZR = 0;
 
-#if POV
-                // If Continuous POV hat switches installed - make them go round
-                // For high values - put the switches in neutral state
-                if (ContPovNumber>0) {
-                    if ((count * 70) < 30000) {
-                        res = joystick.SetContPov(((int)count * 70), id, 1);
-                        res = joystick.SetContPov(((int)count * 70) + 2000, id, 2);
-                        res = joystick.SetContPov(((int)count * 70) + 4000, id, 3);
-                        res = joystick.SetContPov(((int)count * 70) + 6000, id, 4);
-                    } else {
-                        res = joystick.SetContPov(-1, id, 1);
-                        res = joystick.SetContPov(-1, id, 2);
-                        res = joystick.SetContPov(-1, id, 3);
-                        res = joystick.SetContPov(-1, id, 4);
-                    };
-                };
-
-                // If Discrete POV hat switches installed - make them go round
-                // From time to time - put the switches in neutral state
-                if (DiscPovNumber>0) {
-                    if (count < 550) {
-                        joystick.SetDiscPov((((int)count / 20) + 0) % 4, id, 1);
-                        joystick.SetDiscPov((((int)count / 20) + 1) % 4, id, 2);
-                        joystick.SetDiscPov((((int)count / 20) + 2) % 4, id, 3);
-                        joystick.SetDiscPov((((int)count / 20) + 3) % 4, id, 4);
-                    } else {
-                        joystick.SetDiscPov(-1, id, 1);
-                        joystick.SetDiscPov(-1, id, 2);
-                        joystick.SetDiscPov(-1, id, 3);
-                        joystick.SetDiscPov(-1, id, 4);
-                    };
-                };
-                System.Threading.Thread.Sleep(20);
- #endif
-                X += 150; if (X > maxval) X = 0;
-                Y += 250; if (Y > maxval) Y = 0;
-                Z += 350; if (Z > maxval) Z = 0;
-                XR += 220; if (XR > maxval) XR = 0;
-                ZR += 200; if (ZR > maxval) ZR = 0;
-
-//          } // While (Robust)
-
-#endif // ROBUST
-
+            // Press/Release Buttons
+            joystick.SetBtn(true, id, (count>>5) % nButtons );
+            joystick.SetBtn(false, id, 1 + ((count>>5) % nButtons));
+            if (count > 640)
+                count = 0;
         } // Run()
 
         internal void End()
         {
             joystick.RelinquishVJD(id);
         }
-    } // class VJsend
-} // namespace FeederDemoCS
+    }		// class VJsend
+}		// namespace FeederDemoCS
