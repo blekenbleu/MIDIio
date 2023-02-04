@@ -599,9 +599,19 @@ namespace blekenbleu.MIDIspace
 
         private MIDIio M;
         private static uint count;
+        private long maxval;
+        private int X, Y, Z, ZR, XR;
+
         internal void Init(MIDIio that, uint ID)
         {
             M = that;
+            maxval = 0;
+            X = 20;
+            Y = 30;
+            Z = 40;
+            XR = 60;
+            ZR = 80;
+
             // Create one joystick object and a position structure.
             joystick = new vJoy();
             iState = new vJoy.JoystickState();
@@ -695,6 +705,7 @@ namespace blekenbleu.MIDIspace
 //          SimHub.Logging.Current.Info("\npress enter to stat feeding");
 //          Console.ReadKey(true);
             count = 0;
+            joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
 
             // Reset this device to default values
             joystick.ResetVJD(id);
@@ -702,16 +713,13 @@ namespace blekenbleu.MIDIspace
 
     internal void Run()
     {
-            int X, Y, Z, ZR, XR;
-            long maxval = 0;
+                count++;
+        if (0 < (255 & count))
+            return;
+        M.Log(4, $"VJd.Run(): count = {count}");
+                if (count > 640)
+                    count = 0;
 
-            X = 20;
-            Y = 30;
-            Z = 40;
-            XR = 60;
-            ZR = 80;
-
-            joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
 
 #if ROBUST
             bool res;
@@ -768,10 +776,6 @@ namespace blekenbleu.MIDIspace
                 Z += 350; if (Z > maxval) Z = 0;
                 XR += 220; if (XR > maxval) XR = 0;
                 ZR += 200; if (ZR > maxval) ZR = 0;
-                count++;
-
-                if (count > 640)
-                    count = 0;
 
 //          } // While (Robust)
 

@@ -57,6 +57,7 @@ namespace blekenbleu.MIDIspace
 
             // Send my property messages anytime (echo)
             DoSendCC(pluginManager, 0, Properties.MySendCt);
+            VJD.Run();
         }
 
         /// <summary>
@@ -68,6 +69,7 @@ namespace blekenbleu.MIDIspace
         {
             Reader.End();
             Outer.End();
+            VJD.End();
             Properties.End(this);
             this.SaveCommonSettings("GeneralSettings", Settings);
         }
