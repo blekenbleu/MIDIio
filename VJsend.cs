@@ -30,7 +30,7 @@ using vJoyInterfaceWrap;
 //namespace FeederDemoCS
 namespace blekenbleu.MIDIspace
 {
-    public class vJoyFFBReceiver
+    public class VJoyFFBReceiver
     {
         protected bool isRegistered = false;
         protected vJoy Joystick;
@@ -115,7 +115,7 @@ namespace blekenbleu.MIDIspace
         {
             // Packet Header
             //copy ffb packet to managed structure
-            InternalFfbPacket packet = (InternalFfbPacket)Marshal.PtrToStructure(data, typeof(InternalFfbPacket));
+//          InternalFfbPacket packet = (InternalFfbPacket)Marshal.PtrToStructure(data, typeof(InternalFfbPacket));
 
             // Packet Header
             LogFormat("============= FFB Packet =============");
@@ -340,7 +340,7 @@ namespace blekenbleu.MIDIspace
             #endregion
 
 
-            DumpFrame(data);
+//          DumpFrame(data);
             LogFormat("======================================");
 
         }
@@ -538,7 +538,7 @@ namespace blekenbleu.MIDIspace
         {
             int tmp;
             byte inv = (byte)~inb;
-            bool isNeg = ((inb >> 7) != 0 ? true : false);
+            bool isNeg = ((inb >> 7) != 0);
             if (isNeg) {
                 tmp = (int)(inv);
                 tmp = -1 * tmp;
@@ -552,7 +552,7 @@ namespace blekenbleu.MIDIspace
         {
             int tmp;
             int inv = (int)~inb + 1;
-            bool isNeg = ((inb >> 15) != 0 ? true : false);
+            bool isNeg = ((inb >> 15) != 0);
             if (isNeg) {
                 tmp = (int)(inv);
                 tmp = -1 * tmp;
@@ -568,7 +568,7 @@ namespace blekenbleu.MIDIspace
         // Declaring one joystick (Device id 1) and a position structure. 
         static public vJoy joystick;
         static public vJoy.JoystickState iReport;
-        static public vJoyFFBReceiver FFBReceiver;
+        static public VJoyFFBReceiver FFBReceiver;
         static public uint id = 1;
 
         static public int StartAndRegisterFFB()
@@ -597,11 +597,11 @@ namespace blekenbleu.MIDIspace
             // Create one joystick object and a position structure.
             joystick = new vJoy();
             iReport = new vJoy.JoystickState();
-            FFBReceiver = new vJoyFFBReceiver();
+            FFBReceiver = new VJoyFFBReceiver();
 
             // Device ID can only be in the range 1-16
-//          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
-                id = 1 // Convert.ToUInt32(args[0]);
+            //          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
+            id = 1; // Convert.ToUInt32(args[0]);
             if (id <= 0 || id > 16) {
                 SimHub.Logging.Current.Info("Illegal device ID {0}\nExit!", id);
                 return;
