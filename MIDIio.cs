@@ -16,11 +16,11 @@ namespace blekenbleu.MIDIspace
         internal string my = "MIDIio.";					// PluginName + '.'
         internal MIDIioSettings Settings;
         internal CCProperties Properties;
-        internal bool DoEcho = false;
-
+        internal VJsend VJD;
         internal INdrywet Reader;
         internal OUTdrywet Outer;
         internal byte Level = 0;
+        internal bool DoEcho = false;
 
         internal void Info(string str)
         {
@@ -107,6 +107,9 @@ namespace blekenbleu.MIDIspace
 
             Outer = new OUTdrywet();
             Outer.Init(this, output, Properties.SendCt);
+
+            VJD = new VJsend();
+            VJD.Init(this, 1);
 
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
             if (0 < input.Length)
