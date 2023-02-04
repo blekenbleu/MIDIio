@@ -1,20 +1,20 @@
-﻿/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// This project is ripped from the original simple C# vJoy feeder
-// Since MIDIio will generally handle only a single button or axis at a time, EFFICIENT would not be.
-// The ROBUST section demonstrate the usage of functions that are easy and safe to use but are less efficient
-//
-// Functionality:
-//	The program starts with creating one joystick object. 
-//	Then it fetches the device id from the command-line and makes sure that it is within range
-//	After testing that the driver is enabled it gets information about the driver
-//	Gets information about the specified virtual device
-//	This feeder uses only a few axes. It checks their existence and 
-//	checks the number of buttons and POV Hat switches.
-//	Then the feeder acquires the virtual device
-//	Here starts and endless loop that feedes data into the virtual device
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/*
+ ;
+ ; This project is ripped from vJoy's original simple C# feeder app
+ ; Since MIDIio will generally handle only a single button or axis at a time, EFFICIENT would not be.
+ ; ROBUST employs functions that are easy and safe to use
+ ;
+ ; Functionality:
+ ;	The program starts with creating one joystick object. 
+ ;	Then it fetches the device id from the command-line and makes sure that it is within range
+ ;	After testing that the driver is enabled it gets information about the driver
+ ;	Gets information about the specified virtual device
+ ;	This feeder uses only a few axes. It checks their existence and 
+ ;	checks the number of buttons and POV Hat switches.
+ ;	Then the feeder acquires the virtual device
+ ;	Here starts and endless loop that feedes data into the virtual device
+ ;
+ ;-----------------------------------------------------------------------------------------------------*/
 #define ROBUST
 //#define FFB
 //#define DUMP_FFB_FRAME
@@ -603,7 +603,7 @@ namespace blekenbleu.MIDIspace
             //          if (args.Length>0 && !String.IsNullOrEmpty(args[0]))
             id = 1; // Convert.ToUInt32(args[0]);
             if (id <= 0 || id > 16) {
-                SimHub.Logging.Current.Info("Illegal device ID {0}\nExit!", id);
+                SimHub.Logging.Current.Info($"Illegal device ID {id}\nExit!");
                 return;
             }
 
@@ -612,7 +612,7 @@ namespace blekenbleu.MIDIspace
                 SimHub.Logging.Current.Info("vJoy driver not enabled: Failed Getting vJoy attributes.");
                 return;
             } else
-                SimHub.Logging.Current.Info("Vendor: {0}\nProduct :{1}\nVersion Number:{2}", joystick.GetvJoyManufacturerString(), joystick.GetvJoyProductString(), joystick.GetvJoySerialNumberString());
+                SimHub.Logging.Current.Info($"Vendor: {joystick.GetvJoyManufacturerString()}\nProduct :{joystick.GetvJoyProductString()}\nVersion Number:{joystick.GetvJoySerialNumberString()}");
 
             // Get the state of the requested device
             VjdStat status = joystick.GetVJDStatus(id);
@@ -661,8 +661,7 @@ namespace blekenbleu.MIDIspace
             bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
             if (match)
                 SimHub.Logging.Current.Info("Version of Driver Matches DLL Version ({0:X})", DllVer);
-            else
-                SimHub.Logging.Current.Info("Version of Driver ({0:X}) does NOT match DLL Version ({1:X})", DrvVer, DllVer);
+            else SimHub.Logging.Current.Info($"Version of Driver ({DrvVer:X}) does NOT match DLL Version ({DllVer:X})");
 
 
             // Acquire the target
