@@ -1,16 +1,13 @@
 ### blekenbleu.MIDIio SimHub plugin
- This [SimHub](https://github.com/SHWotever/SimHub) plugin sends up to 8 and reads from a single device up to 8 each configured Button, Slider and Knob  
- MIDI [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
+ From one MIDI device, this [SimHub](https://github.com/SHWotever/SimHub) plugin sends up to 8 and reads up to 8 each configured Button, Slider and Knob  
+ [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
  for e.g. on-the-fly tweaking of suitably customized **ShakeIt Bass Shaker** effects.  
-Unconfigured CC messages received dynamically generate new properties, or forward them to a target Device.  
-C# code evolved from SimHub's `User.PluginSdkDemo`,
-using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi) (SimHub already did).  
+Unconfigured CC messages received dynamically generate new properties or are forwarded to a target Device.  
+MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
+using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
 MIDIio also generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games, reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
-Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are values from configured SimHub properties from e.g. **ShakeIt Bass Shaker** effects.
-Unconfigured CC messages dynamically generate new properties or, in echo mode, can go to configured devices.   
-C# code evolved from SimHub's `User.PluginSdkDemo`,
-using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (SimHub already did).
+Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are values from configured SimHub properties, e.g. **ShakeIt Bass Shaker** effects.
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
