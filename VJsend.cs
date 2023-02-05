@@ -588,22 +588,22 @@ namespace blekenbleu.MIDIspace
         }
 #endif // FFB
 
+        private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y, HID_USAGES.HID_USAGE_Z, HID_USAGES.HID_USAGE_RX, HID_USAGES.HID_USAGE_RY, 
+                                   HID_USAGES.HID_USAGE_RZ, HID_USAGES.HID_USAGE_SL0, HID_USAGES.HID_USAGE_SL1, HID_USAGES.HID_USAGE_WHL, HID_USAGES.HID_USAGE_POV };
         private MIDIio M;
-        private uint count;
         private long maxval;
-        private int X, Y, Z, ZR, XR;
-        private uint nButtons;
+        private uint count, nButtons, nAxes;
+        private HID_USAGES[] Usage;
+        private int[] AxVal;
 
         internal void Init(MIDIio that, uint ID)
         {
             M = that;
             id = ID;	// Device ID can only be in the range 1-16
-            X = 20;
-            Y = 30;
-            Z = 40;
-            XR = 60;
-            ZR = 80;
+            AxVal = new int[usages.Length];
+            nAxes = 0;
             maxval = 0;
+            Usage = new HID_USAGES[usages.Length];
 
             // Create one joystick object and a position structure.
             joystick = new vJoy();
@@ -643,30 +643,18 @@ namespace blekenbleu.MIDIspace
                     SimHub.Logging.Current.Info($"vJoy Device {id} general error\nCannot continue");
                     return;
             };
-
-            // Check which axes are supported
-            bool AxisX = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_X);
-            bool AxisY = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_Y);
-            bool AxisZ = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_Z);
-            bool AxisRX = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_RX);
-            bool AxisRZ = joystick.GetVJDAxisExist(id, HID_USAGES.HID_USAGE_RZ);
-
-            // Get the number of buttons and POV Hat switchessupported by this vJoy device
+  
+            // Get button count and count axes for this vJoy device
             nButtons = (uint)joystick.GetVJDButtonNumber(id);
-            if (M.Log(4, $"\nvJoy Device {id} capabilities:"))
+            // GetVJDAxisExist(), () respond only to HID_USAGES Enums, not the equivalent integers..?
+            for (uint i = nAxes = 0; i < usages.Length; i++)
             {
-                SimHub.Logging.Current.Info($"Number of buttons:\t\t{nButtons}");
-                string s = AxisX ? "Yes" : "No";
-                SimHub.Logging.Current.Info($"Axis X\t\t{s}");
-                s = AxisY ? "Yes" : "No";
-                SimHub.Logging.Current.Info($"Axis Y\t\t{s}");
-                s = AxisZ ? "Yes" : "No";
-                SimHub.Logging.Current.Info($"Axis Z\t\t{s}");
-                s = AxisRX ? "Yes" : "No";
-                SimHub.Logging.Current.Info($"Axis Rx\t\t{s}");
-                s = AxisRZ ? "Yes" : "No";
-                SimHub.Logging.Current.Info($"Axis Rz\t\t{s}");
+                AxVal[i] = 0;
+                if (joystick.GetVJDAxisExist(id, usages[i]))	// which axes are supported?
+                    Usage[nAxes++] = usages[i];
             }
+            if (M.Log(4, $"\nvJoy Device {id} capabilities:"))
+                SimHub.Logging.Current.Info($"Buttons:  {nButtons};  Axes: {nAxes}");
 
             // Test if DLL matches the driver
             UInt32 DllVer = 0, DrvVer = 0;
@@ -674,7 +662,6 @@ namespace blekenbleu.MIDIspace
             if (match)
                 M.Log(4, $"Driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
             else SimHub.Logging.Current.Info($"Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
-
 
             // Acquire the target
             if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
@@ -691,10 +678,12 @@ namespace blekenbleu.MIDIspace
 
             // Reset this device to default values
             joystick.ResetVJD(id);
+
         }		// Init()
 
         internal void Run()
         {
+            int[] inc = { 150, 250, 350, 220, 200, 180, 165, 300, 330 };
             if (0 == maxval)
                 return;
 
@@ -705,24 +694,20 @@ namespace blekenbleu.MIDIspace
 
 
             // Feed the device in endless loop
-            // Set position of 4 axes
-            joystick.SetAxis(X, id, HID_USAGES.HID_USAGE_X);
-            joystick.SetAxis(Y, id, HID_USAGES.HID_USAGE_Y);
-            joystick.SetAxis(Z, id, HID_USAGES.HID_USAGE_Z);
-            joystick.SetAxis(XR, id, HID_USAGES.HID_USAGE_RX);
-            joystick.SetAxis(ZR, id, HID_USAGES.HID_USAGE_RZ);
-
-            X += 150; if (X > maxval) X = 0;
-            Y += 250; if (Y > maxval) Y = 0;
-            Z += 350; if (Z > maxval) Z = 0;
-            XR += 220; if (XR > maxval) XR = 0;
-            ZR += 200; if (ZR > maxval) ZR = 0;
+            // Set axes positions
+            for (int i = 0; i < nAxes; i++)
+            {
+                AxVal[i] += inc[i];
+                if (maxval < AxVal[i])
+                    AxVal[i] = 0;
+                joystick.SetAxis(AxVal[i], id, Usage[i]);    // HID_USAGES Enums
+            }
 
             // Press/Release Buttons
-            joystick.SetBtn(true, id, (count>>5) % nButtons );
-            joystick.SetBtn(false, id, 1 + ((count>>5) % nButtons));
-            if (count > 640)
-                count = 0;
+            uint set = 1 + (count >> 5) % nButtons, unset = 1 + (1 + (count >> 5)) % nButtons;
+            M.Log(8, $"VJd.Run(): set {set};  unset {unset}");
+            joystick.SetBtn(true, id, set);			// 1 <= nButtons <= 32
+            joystick.SetBtn(false, id, unset);
         } // Run()
 
         internal void End()
