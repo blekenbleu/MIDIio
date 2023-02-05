@@ -1,18 +1,14 @@
 ﻿/*
- ;
- ; This project is ripped from vJoy's original simple C# feeder app
- ; Since MIDIio will generally handle only a single button or axis at a time, EFFICIENT would not be.
- ; ROBUST employs functions that are easy and safe to use
+ ; This class is ripped from vJoy's original simple C# feeder app
+ ; MIDIio will generally handle only a single button or axis at a time;  EFFICIENT would not be.
  ;
  ; Functionality:
- ;	The program starts with creating one joystick object.
- ;	Then it fetches the device id from the command-line and makes sure that it is within range
- ;	After testing that the driver is enabled it gets information about the driver
- ;	Gets information about the specified virtual device
- ;	This feeder uses only a few axes. It checks their existence and
- ;	checks the number of buttons and POV Hat switches.
- ;	Then the feeder acquires the virtual device
- ;	Here starts and endless loop that feedes data into the virtual device
+ ;	Init() checks for valid device 0 < id <= 16, then creates a joystick object.
+ ;	After testing that the driver is enabled,
+ ;	Init() gets and reports information about it and specified virtual device
+ ;	Init() then checks axes existence and button count, then acquires and resets the virtual device.
+ ;
+ ;	Run() exercises available buttons and axes of that virtual device.
  ;
  ;-----------------------------------------------------------------------------------------------------*/
 //#define FFB
@@ -40,15 +36,53 @@ namespace blekenbleu.MIDIspace
         internal void Init(MIDIio that, uint ID)
         {
             M = that;
-            id = ID;	// Device ID can only be in the range 1-16
-            AxVal = new int[usages.Length];
             nAxes = 0;
             maxval = 0;
-            Usage = new HID_USAGES[usages.Length];
+
+            if (ID <= 0 || ID > 16) {
+                SimHub.Logging.Current.Info($"Invalid device ID;  must be 0 < {ID} <= 16");
+                return;
+            }
+            id = ID;	// Device ID can only be in the range 1-16
 
             // Create one joystick object and a position structure.
             joystick = new vJoy();
             iState = new vJoy.JoystickState();
+
+            // Get the driver attributes (Vendor ID, Product ID, Version Number)
+            if (!joystick.vJoyEnabled()) {
+                SimHub.Logging.Current.Info($"vJoy driver not enabled: Failed Getting vJoy attributes.");
+                return;
+            } else M.Log(4,
+              $"Product: {joystick.GetvJoyProductString()}\nVersion: {joystick.GetvJoySerialNumberString()}\nVendor: {joystick.GetvJoyManufacturerString()}");
+
+            // Test if DLL matches the driver
+            UInt32 DllVer = 0, DrvVer = 0;
+            bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
+            if (match)
+                M.Log(4, $"MIDIio.VJsend.Init():  vJoy driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
+            else SimHub.Logging.Current.Info($"MIDIio.VJsend.Init():  Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
+
+            // Get the state of the requested device
+            VjdStat status = joystick.GetVJDStatus(id);
+            switch (status) {
+                case VjdStat.VJD_STAT_OWN:
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by this feeder");
+                    break;
+                case VjdStat.VJD_STAT_FREE:
+                    M.Log(4, $"MIDIio.VJsend.Init():  vJoy Device {id} is available, with capabilities:");
+                    break;
+                case VjdStat.VJD_STAT_BUSY:
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
+                    return;
+                case VjdStat.VJD_STAT_MISS:
+                    SimHub.Logging.Current.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
+                    return;
+                default:
+                    SimHub.Logging.Current.Info($"vJoy Device {id} general error\nCannot continue");
+                    return;
+            };
+ 
 #if FFB
             FFBReceiver = new VJoyFFBReceiver();
             if (joystick.IsDeviceFfb(id)) {	// Start FFB
@@ -65,41 +99,12 @@ namespace blekenbleu.MIDIspace
                 FFBReceiver.RegisterBaseCallback(joystick, id);
             }
 #endif // FFB
-            if (id <= 0 || id > 16) {
-                SimHub.Logging.Current.Info($"Invalid device ID;  must be 0 < {id} <= 16");
-                return;
-            }
+            Usage = new HID_USAGES[usages.Length];
+            AxVal = new int[usages.Length];
 
-            // Get the driver attributes (Vendor ID, Product ID, Version Number)
-            if (!joystick.vJoyEnabled()) {
-                SimHub.Logging.Current.Info($"vJoy driver not enabled: Failed Getting vJoy attributes.");
-                return;
-            } else
-                M.Log(4, $"Vendor: {joystick.GetvJoyManufacturerString()}\nProduct :{joystick.GetvJoyProductString()}\nVersion Number:{joystick.GetvJoySerialNumberString()}");
-
-            // Get the state of the requested device
-            VjdStat status = joystick.GetVJDStatus(id);
-            switch (status) {
-                case VjdStat.VJD_STAT_OWN:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by this feeder");
-                    break;
-                case VjdStat.VJD_STAT_FREE:
-                    M.Log(4, $"vJoy Device {id} is available, with capabilities:");
-                    break;
-                case VjdStat.VJD_STAT_BUSY:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
-                    return;
-                case VjdStat.VJD_STAT_MISS:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
-                    return;
-                default:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} general error\nCannot continue");
-                    return;
-            };
- 
-            // Get button count and count axes for this vJoy device
+            // Get button count, and count axes for this vJoy device
             nButtons = (uint)joystick.GetVJDButtonNumber(id);
-            // GetVJDAxisExist(), () respond only to HID_USAGES Enums, not the equivalent integers..?
+            // GetVJDAxisExist() responds only to HID_USAGES Enums, not equivalent integers..?
             string got = "";
             for (uint i = nAxes = 0; i < usages.Length; i++)
             {
@@ -115,28 +120,21 @@ namespace blekenbleu.MIDIspace
             }
             M.Log(4, $"  {nButtons} Buttons, {nAxes} Axes{got}");
 
-            // Test if DLL matches the driver
-            UInt32 DllVer = 0, DrvVer = 0;
-            bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
-            if (match)
-                M.Log(4, $"Driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
-            else SimHub.Logging.Current.Info($"Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
-
+            joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
             // Acquire the target
             if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
             {
                 SimHub.Logging.Current.Info($"Failed to acquire vJoy device number {id}.");
                 return;
             }
-            else M.Log(4, $"Acquired: vJoy device number {id}.");
+            else M.Log(4, $"MIDIio.VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
 #if FFB
             StartAndRegisterFFB();
 #endif
-            count = 0;
-            joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
-
             // Reset this device to default values
             joystick.ResetVJD(id);
+
+            count = 0;
         }		// Init()
 
         internal void Run()
