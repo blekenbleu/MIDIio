@@ -1,7 +1,7 @@
 ### blekenbleu.MIDIio SimHub plugin
  For one MIDI device, this [SimHub](https://github.com/SHWotever/SimHub) plugin sends up to 8 and reads up to 8 each configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
- for e.g. on-the-fly tweaking of suitably customized **ShakeIt Bass Shaker** effects.  
+ to e.g. on-the-fly tweak suitably customized **ShakeIt Bass Shaker** effects.  
 Unconfigured CC messages received dynamically generate new properties or are forwarded to a target Device.  
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
