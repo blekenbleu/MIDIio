@@ -19,7 +19,7 @@ namespace blekenbleu.MIDIspace
         internal VJsend VJD;
         internal INdrywet Reader;
         internal OUTdrywet Outer;
-        internal byte Level = 0;
+        private byte Level = 0;
         internal bool DoEcho = false;
 
         internal bool Info(string str)
@@ -54,11 +54,11 @@ namespace blekenbleu.MIDIspace
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
-                DoSendCC(pluginManager, Properties.MySendCt, Properties.SendCt);
+                DoSend(pluginManager, Properties.MySendCt, Properties.SendCt);
 
             // Send my property messages anytime (echo)
-            DoSendCC(pluginManager, 0, Properties.MySendCt);
-            VJD.Run();
+            DoSend(pluginManager, 0, Properties.MySendCt);
+//          VJD.Run();
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace blekenbleu.MIDIspace
             return Properties.SetProp(this, CCnumber, value);
         }
 
-        private void DoSendCC(PluginManager pluginManager, byte b, byte to)
+        private void DoSend(PluginManager pluginManager, byte b, byte to)
         {
             for ( ; b < to; b++)
             {
@@ -188,8 +188,15 @@ namespace blekenbleu.MIDIspace
                     byte value = (byte)(0.5 + Convert.ToDouble(send));
 
                     value &= 0x7F;
-                    if (Settings.Sent[cc] != value)			// send only changed values
-                        Outer.SendCCval(cc, Settings.Sent[cc] = value);	// DoSendCC()
+                    if (Settings.Sent[cc] != value) {			// send only changed values
+                        Settings.Sent[cc] = value;
+                        if (Properties.VJax == (Properties.VJax & Properties.Which[b]))
+                            VJD.Axis(Properties.Vmap[b], value);
+                        else if (Properties.VJbut == (Properties.VJbut & Properties.Which[b]))
+                            VJD.Button(Properties.Vmap[b], value);
+                        else if (Properties.CC == (Properties.CC & Properties.Which[b]))
+			    Outer.SendCCval(cc, value);	// DoSendCC()
+	            }
                 }
             }
         }
