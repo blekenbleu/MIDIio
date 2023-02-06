@@ -21,8 +21,8 @@ namespace blekenbleu.MIDIspace
 {
     class VJsend
     {
-        internal vJoy joystick;		// Declare one joystick (Device id 1) and a position structure.
-        private vJoy.JoystickState iState;
+        internal vJoy joystick;			// Declare one joystick (Device id 1) and a position structure.
+//      internal vJoy.JoystickState iState;	// for EFFICIENT usage; updating the iState structure for multiple buttons and axes
         private uint id;
         private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y,
                                    HID_USAGES.HID_USAGE_Z, HID_USAGES.HID_USAGE_RX, HID_USAGES.HID_USAGE_RY,
@@ -48,7 +48,7 @@ namespace blekenbleu.MIDIspace
 
             // Create one joystick object and a position structure.
             joystick = new vJoy();
-            iState = new vJoy.JoystickState();
+//          iState = new vJoy.JoystickState();
 
             // Get the driver attributes (Vendor ID, Product ID, Version Number)
             if (!joystick.vJoyEnabled())
@@ -134,6 +134,7 @@ namespace blekenbleu.MIDIspace
             joystick.ResetVJD(id);
 
             count = 0;
+	    return true;
         }		// Init()
 
         internal void Run()
