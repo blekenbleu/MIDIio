@@ -7,40 +7,43 @@ Operation is controlled by [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.in
 Search for `midi` in **SimHub Available properties**:
 
 - `ExternalScript.MIDIout`:&nbsp;
-   Case-sensitive name of [MIDI receiver](https://freevstplugins.net/category/midi-vst/controllers/)
+   Case-sensitive name of [MIDI target](https://freevstplugins.net/category/midi-vst/controllers/)
 
 - `ExternalScript.MIDIin`:&nbsp;
   Case-sensitive name of [MIDI source](https://en.wikipedia.org/wiki/MIDI_controller)
 
-- `DataCorePlugin.ExternalScript.MIDIbuttons`, `MIDIknobs`, `MIDIsliders`:  
-   [MIDI CC message number](https://professionalcomposers.com/midi-cc-list/) configuration arrays,
-   for which MIDiio generates respectively:
-
-   -  properties `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`,  
-      which track values received from these configuration arrays of `MIDIin` CC numbers.  
-      Each configured `button[0-7]` also generates a [**Source** (`Event`) for **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).
+- `DataCorePlugin.ExternalScript.MIDIbuttons`, `MIDIknobs`, `MIDIsliders`:&nbsp;  
+   These are *configuration arrays* of up to 8 each [MIDI CC message numbers](https://professionalcomposers.com/midi-cc-list/),  
+   &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; for which MIDIio generates respectively properties:&nbsp;
+   `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`,  
+   &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; which track values received from those `MIDIin` CC numbers.  
+   Each configured `button[0-7]` also generates a [**Source** (`Event`) for
+   **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).
 
 -  `ExternalScript.MIDIecho`:  
    `> 0`:&nbsp; forwards unconfigured `MIDIin` CC messages to `MIDIout` with no corresponding properties generated  
-   `== 0`:&nbsp; dynamically generates:
-
-    -  properties `MIDIio.CC[0-127]` for unconfigured `MIDIin` CC messages received  
-       with numbers not configured by `MIDIio.knob[0-7]`, `slider[0-7]` or `button[0-7]`  
-       when `ExternalScript.MIDIecho == 0`.&nbsp; `MIDIio.CC[0-127]` can be used to identify CC numbers for configuring.
-
--  `ExternalScript.MIDIsend[0-7]` configure properties for which value changes
-   become CC messages to `MIDIout`.  
-   If first 7 characters of those property names are 'MIDIio.', then those properties are `MIDIin` messages  
-   from e.g. `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`, `CC[0-127]` with sent messages matching received CCs.
+   `== 0`:&nbsp; dynamically generates properties `MIDIio.CC[0-127]` for unconfigured CC messages received  
+   &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; when `ExternalScript.MIDIecho == 0`.&nbsp; They can be used to identify CC numbers for configuring.  
+-  `ExternalScript.MIDIsend[0-7]` identify properties for which value changes become CC messages to `MIDIout`.  
+   If first 7 characters of those property names are 'MIDIio.', then those are among `MIDIin` CC properties
+   `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`, or `CC[0-127]`, with matching `MIDIin` CC changes sent.
 
 -  `MIDIio.ping[0-7]` are **SimHub Actions**
    to be associated with Triggers/Sources in
- [SimHub Event mapping](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
+   [SimHub Event mapping](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
    They share CC numbers with configured `MIDIsend` properties that are NOT 'MIDIio.*',  
-   and are generated to help identify those SimHUb property CC numbers on a `MIDIout` receiver.  
+   and are generated to help identify those SimHUb property CC numbers to a `MIDIout` target.  
    For example, if *both and only* `MIDIsend0` and `MIDIsend1` are configured for `MIDIio.*`,  
  then e.g.  configured `MIDIsend2` will cause `ping2` SimHub Action **Target** to be generated, and  
  mapping e.g. `CCn` with `ping2` in **Mapping Picker** enables arbitrary messages using `MIDIsend2`'s CC number.
+
+-  `ExternalScript.VJDbutton[0-7]` configure **[vJoy](https://github.com/blekenbleu/vJoySDK) button** changes from specified properties.  
+   If configured names' first 7 characters are 'MIDIio.', then those properties should be among `MIDIio.button[0-7]`.  
+
+-  `ExternalScript.VJDaxis[0-7]` specify properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp; selecting among  
+   `MIDIio.slider[0-7]`, `MIDIio.knob[0-7]`, or `MIDIio.CC[0-127]` sends their changes as vJoy axes.  
+
+-  Each MIDIin CC property may get multiple send assignments.  
 
 **MIDI supports only 127 CC message numbers per channel.**  
 For example, if `ExternalScript.MIDIsend[0-7]` are configured  
@@ -61,6 +64,6 @@ then other configured `MIDIsend1-7]` properties not set to `MIDIio.*` will send 
 When restarted by SimHub, MIDIio resends saved values for configured `MIDIin.*` properties,  
 but NOT from SimHub properties, e.g. `ShakeITBSV3Plugin.Export.*`
 * properties from a game before restart may be inappropriate for a possibly different newly started game.
-* properties for configured `MIDIin` numbers may be used for configuring `MIDIout` receiver,  
+* properties for configured `MIDIin` numbers may be used for configuring `MIDIout` target,  
   which may have also been restarted.
 

@@ -22,13 +22,13 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-                I.Log(4, $"{I.my}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
+                I.Log(4, $"{I.My}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
             {
                 string oops = e?.ToString();
-                I.Info($"{I.my}SendCC()Failed: {oops}");
+                I.Info($"{I.My}SendCC()Failed: {oops}");
                 return Connected = false;
             }
             return true;
@@ -59,7 +59,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                I.Log(4, $"{M.my}OUTwetdry is ready to send CC messages to {MIDIout}.");
+                I.Log(4, $"{M.My}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
                 for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
                 {
@@ -93,11 +93,11 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent CC)
             {
-                I.Log(4, $"{I.my}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                I.Log(4, $"{I.My}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
                 if ((I.Properties.SendCt <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
-                    I.Info($"{I.my}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
+                    I.Info($"{I.My}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
             }
-            else I.Info($"{I.my}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+            else I.Info($"{I.My}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
     }
 }

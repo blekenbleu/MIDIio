@@ -13,7 +13,7 @@ namespace blekenbleu.MIDIspace
         private bool[] Once;
 
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-        internal string my = "MIDIio.";					// PluginName + '.'
+        internal string My = "MIDIio.";					// PluginName + '.'
         internal MIDIioSettings Settings;
         internal CCProperties Properties;
         internal VJsend VJD;
@@ -22,9 +22,10 @@ namespace blekenbleu.MIDIspace
         internal byte Level = 0;
         internal bool DoEcho = false;
 
-        internal void Info(string str)
+        internal bool Info(string str)
         {
             SimHub.Logging.Current.Info(str);
+            return true;
         }
 
         internal bool Log(byte level, string str)
@@ -81,7 +82,7 @@ namespace blekenbleu.MIDIspace
         private static int count = 0;
         public void Init(PluginManager pluginManager)
         {
-            Log(4, my + "Init()");
+            Log(4, My + "Init()");
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
             Once = new bool[size];
@@ -99,13 +100,13 @@ namespace blekenbleu.MIDIspace
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
             output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
-                Info(my + ".out: unassigned");
+                Info(My + ".out: unassigned");
                 pluginManager.AddProperty("out", this.GetType(), "unassigned");
             }
             else pluginManager.AddProperty("out", this.GetType(), output);
 
             DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
-            Info(my + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed"); 
+            Info(My + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed"); 
 
             Outer = new OUTdrywet();
             Outer.Init(this, output, Properties.SendCt);
@@ -120,10 +121,10 @@ namespace blekenbleu.MIDIspace
                 Reader = new INdrywet();
                 Reader.Init(input, this);
             }
-            else Info(my + "Init(): " + Ini + "in is invalid: '" + input +"'" );
+            else Info(My + "Init(): " + Ini + "in is invalid: '" + input +"'" );
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
-            pluginManager.AddProperty(my + "Init().count", this.GetType(), count);
+            pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 
             for (int i = 0; i < size; i++)
             {
@@ -180,7 +181,7 @@ namespace blekenbleu.MIDIspace
                 if (null == send)
                 {
                      Once[b] = false;
-                     Info(my + "DataUpdate(): null " + prop);
+                     Info(My + "DataUpdate(): null " + prop);
                 }
                 else if (0 < send.Length)
                 {
