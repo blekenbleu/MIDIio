@@ -22,10 +22,12 @@ namespace blekenbleu.MIDIspace
     class VJsend
     {
         internal vJoy joystick;		// Declare one joystick (Device id 1) and a position structure.
-        internal vJoy.JoystickState iState;
+        private vJoy.JoystickState iState;
         private uint id;
-        private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y, HID_USAGES.HID_USAGE_Z, HID_USAGES.HID_USAGE_RX, HID_USAGES.HID_USAGE_RY,
-                                   HID_USAGES.HID_USAGE_RZ, HID_USAGES.HID_USAGE_SL0, HID_USAGES.HID_USAGE_SL1, HID_USAGES.HID_USAGE_WHL, HID_USAGES.HID_USAGE_POV };
+        private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y,
+                                   HID_USAGES.HID_USAGE_Z, HID_USAGES.HID_USAGE_RX, HID_USAGES.HID_USAGE_RY,
+                                   HID_USAGES.HID_USAGE_RZ, HID_USAGES.HID_USAGE_SL0, HID_USAGES.HID_USAGE_SL1,
+                                   HID_USAGES.HID_USAGE_WHL, HID_USAGES.HID_USAGE_POV };
         private readonly string[] HIDaxis = { "X", "Y", "Z", "RX", "RY", "RZ", "SL0", "SL1", "WHL", "POV" };
         private MIDIio M;
         private long maxval;
@@ -33,16 +35,15 @@ namespace blekenbleu.MIDIspace
         private HID_USAGES[] Usage;
         private int[] AxVal;
 
-        internal void Init(MIDIio that, uint ID)
+        internal bool Init(MIDIio that, uint ID)
         {
             M = that;
             nAxes = 0;
             maxval = 0;
+            bool acquire = false;
 
-            if (ID <= 0 || ID > 16) {
-                SimHub.Logging.Current.Info($"Invalid device ID;  must be 0 < {ID} <= 16");
-                return;
-            }
+            if (ID <= 0 || ID > 16)
+                return M.Info($"Invalid device ID;  must be 0 < {ID} <= 16");
             id = ID;	// Device ID can only be in the range 1-16
 
             // Create one joystick object and a position structure.
@@ -50,37 +51,36 @@ namespace blekenbleu.MIDIspace
             iState = new vJoy.JoystickState();
 
             // Get the driver attributes (Vendor ID, Product ID, Version Number)
-            if (!joystick.vJoyEnabled()) {
-                SimHub.Logging.Current.Info($"vJoy driver not enabled: Failed Getting vJoy attributes.");
-                return;
-            } else M.Log(4,
-              $"Product: {joystick.GetvJoyProductString()}\nVersion: {joystick.GetvJoySerialNumberString()}\nVendor: {joystick.GetvJoyManufacturerString()}");
+            if (!joystick.vJoyEnabled())
+                return M.Info($"vJoy driver not enabled: Failed Getting vJoy attributes.");
+            else M.Log(4, $"Product: {joystick.GetvJoyProductString()}\n"
+		          + $"Version: {joystick.GetvJoySerialNumberString()}\n"
+		          + $"Vendor: {joystick.GetvJoyManufacturerString()}");
+            
 
             // Test if DLL matches the driver
             UInt32 DllVer = 0, DrvVer = 0;
             bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
             if (match)
                 M.Log(4, $"MIDIio.VJsend.Init():  vJoy driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
-            else SimHub.Logging.Current.Info($"MIDIio.VJsend.Init():  Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
+            else M.Info($"MIDIio.VJsend.Init():  Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
 
             // Get the state of the requested device
             VjdStat status = joystick.GetVJDStatus(id);
             switch (status) {
                 case VjdStat.VJD_STAT_OWN:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by this feeder");
+                    M.Info($"vJoy Device {id} is already owned by this feeder, with capabilities:");
                     break;
                 case VjdStat.VJD_STAT_FREE:
                     M.Log(4, $"MIDIio.VJsend.Init():  vJoy Device {id} is available, with capabilities:");
+                    acquire = true;
                     break;
                 case VjdStat.VJD_STAT_BUSY:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
-                    return;
+                    return M.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
                 case VjdStat.VJD_STAT_MISS:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
-                    return;
+                    return M.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
                 default:
-                    SimHub.Logging.Current.Info($"vJoy Device {id} general error\nCannot continue");
-                    return;
+                    return M.Info($"vJoy Device {id} general error\nCannot continue");
             };
  
 #if FFB
@@ -121,13 +121,12 @@ namespace blekenbleu.MIDIspace
             M.Log(4, $"  {nButtons} Buttons, {nAxes} Axes{got}");
 
             joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
-            // Acquire the target
-            if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
-            {
-                SimHub.Logging.Current.Info($"Failed to acquire vJoy device number {id}.");
-                return;
-            }
-            else M.Log(4, $"MIDIio.VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
+            if (acquire)	// Acquire the target?
+	    {
+                if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
+                    return M.Info($"Failed to acquire vJoy device number {id}.");
+                else M.Log(4, $"MIDIio.VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
+            } else M.Log(4, $"MIDIio.VJsend.Init():  axis maxval={maxval}.");
 #if FFB
             StartAndRegisterFFB();
 #endif
@@ -164,6 +163,17 @@ namespace blekenbleu.MIDIspace
             joystick.SetBtn(true, id, set);			// 1 <= nButtons <= 32
             joystick.SetBtn(false, id, unset);
         } // Run()
+
+        internal void Axis(byte axis, int value)
+        {
+            value = (int) (63.5 + value * maxval) / 127;	// rescale from MIDI to vJoy
+            joystick.SetAxis(value, id, Usage[axis]);
+        }
+
+        internal void Button(byte button, int value)
+        {
+            joystick.SetBtn((0 < value), id, button);			// 1 <= button <= 32
+        }
 
         internal void End()
         {
