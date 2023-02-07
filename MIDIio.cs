@@ -9,7 +9,8 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-        internal byte size = 8;			// Maximum ping, etc to configure
+        private byte size = 8;						// Maximum Ping, etc to configure
+        internal byte[] Size;
         private bool[,] Once;
 
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
@@ -86,11 +87,11 @@ namespace blekenbleu.MIDIspace
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-            // Make properties available
-            // these get evaluated "on demand" (when shown or used in formulas)
-            Properties = new CCProperties();
-            Properties.Init(this);		// set SendCt before Outer
-            Once = new bool[Properties.send.Length, size];
+            VJD = new VJsend();			// vJoy
+            VJD.Init(this, 1);			// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
+
+            Properties = new CCProperties();    // MIDI and vJoy property configuration
+            Properties.Init(this);		// set SendCt[] before Outer.Init()
 
             string output = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
             // Log() level configuration
@@ -111,9 +112,6 @@ namespace blekenbleu.MIDIspace
             Outer = new OUTdrywet();
             Outer.Init(this, output, Properties.SendCt[0]);
 
-            VJD = new VJsend();
-            VJD.Init(this, 1);
-
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
             if (0 < input.Length)
             {
@@ -125,47 +123,52 @@ namespace blekenbleu.MIDIspace
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
             pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
+            Once = new bool[Properties.send.Length, size];
+            Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
 
             for (int i = 0; i < size; i++)
-            {
                 Settings.Sent[Properties.Map[0, i]] = 129;	// impossible first Send[i] values
-                for (byte j = 0; j < Properties.send.Length; j++)
+            for (byte j = 0; j < Properties.send.Length; j++)
+                for (int i = 0; i < Size[j]; i++}
                     Once[j, i] = true;
-            }
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //          pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
         }
 
         // track active CCs and save values
-        internal bool Active(byte CCnumber, byte value)		// returns true if first time
+        internal bool Active(byte CCnumber, byte value)			// returns true if first time
         {
             byte which = Properties.Which[CCnumber];
             if (5 == CCnumber)
-                Log(8, Properties.CCname[CCnumber]);		// just a debugging breakpoint
+                Log(8, Properties.CCname[CCnumber]);			// just a debugging breakpoint
+
             if (0 < which)	// Configured?
             {
-                Properties.CCvalue[CCnumber] = value;
-                if (3 <= which && 0 < value)			// button or CC?
+                if (0 < which && Properties.CCvalue[CCnumber] != value)
                 {
-                    Outer.Latest = value;			// drop pass to Ping()
-                    if (4 == which || 0 < value)
+                    Outer.Latest = Properties.CCvalue[CCnumber] = value;// drop pass to Ping()
+                    if (0 < (Properties.Button & which))
                         this.TriggerEvent(Properties.CCname[CCnumber]);
-                    if (DoEcho && 4 == which)
-                        return !Outer.SendCCval(CCnumber, value); // 4 may also be appropriated configured
-                }   
+                    if (DoEcho && 0 < (Properties.unconfigured & which))
+                        return !Outer.SendCCval(CCnumber, value); 	// unconfigured may also be appropriated configured
+                }
                 return false;
             }
 
             if (DoEcho)
-                return !Outer.SendCCval(CCnumber, value);	// Activate(): do not SetProp()
+            {
+                if (value != Properties.CCvalue[CCnumber])				// send only changes
+                    Outer.SendCCval(CCnumber, Properties.CCvalue[CCnumber] = value);	// do not SetProp()
+                return true;
+            }
 
             // First time CC number seen
             Properties.Which[CCnumber] = Properties.unconfigured;	// dynamic CC configuration
-//          this.AddEvent(Properties.CCname[CCnumber]);		// Users may assign CCn events to e.g. Ping()
+//          this.AddEvent(Properties.CCname[CCnumber]);			// Users may assign CCn events to e.g. Ping()
 //          this.TriggerEvent(Properties.CCname[CCnumber]);
-            return Properties.SetProp(this, CCnumber, value);
-        }
+            return Properties.SetProp(this, CCnumber, Properties.CCvalue[CCnumber] = value);
+        }	// Active()
 
         private void DoSend(PluginManager pluginManager, bool always)
         {
