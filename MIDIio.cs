@@ -10,7 +10,7 @@ namespace blekenbleu.MIDIspace
     public class MIDIio : IPlugin, IDataPlugin
     {
         internal byte size = 8;			// Maximum ping, etc to configure
-        private bool[] Once;
+        private bool[,] Once;
 
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
         internal string My = "MIDIio.";					// PluginName + '.'
@@ -54,10 +54,10 @@ namespace blekenbleu.MIDIspace
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             if (data.GameRunning && data.OldData != null && data.NewData != null)
-                DoSend(pluginManager, Properties.MySendCt, Properties.SendCt);
+                DoSend(pluginManager, false);
 
             // Send my property messages anytime (echo)
-            DoSend(pluginManager, 0, Properties.MySendCt);
+            DoSend(pluginManager, true);
 //          VJD.Run();
         }
 
@@ -85,12 +85,12 @@ namespace blekenbleu.MIDIspace
             Log(4, My + "Init()");
             // Load settings
             Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
-            Once = new bool[size];
 
             // Make properties available
             // these get evaluated "on demand" (when shown or used in formulas)
             Properties = new CCProperties();
             Properties.Init(this);		// set SendCt before Outer
+            Once = new bool[Properties.send.Length, size];
 
             string output = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
             // Log() level configuration
@@ -109,7 +109,7 @@ namespace blekenbleu.MIDIspace
             Info(My + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed"); 
 
             Outer = new OUTdrywet();
-            Outer.Init(this, output, Properties.SendCt);
+            Outer.Init(this, output, Properties.SendCt[0]);
 
             VJD = new VJsend();
             VJD.Init(this, 1);
@@ -128,8 +128,9 @@ namespace blekenbleu.MIDIspace
 
             for (int i = 0; i < size; i++)
             {
-                Settings.Sent[Properties.Map[i]] = 129;	// impossible first Send[i] values
-                Once[i] = true;
+                Settings.Sent[Properties.Map[0, i]] = 129;	// impossible first Send[i] values
+                for (byte j = 0; j < Properties.send.Length; j++)
+                    Once[j, i] = true;
             }
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
@@ -160,45 +161,49 @@ namespace blekenbleu.MIDIspace
                 return !Outer.SendCCval(CCnumber, value);	// Activate(): do not SetProp()
 
             // First time CC number seen
-            Properties.Which[CCnumber] = 4;			// dynamic CC configuration
-            this.AddEvent(Properties.CCname[CCnumber]);	// Users may assign CCn events to e.g. Ping()
-            this.TriggerEvent(Properties.CCname[CCnumber]);
+            Properties.Which[CCnumber] = Properties.unconfigured;	// dynamic CC configuration
+//          this.AddEvent(Properties.CCname[CCnumber]);		// Users may assign CCn events to e.g. Ping()
+//          this.TriggerEvent(Properties.CCname[CCnumber]);
             return Properties.SetProp(this, CCnumber, value);
         }
 
-        private void DoSend(PluginManager pluginManager, byte b, byte to)
+        private void DoSend(PluginManager pluginManager, bool always)
         {
-            for ( ; b < to; b++)
+            for (byte j = 0; j < Properties.send.Length; j++)
+            for (byte b = (byte)((always) ? 0 : Properties.MySendCt[j]) ; b < ((always) ? Properties.MySendCt[j] : Properties.SendCt[j]); b++)
             {
-                byte cc = Properties.Map[b];	// MIDIout CC numbers
+                byte cc = Properties.Map[j, b];	// MIDIout CC numbers
 
-                if (!Once[b])
+                if (!Once[j, b])
                    return;
 
-                string prop = Properties.Send[b];
+                string prop = Properties.Send[j, b];
                 string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
                 if (null == send)
                 {
-                     Once[b] = false;
+                     Once[j, b] = false;
                      Info(My + "DataUpdate(): null " + prop);
                 }
                 else if (0 < send.Length)
                 {
-                    byte value = (byte)(0.5 + Convert.ToDouble(send));
+                    double property = Convert.ToDouble(send);
+                    if (Properties.MySendCt[j] <= b)
+                        property *= 1.27;				// ShakeIt properties <= 100
+                    byte value = (byte)(0.5 * property);
 
                     value &= 0x7F;
                     if (Settings.Sent[cc] != value) {			// send only changed values
                         Settings.Sent[cc] = value;
                         if (Properties.VJax == (Properties.VJax & Properties.Which[b]))
-                            VJD.Axis(Properties.Vmap[b], value);
-                        else if (Properties.VJbut == (Properties.VJbut & Properties.Which[b]))
-                            VJD.Button(Properties.Vmap[b], value);
-                        else if (Properties.CC == (Properties.CC & Properties.Which[b]))
+                            VJD.Axis(Properties.Map[1, b], property);
+                        if (Properties.VJbut == (Properties.VJbut & Properties.Which[b]))
+                            VJD.Button(Properties.Map[2, b], 0.5 < property);
+                        if (Properties.CC == (Properties.CC & Properties.Which[b]))
 			    Outer.SendCCval(cc, value);	// DoSendCC()
 	            }
                 }
             }
-        }
+        }		// DoSend()
     }
 }
