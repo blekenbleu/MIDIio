@@ -94,7 +94,7 @@ namespace blekenbleu.MIDIspace
             if (Connected && e.Event is ControlChangeEvent CC)
             {
                 I.Log(4, $"{I.My}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
-                if ((I.Properties.SendCt <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
+                if ((I.Properties.SendCt[0] <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
                     I.Info($"{I.My}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
             }
             else I.Info($"{I.My}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
