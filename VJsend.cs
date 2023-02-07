@@ -31,7 +31,8 @@ namespace blekenbleu.MIDIspace
         private readonly string[] HIDaxis = { "X", "Y", "Z", "RX", "RY", "RZ", "SL0", "SL1", "WHL", "POV" };
         private MIDIio M;
         private long maxval;
-        private uint count, nButtons, nAxes;
+        private uint count;
+        internal byte nButtons, nAxes;
         private HID_USAGES[] Usage;
         private int[] AxVal;
 
@@ -103,7 +104,7 @@ namespace blekenbleu.MIDIspace
             AxVal = new int[usages.Length];
 
             // Get button count, and count axes for this vJoy device
-            nButtons = (uint)joystick.GetVJDButtonNumber(id);
+            nButtons = (byte)joystick.GetVJDButtonNumber(id);
             // GetVJDAxisExist() responds only to HID_USAGES Enums, not equivalent integers..?
             string got = "";
             for (uint i = nAxes = 0; i < usages.Length; i++)

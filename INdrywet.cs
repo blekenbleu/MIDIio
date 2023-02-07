@@ -16,7 +16,7 @@ namespace blekenbleu.MIDIspace
         private static IInputDevice _inputDevice;
         private static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
-        internal void Init(String MIDIin, MIDIio that)
+        internal bool Init(String MIDIin, MIDIio that)
         {
             try
             {
@@ -31,14 +31,10 @@ namespace blekenbleu.MIDIspace
                 that.Info($"{that.My}INdrywet() Failed to find {MIDIin};\nKnown devices:");
                 foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
                     that.Info("\t" + inputDevice.Name);
+                return false;
             }
-
-            that.Properties.Attach(M = that);		// AttachDelegate buttons, sliders and knobs
-        }
-
-        internal void End()
-        {
-            (InputDevice as IDisposable)?.Dispose();
+            M = that;
+            return true;
         }
 
         // callback
@@ -46,12 +42,14 @@ namespace blekenbleu.MIDIspace
         {
             var midiDevice = (MidiDevice)sender;
             // this cute syntax is called pattern matching
-            if (e.Event is ControlChangeEvent foo)
-            {
-                M.Log(4, $"{M.My}ControlNumber = {foo.ControlNumber}; ControlValue = {foo.ControlValue}");
-                M.Active((byte)foo.ControlNumber, (byte)foo.ControlValue);	// add unconfigured CC properties
-            }
-            else M.Info($"{M.My}INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
+            if (e.Event is ControlChangeEvent CC)
+                M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);	// add unconfigured CC properties
+            else SimHub.Logging.Current.Info($"{M.My}INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
+        }
+
+        internal void End()
+        {
+            (InputDevice as IDisposable)?.Dispose();
         }
     }
 }

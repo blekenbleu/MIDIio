@@ -20,15 +20,16 @@ namespace blekenbleu.MIDIspace
         private string[]  Ping;				// ping[0-7]
         private string[,] prop;
 
-        internal void Init(MIDIio I)
+	// VJD.Init() is already run; sort "my" properties first to send, even when game is not running
+        internal void Init(MIDIio I, byte[] Size)
         {
             send = new string[] { I.Ini + "send", I.Ini + "VJDbutton", I.Ini + "VJDaxis"};
-            prop = new string[send.Length, I.size];	// accumulate 'send' entries in the order received
+            prop = new string[send.Length, Size[0]];	// accumulate 'send' entries in the order received
             byte ct;
-            Map = new byte[send.Length, I.size];	// first MySendCt entries will be for I.my properties
+            Map = new byte[send.Length, Size[0]];	// first MySendCt entries will be for I.my properties
             SendCt = new byte[send.Length];
             MySendCt = new byte[send.Length];
-            Which = new byte[128];			// initialize;  OUTwetdry.Init() resends unconfigured CCs on restart if DoEcho && (4 == (4 & Which[i]))
+            Which = new byte[128];			// OUTwetdry.Init() resends unconfigured CCs on restart if DoEcho && (0 < unconfigured & Which[i])
             Unmap = new byte[128];			// OnEventSent() warns of unexpected CC numbers sent
             CCvalue = new byte[128];
             CCname = new string[128];
@@ -48,20 +49,21 @@ namespace blekenbleu.MIDIspace
             }
             I.Log(4, $"{I.My}CCProperties.Init():  {ct} unconfigured CCs");
 
-            Send   = new string[send.Length, I.size];		// these will be used at 60Hz
-            Configured = new byte[I.size];		// temporarily acumulate configured Sends
-            bool[,] ok = new bool[send.Length,I.size];	// valid send properties non I.my
-            Ping = new string[I.size];
-            for (byte i = 0; i < I.size; i++)
+            Send = new string[send.Length, Size[0]];		// these will be used at 60Hz
+            Configured = new byte[Size[0]];		// temporarily acumulate configured Sends
+            bool[,] ok = new bool[send.Length,Size[0]];	// valid send properties non I.my
+            Ping = new string[Size[0]];
+            for (byte i = 0; i < Size[0]; i++)
                 Ping[i] = "ping" + i;
 
             for (byte j = 0; j < send.Length; j++)
             {
                 MySendCt[j] = 0;
-                for (byte i = 0; i < I.size; i++)   	// snag 'My' configured sends
+                for (byte i = 0; i < Size[j]; i++)   	// snag 'My' configured sends
                 {
                     prop[j, i] = I.PluginManager.GetPropertyValue($"{send[j]}{i}")?.ToString();
                     if (ok[j, i] = (null != prop[j, i] && 0 < prop[j, i].Length))
+                        // test for properties with "my" I.My prefix
                         if ((3 + I.My.Length) < prop[j, i].Length && I.My == (prop[j, i].Substring(0, I.My.Length)))
                         {
                             I.Log(4, I.My + "CCProperties(): '{prop[i].Substring(0, I.my.Length)}' == '{I.my.Length}'  ");
@@ -71,17 +73,18 @@ namespace blekenbleu.MIDIspace
                         }
                 }
 
-                SendCt[j] = MySendCt[j];				// first MySendCt entries are indices for "My" outputs
-                for (byte i = 0; i < I.size; i++)   	// now, snag configured sends NOT from I.my.send[n < MySendCt]
+                SendCt[j] = MySendCt[j];			// first MySendCt entries are indices for "My" outputs
+                for (byte i = 0; i < Size[j]; i++)   		// now, configured sends NOT from I.my.send[n < MySendCt]
                 {
-                    if (ok[j, i])
+                    if (ok[j, i])				// not already assigned to Send[,]?
                     {
-                        Configured[SendCt[j]] = i;		// find a CC number to reuse for this send
+                        if (0 == j)
+                            Configured[SendCt[0]] = i;		// find a CC number to reuse for this send
                         Send[j, SendCt[j]++] = prop[j, i];
                     }
                 }
             }
-        }
+        }	// Init()
 
         internal void End(MIDIio I)
         {
@@ -540,7 +543,7 @@ namespace blekenbleu.MIDIspace
 
             if (I.Log(4, I.My + "Attach() my Send:"))
             {
-                for (byte j = 0; j < send.Length; j++)
+                for (byte j = 0; j < Send.GetLength(0); j++)
                     for (byte i = 0; i < MySendCt[j]; i++)
                         I.Info("\t" + Send[j, i] + " AKA " + Send[j, i].Substring(L, Send[j, i].Length - L));
             }
@@ -573,7 +576,7 @@ namespace blekenbleu.MIDIspace
                                 Unmap[cc] = my;
                                 Map[0, my++] = cc;			// reuse this input CC number for output
                             }
-                            else if (mc < I.size)
+                            else if (mc < I.Size[0])
                                 Configured[mc++] = cc;
 
  	                SetProp(I, cc, I.Settings.Sent[cc]);	// set property for newly configured input
@@ -598,20 +601,20 @@ namespace blekenbleu.MIDIspace
             byte ct;
             if (!I.DoEcho)
                 for (ct = 0; ct < 128; ct++)
-                    if (4 == Which[ct])
+                    if (0 < (unconfigured & Which[ct]))
                         SetProp(I, ct, I.Settings.Sent[ct]);	// restore previous received unconfigured CCs
 
             ct = MySendCt[0];
             for (my = 0; my < mc && ct < SendCt[0]; my++) 
                 Map[0, ct++] = Configured[my];			// recycle configured MIDIin CC numbers
 
-            // appropriate previously unconfigured CC numbers;  those controls will be unavailable in DeEcho mode..
+            // appropriate previously unallocated CC numbers;  those controls will be unavailable in DeEcho mode..
             for (my = 127; MySendCt[0] <= my && ct < SendCt[0]; my--)	// configure CC numbers for MySendCt <= i < SendCt
             {
                 if (0 == Which[my])
                 {
-                    Map[0, ct++] = my;			// appropriate unconfigured MIDIin CC numbers
-                    Which[my] = unconfigured;	// set my as appropriated
+                    Map[0, ct++] = my;				// appropriate unconfigured MIDIin CC numbers
+                    Which[my] = unconfigured;			// set my as appropriated
                 }
             }
             if (ct < SendCt[0])

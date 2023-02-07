@@ -9,10 +9,9 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-        private byte size = 8;						// Maximum Ping, etc to configure
+        private byte size = 8;						// default configurable output count
         internal byte[] Size;
         private bool[,] Once;
-
         internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
         internal string My = "MIDIio.";					// PluginName + '.'
         internal MIDIioSettings Settings;
@@ -90,8 +89,9 @@ namespace blekenbleu.MIDIspace
             VJD = new VJsend();			// vJoy
             VJD.Init(this, 1);			// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
 
+            Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
             Properties = new CCProperties();    // MIDI and vJoy property configuration
-            Properties.Init(this);		// set SendCt[] before Outer.Init()
+            Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
 
             string output = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
             // Log() level configuration
@@ -101,10 +101,10 @@ namespace blekenbleu.MIDIspace
             // Launch Outer before Reader, which tries to send stored MIDI CC messages
             output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
             if (null == output || 0 == output.Length) {
-                Info(My + ".out: unassigned");
-                pluginManager.AddProperty("out", this.GetType(), "unassigned");
+                output = "unassigned";
+                Info(My + ".out: " + output);
             }
-            else pluginManager.AddProperty("out", this.GetType(), output);
+            pluginManager.AddProperty("out", this.GetType(), output);
 
             DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
             Info(My + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed"); 
@@ -113,23 +113,32 @@ namespace blekenbleu.MIDIspace
             Outer.Init(this, output, Properties.SendCt[0]);
 
             string input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
-            if (0 < input.Length)
+            if (null == input)
+                 Info(My + "Init(): missing " + Ini + "in entry!");
+            else if (0 < input.Length)
             {
                 pluginManager.AddProperty("in", this.GetType(), input);
                 Reader = new INdrywet();
-                Reader.Init(input, this);
+                if(Reader.Init(input, this))
+                    Properties.Attach(this);	// AttachDelegate buttons, sliders and knobs
             }
-            else Info(My + "Init(): " + Ini + "in is invalid: '" + input +"'" );
+            else Info(My + "Init(): " + Ini + "in is undefined" );
+
+            int s = size;
+            input = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
+            if (null != input && 0 < input.Length && (0 >= (s = Int32.Parse(input)) || 128 < s))
+                Info(My + $"Init(): invalid {Ini + "size"} {input}; defaulting to {size}");
+            else size = (byte)s;
+            pluginManager.AddProperty("size", this.GetType(), size);
 
             count += 1;		// increments for each restart, provoked e.g. by game change or restart
             pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
             Once = new bool[Properties.send.Length, size];
-            Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
 
             for (int i = 0; i < size; i++)
                 Settings.Sent[Properties.Map[0, i]] = 129;	// impossible first Send[i] values
             for (byte j = 0; j < Properties.send.Length; j++)
-                for (int i = 0; i < Size[j]; i++}
+                for (int i = 0; i < Size[j]; i++)
                     Once[j, i] = true;
 
 //          data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
@@ -143,13 +152,17 @@ namespace blekenbleu.MIDIspace
             if (5 == CCnumber)
                 Log(8, Properties.CCname[CCnumber]);			// just a debugging breakpoint
 
-            if (0 < which)	// Configured?
+            Log(4, $"{My}ControlNumber = {CCnumber}; ControlValue = {value}");
+            if (0 < which)						// Known?
             {
-                if (0 < which && Properties.CCvalue[CCnumber] != value)
+                if (Properties.CCvalue[CCnumber] != value)
                 {
-                    Outer.Latest = Properties.CCvalue[CCnumber] = value;// drop pass to Ping()
+                    Properties.CCvalue[CCnumber] = value;
                     if (0 < (Properties.Button & which))
+                    {
+                        Outer.Latest = value;				// drop pass to Ping()
                         this.TriggerEvent(Properties.CCname[CCnumber]);
+                    }
                     if (DoEcho && 0 < (Properties.unconfigured & which))
                         return !Outer.SendCCval(CCnumber, value); 	// unconfigured may also be appropriated configured
                 }
@@ -173,38 +186,42 @@ namespace blekenbleu.MIDIspace
         private void DoSend(PluginManager pluginManager, bool always)
         {
             for (byte j = 0; j < Properties.send.Length; j++)
-            for (byte b = (byte)((always) ? 0 : Properties.MySendCt[j]) ; b < ((always) ? Properties.MySendCt[j] : Properties.SendCt[j]); b++)
             {
-                byte cc = Properties.Map[j, b];	// MIDIout CC numbers
+                byte end = (always) ? Properties.MySendCt[j] : Properties.SendCt[j];
 
-                if (!Once[j, b])
-                   return;
-
-                string prop = Properties.Send[j, b];
-                string send = pluginManager.GetPropertyValue(prop)?.ToString();
-
-                if (null == send)
+                for (byte b = (byte)((always) ? 0 : Properties.MySendCt[j]); b < end; b++)
                 {
-                     Once[j, b] = false;
-                     Info(My + "DataUpdate(): null " + prop);
-                }
-                else if (0 < send.Length)
-                {
-                    double property = Convert.ToDouble(send);
-                    if (Properties.MySendCt[j] <= b)
-                        property *= 1.27;				// ShakeIt properties <= 100
-                    byte value = (byte)(0.5 * property);
+                    byte cc = Properties.Map[j, b];	// MIDIout CC numbers or vJoy button or axis
 
-                    value &= 0x7F;
-                    if (Settings.Sent[cc] != value) {			// send only changed values
-                        Settings.Sent[cc] = value;
-                        if (Properties.VJax == (Properties.VJax & Properties.Which[b]))
-                            VJD.Axis(Properties.Map[1, b], property);
-                        if (Properties.VJbut == (Properties.VJbut & Properties.Which[b]))
-                            VJD.Button(Properties.Map[2, b], 0.5 < property);
-                        if (Properties.CC == (Properties.CC & Properties.Which[b]))
-			    Outer.SendCCval(cc, value);	// DoSendCC()
-	            }
+                    if (!Once[j, b])
+                       return;
+
+                    string prop = Properties.Send[j, b];
+                    string send = pluginManager.GetPropertyValue(prop)?.ToString();
+
+                    if (null == send)
+                    {
+                         Once[j, b] = false;
+                         Info(My + "DataUpdate(): null " + prop);
+                    }
+                    else if (0 < send.Length)
+                    {
+                        double property = Convert.ToDouble(send);
+                        if (Properties.MySendCt[j] <= b)
+                            property *= 1.27;				// ShakeIt properties <= 100
+                        byte value = (byte)(0.5 * property);
+
+                        value &= 0x7F;
+                        if (Settings.Sent[cc] != value) {			// send only changed values
+                            Settings.Sent[cc] = value;
+                            if (Properties.VJax == (Properties.VJax & Properties.Which[b]))
+                                VJD.Axis(Properties.Map[1, b], property);
+                            if (Properties.VJbut == (Properties.VJbut & Properties.Which[b]))
+                                VJD.Button(Properties.Map[2, b], 0.5 < property);
+                            if (Properties.CC == (Properties.CC & Properties.Which[b]))
+			        Outer.SendCCval(cc, value);	// DoSendCC()
+	                }
+                    }
                 }
             }
         }		// DoSend()

@@ -61,14 +61,15 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.PrepareForEventsSending();
                 I.Log(4, $"{M.My}OUTwetdry is ready to send CC messages to {MIDIout}.");
                 byte j = 0;
-                for (byte i = 0; j < count && i < 128; i++)	// resend saved CCs
-                {
-                    if (3 < M.Properties.Which[i] && I.DoEcho)	// unconfigured CC number?
+                if (I.DoEcho)
+                    for (byte i = 0; j < count && i < 128; i++)				// resend saved CCs
                     {
-                        SendCC(i, M.Settings.Sent[i]);		// Init() time may have passed;  reinitialize MIDIout
-                        j++;
+                        if (0 < (M.Properties.unconfigured & M.Properties.Which[i]))	// unconfigured CC number?
+                        {
+                            SendCC(i, M.Settings.Sent[i]);		// much time may have passed;  reinitialize MIDIout device
+                            j++;
+                        }
                     }
-                }
             }
             
             catch (Exception)
