@@ -165,15 +165,15 @@ namespace blekenbleu.MIDIspace
             joystick.SetBtn(false, id, unset);
         } // Run()
 
-        internal void Axis(byte axis, int value)
+        internal void Axis(byte axis, double value)
         {
-            value = (int) (63.5 + value * maxval) / 127;	// rescale from MIDI to vJoy
-            joystick.SetAxis(value, id, Usage[axis]);
+            int val = (int) (63.5 + value * maxval) / 127;	// rescale from MIDI to vJoy
+            joystick.SetAxis(val, id, Usage[axis]);
         }
 
-        internal void Button(byte button, int value)
+        internal void Button(byte button, bool value)
         {
-            joystick.SetBtn((0 < value), id, button);			// 1 <= button <= 32
+            joystick.SetBtn(value, id, button);			// 1 <= button <= 32
         }
 
         internal void End()
