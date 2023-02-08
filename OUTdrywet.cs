@@ -22,7 +22,7 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-                I.Log(4, $"{I.My}SendCC(): OutputDevice.SendEvent() {control} {value} 0");
+                I.Log(8, $"{I.My}SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
@@ -94,7 +94,7 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent CC)
             {
-                I.Log(4, $"{I.My}ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                I.Log(8, $"{I.My}OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
                 if ((I.Properties.SendCt[0] <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
                     I.Info($"{I.My}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
             }
