@@ -26,7 +26,7 @@ namespace blekenbleu.MIDIspace
 	    send = new string[] { I.Ini + "send", I.Ini + "vJDaxis", I.Ini + "vJDbutton"};
 	    prop = new string[send.Length, Size[0]];			// accumulate entries in numerically ascending order
 	    byte ct;
-									// first MySendCt entries are for I.My propertie
+									// first MySendCt entries are for MIDIio.My propertie
 	    Map = new byte[][] { new byte[Size[0]], new byte[Size[0]], new byte[Size[0]] };
 	    SendCt = new byte[send.Length];
 	    MySendCt = new byte[send.Length];
@@ -36,7 +36,7 @@ namespace blekenbleu.MIDIspace
 	    CCvalue = new byte[128];
 	    CCname = new string[128];
 
-	    I.Log(8, I.My + $"Properties.send.Length = {send.Length}");
+	    I.Log(8, "Properties.send.Length = " + send.Length);
 	    for (byte i = ct = 0; i < 128; i++)				// extract unconfigured CC flags
 	    {
 		if (0 < (0x80 & I.Settings.Sent[i]))
@@ -51,7 +51,7 @@ namespace blekenbleu.MIDIspace
 		Unmap[i] = i;
 		CCname[i] = "CC" + i;
 	    }
-	    I.Log(4, $"{I.My}CCProperties.Init():  {ct} unconfigured CCs restored");
+	    I.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
 
 	    Send = new string[send.Length, Size[0]];			// these will be used at 60Hz
 	    Configured = new byte[Size[0]];				// temporarily acumulate configured Sends
@@ -65,14 +65,14 @@ namespace blekenbleu.MIDIspace
                 string ss = "";
 
 		MySendCt[j] = 0;
-                I.Log(8, I.My + $"send[{j}] = '{send[j]}'");
+                I.Log(8, $"send[{j}] = '{send[j]}'");
 		for (byte i = 0; i < Size[j]; i++)   			// snag 'My' configured sends
 		{
                     byte k = (2 > j) ? i : (byte)(i + 1);		// first vJoy button is 1, not 0
 		    prop[j, i] = I.PluginManager.GetPropertyValue($"{send[j]}{k}")?.ToString();
 		    if (ok[j, i] = (null != prop[j, i] && 0 < prop[j, i].Length))
-			// test for properties with "my" I.My prefix
-			if ((3 + I.My.Length) < prop[j, i].Length && I.My == (prop[j, i].Substring(0, I.My.Length)))
+			// test for properties with "my" MIDIio.My prefix
+			if ((3 + MIDIio.My.Length) < prop[j, i].Length && MIDIio.My == (prop[j, i].Substring(0, MIDIio.My.Length)))
 			{
 			    ok[j, i] = false;
 			    Send[j, MySendCt[j]] = prop[j, i];
@@ -94,8 +94,8 @@ namespace blekenbleu.MIDIspace
 			ss += prop[j, i] + ",";
 		    }
 		}
-		I.Log(4, I.My + $"Properties.Map[{j}] SendCt = {SendCt[j]}:  " + string.Join(",", Array.ConvertAll(Map[j], ele => ele.ToString())));
-		I.Log(4, I.My + $"Properties.Send[{j}]: " + ss);
+		I.Log(4, $"Properties.Map[{j}] SendCt = {SendCt[j]}:  " + string.Join(",", Array.ConvertAll(Map[j], ele => ele.ToString())));
+		I.Log(4, $"Properties.Send[{j}]: " + ss);
 	    }
 	}	// Init()
 
@@ -110,7 +110,7 @@ namespace blekenbleu.MIDIspace
 		    ct++;
 		}
 
-	    I.Log(4, $"{I.My}Properties.End():  {ct} unconfigured CCs");
+	    I.Log(4, $"Properties.End():  {ct} unconfigured CCs");
 	}
 
 	private void Action(MIDIio I, byte bn, byte CCnumber)
@@ -143,7 +143,7 @@ namespace blekenbleu.MIDIspace
 		    I.AddAction(Ping[7],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)7));
 		    break;
 		default:
-		    I.Info($"{I.My}Action(): invalid Ping[{bn}] for {CCnumber}");
+		    I.Info($"Action(): invalid Ping[{bn}] for {CCnumber}");
 		    break;
 	    }
 	}
@@ -537,7 +537,7 @@ namespace blekenbleu.MIDIspace
 		    I.AttachDelegate(CCname[127], () => CCvalue[127]);
 		    break;
 		default:
-		    I.Info($"{I.My}SetProp() not set: CC{CCnumber}");
+		    I.Info($"SetProp() not set: CC{CCnumber}");
 		    return false;
 	    }
 	    CCvalue[CCnumber] = value;
@@ -552,10 +552,10 @@ namespace blekenbleu.MIDIspace
 	    string[] setting = { "unconfigured", "slider", "knob", "button" };	// Which types
 	    byte[] Wmap = new byte[] { unconfigured, CC, CC, Button };		// Which type flag bits
 	    string send = I.Ini + "out";
-	    int L = I.My.Length;
+	    int L = MIDIio.My.Length;
 	    byte my = 0;
 
-	    if (I.Log(8, I.My + "Attach() MIDIio.in sends:"))
+	    if (I.Log(8, "Attach() MIDIio.in sends:"))
 	    {
 		for (byte j = 0; j < Send.GetLength(0); j++)
 		    for (byte i = 0; i < MySendCt[j]; i++)
@@ -567,13 +567,13 @@ namespace blekenbleu.MIDIspace
 		string type = I.Ini + setting[s] + 's';
 		string value = I.PluginManager.GetPropertyValue(type)?.ToString();
 		if (null == value) {
-		    I.Info($"{I.My}Attach(): '{type}' not found");
+		    I.Info($"Attach(): '{type}' not found");
 		    continue;
 		}
 
 		// bless the Internet
 		byte[] array = value.Split(',').Select(byte.Parse).ToArray();
-		I.Log(4, $"{I.My}Attach(): '{I.Ini + setting[s]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
+		I.Log(4, $"Attach(): '{I.Ini + setting[s]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
 
 		byte cn = 0;		 			// index settings[]
 		foreach (byte cc in array)			// array has cc numbers assigned for this type
@@ -583,13 +583,13 @@ namespace blekenbleu.MIDIspace
 		    {
 			if(unconfigured == Which[cc])
 			{
-			    I.Log(4, I.My + $"Attach() replacing {CCname[cc]} by " + setting[s] + cn);
+			    I.Log(4, $"Attach() replacing {CCname[cc]} by " + setting[s] + cn);
 			    Which[cc] = 0;
 			}
 			CCname[cc] = setting[s] + cn;	  	// lacks I.Ini
 			Which[cc] |= Wmap[s];
 
-			I.Log(8, $"{I.My}Attach():  {CCname[cc]} = CC{cc}");
+			I.Log(8, $"Attach():  {CCname[cc]} = CC{cc}");
 			for (byte mi = 0; mi < MySendCt[0]; mi++)
 			    if (CCname[cc].Length == (Send[0, mi].Length - L) && CCname[cc] == Send[0, mi].Substring(L, CCname[cc].Length))
 			    {
@@ -618,9 +618,7 @@ namespace blekenbleu.MIDIspace
 	    // if configured input CC number count < configured outputs,
 	    // then configured output numbers potentially collide with low unconfigured input CC numbers
 	    if (mc < SendCt[0])
-		I.Info($"{I.My}Attach(): {mc} allocated MIDIin count < {SendCt} for MIDIout");
-	    if (my < MySendCt[0])
-		I.Info($"{I.My}Attach(): {MySendCt[0]-my}/{MySendCt[0]} MySendCt[0] were NOT configured");
+		I.Info($"Attach(): {mc} allocated MIDIin count < {SendCt} for MIDIout");
 
 	    byte ct;
 	    if (!I.DoEcho)
@@ -642,7 +640,7 @@ namespace blekenbleu.MIDIspace
 		}
 	    }
 	    if (ct < SendCt[0])
-		I.Info($"{I.My}Attach(): '{prop[0, ct]}' not Map[]ed");
+		I.Info($"Attach(): '{prop[0, ct]}' not Map[]ed");
 	}	// Attach()
     }
 }

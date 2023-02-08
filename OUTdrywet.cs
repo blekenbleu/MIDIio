@@ -22,13 +22,13 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-                I.Log(8, $"{I.My}SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
+                I.Log(8, $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
             {
                 string oops = e?.ToString();
-                I.Info($"{I.My}SendCC()Failed: {oops}");
+                I.Info("SendCC() Failed: " + oops);
                 return Connected = false;
             }
             return true;
@@ -39,10 +39,10 @@ namespace blekenbleu.MIDIspace
         internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
             if (SendCCval(num, Latest)) {        		// Ping(): drop pass from Active()
-                I.Info($"{CCout} CC{num} pinged {Latest}");
+                I.Info($"Ping(): {CCout} CC{num} {Latest}");
                 return true;
             }
-            else I.Info($"{CCout} disabled");
+            else I.Info(CCout + " disabled");
             return false;
         }
 
@@ -59,7 +59,7 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                I.Log(4, $"{M.My}OUTwetdry is ready to send CC messages to {MIDIout}.");
+                I.Log(4, "OUTwetdry() is ready to send CC messages to " + MIDIout + ".");
                 byte j = 0;
                 if (I.DoEcho)
                     for (byte i = 0; j < count && i < 128; i++)				// resend saved CCs
@@ -75,9 +75,9 @@ namespace blekenbleu.MIDIspace
             catch (Exception)
             {
                 Connected = false;
-                I.Info($"Failed to find OUTdrywet output device {MIDIout};\nKnown devices:");
+                I.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
                 foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
-                    I.Info(outputDevice.Name);
+                    I.Info("Init(): " +outputDevice.Name);
             }
         }
 
@@ -94,11 +94,11 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent CC)
             {
-                I.Log(8, $"{I.My}OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                I.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
                 if ((I.Properties.SendCt[0] <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
-                    I.Info($"{I.My}OnEventSent(): Mystery {I.Properties.CCname[CC.ControlNumber]}");
+                    I.Info("OnEventSent(): Mystery " + I.Properties.CCname[CC.ControlNumber]);
             }
-            else I.Info($"{I.My}OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+            else I.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
     }
 }

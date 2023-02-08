@@ -3,8 +3,13 @@
     <ProjectGuid>{833040C9-FE5E-4CCF-B21D-71979E049B6B}</ProjectGuid>
     <RootNamespace>blekenbleu.MIDIspace</RootNamespace>
     <TargetFramework>net48</TargetFramework>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <OutDir>..\..\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <DebugType>full</DebugType>
     <OutDir>..\..\</OutDir>
   </PropertyGroup>
@@ -13,7 +18,16 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <OutDir>..\..\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>pdbonly</DebugType>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <OutDir>..\..\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartAction>Program</StartAction>
+    <StartProgram>E:\my\Sim\SimHub\SimHub\SimHubWPF.exe</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <StartAction>Program</StartAction>
     <StartProgram>E:\my\Sim\SimHub\SimHub\SimHubWPF.exe</StartProgram>
   </PropertyGroup>

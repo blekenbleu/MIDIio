@@ -14,7 +14,8 @@ namespace blekenbleu.MIDIspace
 	private bool[,] Once;
 	private byte[][] Sent;
 	internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-	internal string My = "MIDIio.";					// PluginName + '.'
+	internal static string My = "MIDIio.";					// PluginName + '.'
+        internal string[] Real { get; } = { My, "JoystickPlugin." };
 	internal MIDIioSettings Settings;
 	internal CCProperties Properties;
 	internal VJsend VJD;
@@ -25,7 +26,7 @@ namespace blekenbleu.MIDIspace
 
 	internal bool Info(string str)
 	{
-	    SimHub.Logging.Current.Info(str);
+	    SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Info()
 	    return true;
 	}
 
@@ -34,7 +35,7 @@ namespace blekenbleu.MIDIspace
 	    bool b = 0 < (level & Level);
 
 	    if (b)
-		SimHub.Logging.Current.Info(str);
+		SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Log()
 	    return b;
 	}
 
@@ -83,7 +84,7 @@ namespace blekenbleu.MIDIspace
 	private static int count = 0;
 	public void Init(PluginManager pluginManager)
 	{
-	    Log(4, My + "Init()");
+	    Log(4, "Init()");
 	    // Load settings
 	    Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
@@ -93,7 +94,7 @@ namespace blekenbleu.MIDIspace
 	    int s = size;
 	    string input = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
 	    if (null != input && 0 < input.Length && (0 >= (s = Int32.Parse(input)) || 128 < s))
-		Info(My + $"Init(): invalid {Ini + "size"} {input}; defaulting to {size}");
+		Info($"Init(): invalid {Ini + "size"} {input}; defaulting to {size}");
 	    else size = (byte)s;
 	    pluginManager.AddProperty("size", this.GetType(), size);
 
@@ -104,26 +105,26 @@ namespace blekenbleu.MIDIspace
 	    // Log() level configuration
 	    if (null != output && 0 < output.Length)
 		Level = (byte)(0.5 + Convert.ToDouble(output));
-            Log(8, My + $"log Level {Level}");
+            Log(8, $"log Level {Level}");
 	    Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
 
 	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
 	    output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
 	    if (null == output || 0 == output.Length) {
 		output = "unassigned";
-		Info(My + ".out: " + output);
+		Info("out: " + output);
 	    }
 	    pluginManager.AddProperty("out", this.GetType(), output);
 
 	    DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
-	    Info(My + "Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
+	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
 
 	    Outer = new OUTdrywet();
 	    Outer.Init(this, output, Properties.SendCt[0]);
 
 	    input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 	    if (null == input)
-		Info(My + "Init(): missing " + Ini + "in entry!");
+		Info("Init(): missing " + Ini + "in entry!");
 	    else if (0 < input.Length)
 	    {
 		pluginManager.AddProperty("in", this.GetType(), input);
@@ -131,7 +132,7 @@ namespace blekenbleu.MIDIspace
 		if(Reader.Init(input, this))
 		    Properties.Attach(this);	// AttachDelegate buttons, sliders and knobs
 	    }
-	    else Info(My + "Init(): " + Ini + "in is undefined" );
+	    else Info("Init(): " + Ini + "in is undefined" );
 
 	    count += 1;		// increments for each restart, provoked e.g. by game change or restart
 	    pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
@@ -157,9 +158,9 @@ namespace blekenbleu.MIDIspace
 	{
 	    byte which = Properties.Which[CCnumber];
 	    if (5 == CCnumber)
-		Log(8, Properties.CCname[CCnumber]);			// just a debugging breakpoint
+		Log(8, "Active(): " + Properties.CCname[CCnumber]);			// just a debugging breakpoint
 
-	    Log(8, $"{My}Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
+	    Log(8, $"Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
 	    if (0 < which)						// Known?
 	    {
 		if (Properties.CCvalue[CCnumber] != value)
@@ -217,7 +218,7 @@ namespace blekenbleu.MIDIspace
 		    if (null == send)
 		    {
 			Once[j, b] = false;
-			Info(My + "DoSend(): null " + prop);
+			Info("DoSend(): null " + prop);
 		    }
 		    else if (0 < send.Length)
 		    {
@@ -237,7 +238,7 @@ namespace blekenbleu.MIDIspace
 				Outer.SendCCval(cc, value);		// DoSendCC()
 			}
 		    }
-		    else Info(My + $"DoSend(): 0 length {prop} map[{j}, {b}]");
+		    else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
 		}
 	    }
 	}		// DoSend()

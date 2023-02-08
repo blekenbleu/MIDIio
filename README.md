@@ -6,7 +6,8 @@ Unconfigured CC messages received dynamically generate new properties or are for
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio also generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games, reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
+MIDIio also generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
+reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
 Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are values from configured SimHub properties, e.g. **ShakeIt Bass Shaker** effects.
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
@@ -14,6 +15,9 @@ Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are v
 [principles of operation](docs/principles.md)  
 
 #### Notes:
+- This plugin **is compatible with SimHub's Controllers plugin**  
+  - This allows e.g. forwarding *real* **JoystickPlugin** properties to MIDIout or vJoy;  
+    **Do NOT** forward *vJoy* properties from **JoystickPlugin**;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's Midi Controllers Input plugin**  
     - Enabling both causes SimHub to crash!!!   
 - Like SimHub's **Midi Controllers Input** plugin, **MIDIio** can automatically set CCn properties  
