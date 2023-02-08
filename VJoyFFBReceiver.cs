@@ -86,8 +86,7 @@ namespace blekenbleu.MIDIspace
         /// Called when vJoy has a new FFB packet.
         /// WARNING This is called from a thread pool managed by windows.
         /// The thread itself is created and managed by vJoyInterface.dll.
-        /// Do not overload it, else you will me missing FFB packets from
-        /// third party application.
+        /// Overloading it will miss third party application FFB packets.
         /// </summary>
         /// <param name="ffbDataPtr"></param>
         /// <param name="userData"></param>

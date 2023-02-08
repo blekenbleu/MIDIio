@@ -2,7 +2,7 @@
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
-//using Melanchall.DryWetMidi.Multimedia;
+//using Melanchall.DryWetMidi.Multimedia;	// replaces .Devices in newer versions than SimHub's
 using SimHub.Plugins;
 
 namespace blekenbleu.MIDIspace
@@ -44,7 +44,7 @@ namespace blekenbleu.MIDIspace
             var midiDevice = (MidiDevice)sender;
             // this cute syntax is called pattern matching
             if (e.Event is ControlChangeEvent CC)
-                M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);	// add unconfigured CC properties
+                M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);	// add unconfigured CC properties, perhaps Echo
             else MIDIio.Info($"INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
         }
 

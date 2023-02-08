@@ -23,13 +23,22 @@ namespace blekenbleu.MIDIspace
 	// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
 	internal void Init(MIDIio I, byte[] Size)
 	{								// configuration property name prefixes
-	    send = new string[] { MIDIio.Ini + "send", MIDIio.Ini + "vJDaxis", MIDIio.Ini + "vJDbutton"};
+            if (null != I.Outer)
+            {
+		send = new string[] { MIDIio.Ini + "send", MIDIio.Ini + "vJDaxis", MIDIio.Ini + "vJDbutton"};
+		MySendCt = new byte[send.Length];
+		SendCt = new byte[send.Length];
+            }
+            else
+            {
+		send = new string[0];
+                SendCt = MySendCt = new byte[] {0};
+//		SendCt = new byte[] {0};
+            }
 	    prop = new string[send.Length, Size[0]];			// accumulate entries in numerically ascending order
 	    byte ct;
 									// first MySendCt entries are for MIDIio.My propertie
 	    Map = new byte[][] { new byte[Size[0]], new byte[Size[0]], new byte[Size[0]] };
-	    SendCt = new byte[send.Length];
-	    MySendCt = new byte[send.Length];
 	    Which = new byte[128];					// OUTwetdry.Init() resends unconfigured CCs on restart
 									//                  if DoEcho && (0 < unconfigured & Which[i])
 	    Unmap = new byte[128];					// OnEventSent() warns of unexpected CC numbers sent
@@ -614,10 +623,10 @@ namespace blekenbleu.MIDIspace
 		    cn++;					// next setting[s]
 		}
 	    }
-	    // MIDIin property configuration is now complete with mc CC numbers available in Configured[] for MIDIout not mine
-	    // if configured input CC number count < configured outputs,
-	    // then configured output numbers potentially collide with low unconfigured input CC numbers
-	    if (mc < SendCt[0])
+            // MIDIin property configuration is now complete with mc CC numbers available in Configured[] for MIDIout not mine
+            // if configured input CC number count < configured outputs,
+            // then configured output numbers potentially collide with low unconfigured input CC numbers
+            if (mc < SendCt[0])
 		MIDIio.Info($"Attach(): {mc} allocated MIDIin count < {SendCt} for MIDIout");
 
 	    byte ct;

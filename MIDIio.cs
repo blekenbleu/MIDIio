@@ -61,7 +61,7 @@ namespace blekenbleu.MIDIspace
 
 	    // Send my property messages anytime (echo)
 	    DoSend(pluginManager, true);
-//	    VJD.Run();
+//	    VJD.Run();				// for testing: loops thru configured axes and buttons
 	}
 
 	/// <summary>
@@ -71,8 +71,10 @@ namespace blekenbleu.MIDIspace
 	/// <param name="pluginManager"></param>
 	public void End(PluginManager pluginManager)
 	{
-	    Reader.End();
-	    Outer.End();
+	    if (null != Reader)
+		Reader.End();
+	    if (null != Outer)
+		Outer.End();
 	    VJD.End();
 	    Properties.End(this);
 	    this.SaveCommonSettings("GeneralSettings", Settings);
@@ -83,6 +85,7 @@ namespace blekenbleu.MIDIspace
 	/// </summary>
 	/// <param name="pluginManager"></param>
 	private static int count = 0;
+        private long VJDmaxval;
 	public void Init(PluginManager pluginManager)
 	{
 	    Log(4, "Init()");
@@ -98,7 +101,6 @@ namespace blekenbleu.MIDIspace
 	    if (null != prop && 0 < prop.Length && (0 >= (s = Int32.Parse(prop)) || 128 < s))
 		Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
 	    else size = (byte)s;
-	    pluginManager.AddProperty("size", this.GetType(), size);
 
 	    // Log() level configuration
 	    prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
@@ -106,7 +108,7 @@ namespace blekenbleu.MIDIspace
             Log(8, $"log Level {Level}");
 
 	    VJD = new VJsend();			// vJoy
-	    VJD.Init(1);			// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
+	    VJDmaxval = VJD.Init(1);		// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
 
 	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
 	    Properties = new CCProperties();    // MIDI and vJoy property configuration
@@ -114,14 +116,15 @@ namespace blekenbleu.MIDIspace
 
 	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
 	    prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
-	    if (null == prop || 0 == prop.Length) {
-		prop = "unassigned";
-		Info("out: " + prop);
+	    if (null == prop)
+		Info("Init(): missing " + Ini + "out entry!");
+	    else if (0 < prop.Length)
+	    {
+	    	pluginManager.AddProperty("out", this.GetType(), prop);
+		Outer = new OUTdrywet();
+		Outer.Init(this, prop, Properties.SendCt[0]);
 	    }
-	    pluginManager.AddProperty("out", this.GetType(), prop);
-
-	    Outer = new OUTdrywet();
-	    Outer.Init(this, prop, Properties.SendCt[0]);
+	    else Info("Init(): " + Ini + "out is undefined" );
 
 	    prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 	    if (null == prop)
@@ -232,7 +235,7 @@ namespace blekenbleu.MIDIspace
 			if (Sent[j][cc] != value) {			// send only changed values
 			    Sent[j][cc] = value;
 			    if (1 == j)
-				VJD.Axis(cc, property);
+				VJD.Axis(cc, (int) (63.5 + property * VJDmaxval) / 127);	// rescale from MIDI to vJoy
 			    else if (2 == j)
 				VJD.Button( ++cc, 0.5 < property);	// first VJoy button is 1, not 0
 			    else if (Properties.CC == (Properties.CC & Properties.Which[b]))
