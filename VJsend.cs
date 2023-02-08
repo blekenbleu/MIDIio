@@ -35,14 +35,14 @@ namespace blekenbleu.MIDIspace
         private HID_USAGES[] Usage;
         private int[] AxVal;
 
-        internal bool Init(uint ID)
+        internal long Init(uint ID)	// return maxval
         {
             nAxes = 0;
             maxval = 0;
             bool acquire = false;
 
             if (ID <= 0 || ID > 16)
-                return MIDIio.Info($"VJsend(): Invalid device ID;  must be 0 < {ID} <= 16");
+                return MIDIio.Info($"VJsend(): Invalid device ID;  must be 0 < {ID} <= 16") ? 0 : 0;
             id = ID;	// Device ID can only be in the range 1-16
 
             // Create one joystick object and a position structure.
@@ -51,11 +51,11 @@ namespace blekenbleu.MIDIspace
 
             // Get the driver attributes (Vendor ID, Product ID, Version Number)
             if (!joystick.vJoyEnabled())
-                return MIDIio.Info($"VJsend(): vJoy driver not enabled: Failed Getting vJoy attributes.");
+                return MIDIio.Info($"VJsend(): vJoy driver not enabled: Failed Getting vJoy attributes.") ? 0 : 0;
 
 	    MIDIio.Info("VJsend(): Found " + joystick.GetvJoyProductString());
             MIDIio.Log(2, $"vJoy.Version: {joystick.GetvJoySerialNumberString()}\n"
-	           + $"\tDeveloper: {joystick.GetvJoyManufacturerString()}");
+	           + $"\t     Developer: {joystick.GetvJoyManufacturerString()}");
             
 
             // Test if DLL matches the driver
@@ -76,11 +76,11 @@ namespace blekenbleu.MIDIspace
                     acquire = true;
                     break;
                 case VjdStat.VJD_STAT_BUSY:
-                    return MIDIio.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue");
+                    return MIDIio.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue") ? 0 : 0;
                 case VjdStat.VJD_STAT_MISS:
-                    return MIDIio.Info($"vJoy Device {id} is not installed or disabled\nCannot continue");
+                    return MIDIio.Info($"vJoy Device {id} is not installed or disabled\nCannot continue") ? 0 : 0;
                 default:
-                    return MIDIio.Info($"vJoy Device {id} general error\nCannot continue");
+                    return MIDIio.Info($"vJoy Device {id} general error\nCannot continue") ? 0 : 0;
             };
  
 #if FFB
@@ -124,9 +124,9 @@ namespace blekenbleu.MIDIspace
             if (acquire)	// Acquire the target?
 	    {
                 if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
-                    return MIDIio.Info($"Failed to acquire vJoy device number {id}.");
-                else MIDIio.Log(4, $"MIDIio.VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
-            } else MIDIio.Log(4, $"MIDIio.VJsend.Init():  axis maxval={maxval}.");
+                    return MIDIio.Info($"VJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
+                else MIDIio.Log(4, $"VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
+            } else MIDIio.Log(4, $"VJsend.Init():  axis maxval={maxval}.");
 #if FFB
             StartAndRegisterFFB();
 #endif
@@ -134,8 +134,8 @@ namespace blekenbleu.MIDIspace
             joystick.ResetVJD(id);
 
             count = 0;
-	    return true;
-        }		// Init()
+	    return maxval;
+        }			// Init()
 
         internal void Run()
         {
@@ -163,12 +163,11 @@ namespace blekenbleu.MIDIspace
             MIDIio.Log(8, $"VJd.Run(): set {set};  unset {unset}");
             joystick.SetBtn(true, id, set);			// 1 <= nButtons <= 32
             joystick.SetBtn(false, id, unset);
-        } // Run()
+        } 							// Run()
 
-        internal void Axis(byte axis, double value)
+        internal void Axis(byte axis, int valint)
         {
-            int val = (int) (63.5 + value * maxval) / 127;	// rescale from MIDI to vJoy
-            joystick.SetAxis(val, id, Usage[axis]);
+            joystick.SetAxis(valint, id, Usage[axis]);		// 0 <= valing <= maxval
         }
 
         internal void Button(byte button, bool value)
