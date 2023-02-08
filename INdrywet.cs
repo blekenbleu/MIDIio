@@ -23,17 +23,18 @@ namespace blekenbleu.MIDIspace
                 InputDevice = Melanchall.DryWetMidi.Devices.InputDevice.GetByName(MIDIin);
                 InputDevice.EventReceived += OnEventReceived;
                 InputDevice.StartEventsListening();
-                that.Log(4, $"INdrywet() is listening for {MIDIin} messages.");
+                MIDIio.Log(4, $"INdrywet() is listening for {MIDIin} messages.");
             }
             
             catch (Exception)
             {
-                that.Info($"INdrywet() Failed to find {MIDIin};\nKnown devices:");
+                MIDIio.Info($"INdrywet() Failed to find {MIDIin};\nKnown devices:");
                 foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
-                    that.Info("\t" + inputDevice.Name);
+                    MIDIio.Info("\t" + inputDevice.Name);
                 return false;
             }
             M = that;
+            MIDIio.Info("INdrywet(): Found " + MIDIin); 
             return true;
         }
 
@@ -44,7 +45,7 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (e.Event is ControlChangeEvent CC)
                 M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);	// add unconfigured CC properties
-            else SimHub.Logging.Current.Info($"INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
+            else MIDIio.Info($"INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
         }
 
         internal void End()

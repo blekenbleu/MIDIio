@@ -22,13 +22,13 @@ namespace blekenbleu.MIDIspace
         {   // wasted a day not finding this documented
             try
             {
-                I.Log(8, $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
+                MIDIio.Log(8, $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
                 OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control, (SevenBitNumber)value) {Channel = (FourBitNumber)0});
             }
             catch (Exception e)
             {
                 string oops = e?.ToString();
-                I.Info("SendCC() Failed: " + oops);
+                MIDIio.Info("SendCC() Failed: " + oops);
                 return Connected = false;
             }
             return true;
@@ -39,16 +39,16 @@ namespace blekenbleu.MIDIspace
         internal bool Ping(SevenBitNumber num)	// gets called (indirectly, event->action) by INdrywet()
         {
             if (SendCCval(num, Latest)) {        		// Ping(): drop pass from Active()
-                I.Info($"Ping(): {CCout} CC{num} {Latest}");
+                MIDIio.Info($"Ping(): {CCout} CC{num} {Latest}");
                 return true;
             }
-            else I.Info(CCout + " disabled");
+            else MIDIio.Info(CCout + " disabled");
             return false;
         }
 
         internal void Init(MIDIio M, String MIDIout, int count)
         {
-            I = M;			// only for logging
+            I = M;			// only for OnEventSent
             if (null == MIDIout)
                 return;
             CCout = MIDIout;
@@ -59,9 +59,9 @@ namespace blekenbleu.MIDIspace
                 OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
-                I.Log(4, "OUTwetdry() is ready to send CC messages to " + MIDIout + ".");
+                MIDIio.Info("OUTwetdry(): Found " + MIDIout);
                 byte j = 0;
-                if (I.DoEcho)
+                if (M.DoEcho)
                     for (byte i = 0; j < count && i < 128; i++)				// resend saved CCs
                     {
                         if (0 < (M.Properties.unconfigured & M.Properties.Which[i]))	// unconfigured CC number?
@@ -75,9 +75,9 @@ namespace blekenbleu.MIDIspace
             catch (Exception)
             {
                 Connected = false;
-                I.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
+                MIDIio.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
                 foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
-                    I.Info("Init(): " +outputDevice.Name);
+                    MIDIio.Info("Init(): " +outputDevice.Name);
             }
         }
 
@@ -94,11 +94,11 @@ namespace blekenbleu.MIDIspace
             // this cute syntax is called pattern matching
             if (Connected && e.Event is ControlChangeEvent CC)
             {
-                I.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+                MIDIio.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
                 if ((I.Properties.SendCt[0] <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
-                    I.Info("OnEventSent(): Mystery " + I.Properties.CCname[CC.ControlNumber]);
+                    MIDIio.Info("OnEventSent(): Mystery " + I.Properties.CCname[CC.ControlNumber]);
             }
-            else I.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+            else MIDIio.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }
     }
 }

@@ -13,7 +13,7 @@ namespace blekenbleu.MIDIspace
 	internal byte[] Size;
 	private bool[,] Once;
 	private byte[][] Sent;
-	internal string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
+	internal static string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
 	internal static string My = "MIDIio.";					// PluginName + '.'
         internal string[] Real { get; } = { My, "JoystickPlugin." };
 	internal MIDIioSettings Settings;
@@ -21,16 +21,17 @@ namespace blekenbleu.MIDIspace
 	internal VJsend VJD;
 	internal INdrywet Reader;
 	internal OUTdrywet Outer;
-	private byte Level = 0;
-	internal bool DoEcho = false;
+	private static byte Level;
+	internal bool DoEcho;
+        private string prop;
 
-	internal bool Info(string str)
+	internal static bool Info(string str)
 	{
 	    SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Info()
 	    return true;
 	}
 
-	internal bool Log(byte level, string str)
+	internal static bool Log(byte level, string str)
 	{
 	    bool b = 0 < (level & Level);
 
@@ -88,48 +89,48 @@ namespace blekenbleu.MIDIspace
 	    // Load settings
 	    Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
-	    VJD = new VJsend();			// vJoy
-	    VJD.Init(this, 1);			// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
+	    prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
+	    DoEcho = (null != prop && 0 < Int32.Parse(prop));
+	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
 
 	    int s = size;
-	    string input = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
-	    if (null != input && 0 < input.Length && (0 >= (s = Int32.Parse(input)) || 128 < s))
-		Info($"Init(): invalid {Ini + "size"} {input}; defaulting to {size}");
+	    prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
+	    if (null != prop && 0 < prop.Length && (0 >= (s = Int32.Parse(prop)) || 128 < s))
+		Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
 	    else size = (byte)s;
 	    pluginManager.AddProperty("size", this.GetType(), size);
 
+	    // Log() level configuration
+	    prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
+	    Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
+            Log(8, $"log Level {Level}");
+
+	    VJD = new VJsend();			// vJoy
+	    VJD.Init(1);			// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
+
 	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
 	    Properties = new CCProperties();    // MIDI and vJoy property configuration
-
-	    string output = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
-	    // Log() level configuration
-	    if (null != output && 0 < output.Length)
-		Level = (byte)(0.5 + Convert.ToDouble(output));
-            Log(8, $"log Level {Level}");
 	    Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
 
 	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
-	    output = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
-	    if (null == output || 0 == output.Length) {
-		output = "unassigned";
-		Info("out: " + output);
+	    prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
+	    if (null == prop || 0 == prop.Length) {
+		prop = "unassigned";
+		Info("out: " + prop);
 	    }
-	    pluginManager.AddProperty("out", this.GetType(), output);
-
-	    DoEcho = 0 < Int32.Parse(pluginManager.GetPropertyValue(Ini + "echo")?.ToString());
-	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
+	    pluginManager.AddProperty("out", this.GetType(), prop);
 
 	    Outer = new OUTdrywet();
-	    Outer.Init(this, output, Properties.SendCt[0]);
+	    Outer.Init(this, prop, Properties.SendCt[0]);
 
-	    input = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
-	    if (null == input)
+	    prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
+	    if (null == prop)
 		Info("Init(): missing " + Ini + "in entry!");
-	    else if (0 < input.Length)
+	    else if (0 < prop.Length)
 	    {
-		pluginManager.AddProperty("in", this.GetType(), input);
+		pluginManager.AddProperty("in", this.GetType(), prop);
 		Reader = new INdrywet();
-		if(Reader.Init(input, this))
+		if(Reader.Init(prop, this))
 		    Properties.Attach(this);	// AttachDelegate buttons, sliders and knobs
 	    }
 	    else Info("Init(): " + Ini + "in is undefined" );
@@ -198,7 +199,7 @@ namespace blekenbleu.MIDIspace
 	private void DoSend(PluginManager pluginManager, bool always)
 	{
 	    byte end, j, b, cc, value;
-            string prop, send;
+            string send;
             double property;
 
 	    for (j = 0; j < Properties.Send.GetLength(0); j++)
