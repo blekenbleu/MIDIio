@@ -17,12 +17,12 @@ namespace blekenbleu.MIDIspace
 	internal static string My = "MIDIio.";					// PluginName + '.'
         internal string[] Real { get; } = { My, "JoystickPlugin." };
 	internal MIDIioSettings Settings;
-	internal CCProperties Properties;
+	internal static CCProperties Properties;
 	internal VJsend VJD;
 	internal INdrywet Reader;
 	internal OUTdrywet Outer;
 	private static byte Level;
-	internal bool DoEcho;
+	internal static bool DoEcho;
         private string prop;
 
 	internal static bool Info(string str)

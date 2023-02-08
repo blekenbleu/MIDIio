@@ -14,7 +14,6 @@ namespace blekenbleu.MIDIspace
     {
         private static IOutputDevice _outputDevice;
         private static IOutputDevice OutputDevice { get => _outputDevice; set => _outputDevice = value; }
-        private MIDIio I;
         private bool Connected = false;
         private String CCout;       	// Output MIDI destination, used by log messages
 
@@ -48,7 +47,6 @@ namespace blekenbleu.MIDIspace
 
         internal void Init(MIDIio M, String MIDIout, int count)
         {
-            I = M;			// only for OnEventSent
             if (null == MIDIout)
                 return;
             CCout = MIDIout;
@@ -61,10 +59,10 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.PrepareForEventsSending();
                 MIDIio.Info("OUTwetdry(): Found " + MIDIout);
                 byte j = 0;
-                if (M.DoEcho)
+                if (MIDIio.DoEcho)
                     for (byte i = 0; j < count && i < 128; i++)				// resend saved CCs
                     {
-                        if (0 < (M.Properties.unconfigured & M.Properties.Which[i]))	// unconfigured CC number?
+                        if (0 < (MIDIio.Properties.unconfigured & MIDIio.Properties.Which[i]))	// unconfigured CC number?
                         {
                             SendCC(i, M.Settings.Sent[i]);		// much time may have passed;  reinitialize MIDIout device
                             j++;
@@ -95,8 +93,8 @@ namespace blekenbleu.MIDIspace
             if (Connected && e.Event is ControlChangeEvent CC)
             {
                 MIDIio.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
-                if ((I.Properties.SendCt[0] <= I.Properties.Unmap[CC.ControlNumber]) && !I.DoEcho)	// unassigned ?
-                    MIDIio.Info("OnEventSent(): Mystery " + I.Properties.CCname[CC.ControlNumber]);
+                if ((MIDIio.Properties.SendCt[0] <= MIDIio.Properties.Unmap[CC.ControlNumber]) && !MIDIio.DoEcho)	// unassigned ?
+                    MIDIio.Info("OnEventSent(): Mystery " + MIDIio.Properties.CCname[CC.ControlNumber]);
             }
             else MIDIio.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
         }

@@ -621,7 +621,7 @@ namespace blekenbleu.MIDIspace
 		MIDIio.Info($"Attach(): {mc} allocated MIDIin count < {SendCt} for MIDIout");
 
 	    byte ct;
-	    if (!I.DoEcho)
+	    if (!MIDIio.DoEcho)
 		for (ct = 0; ct < 128; ct++)
 		    if (0 < (unconfigured & Which[ct]))
 			SetProp(I, ct, I.Settings.Sent[ct]);	// restore previous received unconfigured CCs
