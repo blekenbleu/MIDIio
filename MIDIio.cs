@@ -203,7 +203,6 @@ namespace blekenbleu.MIDIspace
 	{
 	    byte end, j, b, cc, value;
             string send;
-            double property;
 
 	    for (j = 0; j < Properties.Send.GetLength(0); j++)
 	    {
@@ -226,7 +225,13 @@ namespace blekenbleu.MIDIspace
 		    }
 		    else if (0 < send.Length)
 		    {
-			property = Convert.ToDouble(send);
+/*
+ ; At least 3 possibilities:
+ ; 1) 0 <= MIDI value < 128
+ ; 2) 0 <= ShakeIt property <= 100.0
+ ; 3) 0 <= JoyStick property <= VJDmaxval
+ */
+			double property = Convert.ToDouble(send);
 			if (Properties.MySendCt[j] <= b)
 			    property *= 1.27;				// ShakeIt properties <= 100
 			value = (byte)(0.5 * property);
