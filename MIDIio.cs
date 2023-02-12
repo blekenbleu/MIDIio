@@ -13,11 +13,11 @@ namespace blekenbleu.MIDIspace
 	internal byte[] Size;
 	private bool[,] Once;
 	private byte[][] Sent;
-	internal static string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-	internal static string My = "MIDIio.";					// PluginName + '.'
-        internal string[] Real { get; } = { My, "JoystickPlugin." };
+	internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
+	internal static readonly string My = "MIDIio.";					// PluginName + '.'
+        internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
 	internal MIDIioSettings Settings;
-	internal static CCProperties Properties;
+	internal static IOproperties Properties;
 	internal VJsend VJD;
 	internal INdrywet Reader;
 	internal OUTdrywet Outer;
@@ -111,7 +111,7 @@ namespace blekenbleu.MIDIspace
 	    VJDmaxval = VJD.Init(1);		// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
 
 	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
-	    Properties = new CCProperties();    // MIDI and vJoy property configuration
+	    Properties = new IOproperties();    // MIDI and vJoy property configuration
 	    Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
 
 	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
