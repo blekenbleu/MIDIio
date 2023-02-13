@@ -8,14 +8,14 @@ namespace blekenbleu.MIDIspace
     // Working around the SimHub limitation that AttachDelegate() fails for variables.
     internal class IOproperties
     {
-	private string[] SendType;						// configuration by NCalc script
-	internal string[,] Send;					// these are used at 60Hz
+	private string[] SendType;					// configuration by NCalc script
+	internal string[][] Send;					// these properties may be sent at 60Hz
+	internal byte[,] SendCt;					// cumulative SendType subtotals
 	internal string[] CCname;					// for AttachDelegate()
 	internal byte[] CCvalue;					// store CC values
-	internal byte[] SendCt, MySendCt;
-	internal byte[] Which, Unmap;					// remap CC Sends
+	internal byte[] Which, Unmap;					// remap CC Sends; Active() test Which for non-zero (already active), Button and unconfigured
 	internal readonly byte unconfigured = 4, CC = 1, Button = 2;	// flags for Which[]
-	internal byte[][] Map;						// reorder parameter refresh
+	internal byte[][] Map;						// reorder SendProp refresh
 	private byte[] Configured;					// temporarily accumulate configured Sends
 	private string[]  Ping;						// ping[0-7]
 	private string[,] SendProp;
@@ -24,29 +24,26 @@ namespace blekenbleu.MIDIspace
 	internal void Init(MIDIio I)
 	{								// configuration property name prefixes
 	    SendType = new string[] { "send", "vJDaxis", "vJDbutton" };
-            if (null != I.Outer)
-            {
-		MySendCt = new byte[SendType.Length];
-		SendCt = new byte[SendType.Length];
-            }
-            else
-            {
-                SendCt = MySendCt = new byte[] {0};
-//		SendCt = new byte[] {0};
-            }
-	    SendProp = new string[SendType.Length, Size[0]];			// accumulate entries in numerically ascending order
-	    byte ct;
-									// first MySendCt entries are for MIDIio.My propertie
-	    Map = new byte[][] { new byte[Size[0]], new byte[Size[0]], new byte[Size[0]] };
+	    SendProp = new string[SendType.Length, MIDIio.size];	// accumulate property names in discovered order
+	    SendCt = new byte[SendType.Length, 1 + MIDIio.Real.Length];	// SendCt entries sorted for SendType[], then game properties
+
+	    Send = new string[][] {new string[Size[0]], new string[Size[1]], new string[Size[2]] }; // SendProp[][] sorted by SendCt[,]
+	    Map = new byte[][] { new byte[Size[0]], new byte[Size[1]], new byte[Size[2]] };	// Send[][] indices sorted by SendCt[,]
+
 	    Which = new byte[128];					// OUTwetdry.Init() resends unconfigured CCs on restart
 									//                  if DoEcho && (0 < unconfigured & Which[i])
 	    Unmap = new byte[128];					// OnEventSent() warns of unexpected CC numbers sent
-	    CCvalue = new byte[128];
-	    CCname = new string[128];
+	    CCname = new string[128];					// first CCname[SendCt[0, MIDIio.Real.Length]] entries will be Send[0]
+	    CCvalue = new byte[128];					// first CCvalue[SendCt[0, MIDIio.Real.Length]] entries will be for Send[0]
+	    byte ct;
 
 	    MIDIio.Log(8, "Properties.send.Length = " + SendType.Length);
 	    for (byte i = ct = 0; i < 128; i++)				// extract unconfigured CC flags
 	    {
+		CCvalue[i] = 0;
+		Unmap[i] = i;
+		CCname[i] = "CC" + i;
+
 		if (0 < (0x80 & I.Settings.Sent[i]))
 		{
 		    ct++;
@@ -54,15 +51,12 @@ namespace blekenbleu.MIDIspace
 		    Which[i] = unconfigured;
 		}
 		else Which[i] = 0;
-
-		CCvalue[i] = 0;
-		Unmap[i] = i;
-		CCname[i] = "CC" + i;
 	    }
+
 	    byte j = 0;
             if (MIDIio.DoEcho)
 	    {
-                for (byte i = 0, j < count && i < 128; i++)                         // resend saved CCs
+                for (byte i = 0, j < ct && i < 128; i++)                         // resend saved CCs
                 {
                     if (0 < (MIDIio.Properties.unconfigured & MIDIio.Properties.Which[i]))  // unconfigured CC number?
                     {
@@ -71,51 +65,70 @@ namespace blekenbleu.MIDIspace
                     }
                 }
 	        MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
+	    } else MIDIio.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
+
+	    // these will be used at 60Hz
+	    Configured = new byte[MIDIio.size];					// temporarily acumulate configured Sends
+
+	    bool[,] ok = new bool[SendType.Length,MIDIio.size];			// valid Real send properties
+	    bool[,] game = new bool[SendType.Length,MIDIio.size];
+            for (ct = 0; ct < SendType.Length; ct++)
+	    {
+	    	SendCt[ct,0] = 0;
+		for (j = 0; j < MIDIio.size; j++)
+		    game[ct. j] = ! (ok[ct, j] = false);
 	    }
-	    MIDIio.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
-	    Send = new string[SendType.Length, Size[0]];			// these will be used at 60Hz
-	    Configured = new byte[Size[0]];				// temporarily acumulate configured Sends
-	    bool[,] ok = new bool[SendType.Length,Size[0]];			// valid send properties non I.my
+
 	    Ping = new string[Size[0]];
 	    for (byte i = 0; i < Size[0]; i++)
 		Ping[i] = "ping" + i;
 
-	    for (byte j = 0; j < SendType.Length; j++)
+	    // Search MIDIio.ini for send properties.  MIDIio.size may have been configured for each, but destinations may accept less, even 0
+	    string[] ss = { "", "", "" };
+	    for (ct = 0; ct < SendType.Length; ct++)
+	    for (j = 0; j < MIDIio.Real.Length; j++)
 	    {
-                string ss = "";
-
-		MySendCt[j] = 0;
-                MIDIio.Log(8, $"SendType[{j}] = '{SendType[j]}'");
-		for (byte i = 0; i < Size[j]; i++)   			// snag 'My' configured sends
+                MIDIio.Log(8, $"{SendType[ct]} for {MIDIio.Real[j]}");
+                byte k = (2 > j) ? j : (byte)(j + 1);				// first vJoy button is 1, not 0
+		for (byte i = 0; i < MIDIio.size; i++)   			// snag Real[j] configured sends
 		{
-                    byte k = (2 > j) ? i : (byte)(i + 1);		// first vJoy button is 1, not 0
 		    SendProp[j, i] = I.PluginManager.GetPropertyValue($"{MIDIio.Ini + SendType[j]}{k}")?.ToString();
-		    if (ok[j, i] = (null != SendProp[j, i] && 0 < SendProp[j, i].Length))
-			// test for properties with "my" MIDIio.My prefix
-			if ((3 + MIDIio.My.Length) < SendProp[j, i].Length && MIDIio.My == (SendProp[j, i].Substring(0, MIDIio.My.Length)))
-			{
-			    ok[j, i] = false;
-			    Send[j, MySendCt[j]] = SendProp[j, i];
-			    Map[j][MySendCt[j]] = i;
-			    MySendCt[j]++;          // configured I.my CC's get echo'ed
-							ss += SendProp[j, i] + ",";
-			}
-		}
-
-		SendCt[j] = MySendCt[j];				// first MySendCt entries are indices for "My" outputs
-		for (byte i = 0; i < Size[j]; i++)   			// now, configured sends NOT from I.my.send[n < MySendCt]
-		{
-		    if (ok[j, i])					// not already assigned to Send[,]?
+		    if ((null != SendProp[j, i] && 0 < SendProp[j, i].Length))
 		    {
-			if (0 == j)
-			    Configured[SendCt[0]] = i;			// find a CC number to reuse for this send
-			Map[j][SendCt[j]] = i;
-			Send[j, SendCt[j]++] = SendProp[j, i];
-			ss += SendProp[j, i] + ",";
+			ok[j, i] = true;					// a valid send
+			// test for properties with  Real prefix
+			if ((3 + MIDIio.Real[j].Length) < SendProp[j, i].Length && MIDIio.Real[9] == (SendProp[j, i].Substring(0, MIDIio.My.Length)))
+			{
+			    game[j, i] = false;					// Real match, so not game; lots of not ok game remain set to true
+			    Send[j, SendCt[ct, j]] = SendProp[j, i];
+			    Map[j][MySendCt[ct, j]] = i;
+			    MySendCt[ct, j]++;
+			    if (0 == ss[ct].Length]
+			        ss[ct] += SendProp[j, i] + ",";
+			    else ss[ct] += "\n\t\t\t" + SendProp[j, i] + ",";
+			}
 		    }
 		}
-		MIDIio.Log(4, $"Properties.Map[{j}] SendCt = {SendCt[j]}:  " + string.Join(",", Array.ConvertAll(Map[j], ele => ele.ToString())));
-		MIDIio.Log(4, $"Properties.Send[{j}]: " + ss);
+
+		SendCt[ct, j + 1] = SendCt[ct, j];			// previous SendCt entries are starts for subsequent
+		for (byte i = 0; i < ok[j].Length; i++)   			// now, configured sends NOT from I.my.send[n < MySendCt]
+		{
+		    if (ok[j,i] && game[j, i])				// not already assigned to Send[,]?
+		    {
+			if (0 == j)
+			    Configured[SendCt[0, SendCt[ct, j]] = i;			// find a CC number to reuse for this send
+			Map[j][SendCt[ct, j]] = i;
+			Send[j][SendCt[ct, j]++] = SendProp[j, i];
+			if (0 == ss[ct].Length]
+			    ss[ct] += SendProp[j, i] + ",";
+			else ss[ct] += "\n\t\t\t" + SendProp[j, i] + ",";
+		    }
+		}
+	    }
+	    for (ct = 0; ct < SendType.Length; ct++)
+	    {
+		MIDIio.Log(4, $"Properties.Map[{tc}] SendCt = {SendCt[ct, SendType.Length]}:  " + string.Join(",", Array.ConvertAll(Map[ct], ele => ele.ToString())));
+		MIDIio.Log(4, $"Properties.Send[{ct}]:  " + ss);
 	    }
 	}	// Init()
 
@@ -578,7 +591,7 @@ namespace blekenbleu.MIDIspace
 	    if (MIDIio.Log(8, "Attach() MIDIio.in sends:"))
 	    {
 		for (byte j = 0; j < Send.GetLength(0); j++)
-		    for (byte i = 0; i < MySendCt[j]; i++)
+		    for (byte i = 0; i < SendCt[j, 0]; i++)
 			MIDIio.Info("\t" + Send[j, i] + " AKA " + Send[j, i].Substring(L, Send[j, i].Length - L));
 	    }
 
@@ -610,7 +623,7 @@ namespace blekenbleu.MIDIspace
 			Which[cc] |= Wmap[s];
 
 			MIDIio.Log(8, $"Attach():  {CCname[cc]} = CC{cc}");
-			for (byte mi = 0; mi < MySendCt[0]; mi++)
+			for (byte mi = 0; mi < SendCt[0, 0]; mi++)
 			    if (CCname[cc].Length == (Send[0, mi].Length - L) && CCname[cc] == Send[0, mi].Substring(L, CCname[cc].Length))
 			    {
 				Unmap[cc] = my;
@@ -637,8 +650,8 @@ namespace blekenbleu.MIDIspace
             // MIDIin property configuration is now complete with mc CC numbers available in Configured[] for MIDIout not mine
             // if configured input CC number count < configured outputs,
             // then configured output numbers potentially collide with low unconfigured input CC numbers
-            if (mc < SendCt[0])
-		MIDIio.Info($"Attach(): {mc} allocated MIDIin count < {SendCt} for MIDIout");
+            if (mc < SendCt[0, 0])
+		MIDIio.Info($"Attach(): {mc} allocated MIDIin count < {SendCt[0, 0]} for MIDIout");
 
 	    byte ct;
 	    if (!MIDIio.DoEcho)
@@ -646,12 +659,12 @@ namespace blekenbleu.MIDIspace
 		    if (0 < (unconfigured & Which[ct]))
 			SetProp(I, ct, I.Settings.Sent[ct]);	// restore previous received unconfigured CCs
 
-	    ct = MySendCt[0];
-	    for (my = 0; my < mc && ct < SendCt[0]; my++) 
+	    ct = SendCt[0,0];
+	    for (my = 0; my < mc && ct < SendCt[0, SendType.Length]; my++) 
 		Map[0][ct++] = Configured[my];			// recycle configured MIDIin CC numbers
 
 	    // appropriate previously unallocated CC numbers;  those controls will be unavailable in DeEcho mode..
-	    for (my = 127; MySendCt[0] <= my && ct < SendCt[0]; my--)	// configure CC numbers for MySendCt <= i < SendCt
+	    for (my = 127; MySendCt[0] <= my && ct < mc; my--)	// configure CC numbers for MySendCt <= i < SendCt
 	    {
 		if (0 == Which[my])
 		{
@@ -659,8 +672,13 @@ namespace blekenbleu.MIDIspace
 		    Which[my] = unconfigured;			// set my as appropriated
 		}
 	    }
-	    if (ct < SendCt[0])
-		MIDIio.Info($"Attach(): '{SendProp[0, ct]}' not Map[]ed");
+	    if (ct < mc)
+            {
+		string ss = SendProp[0, ct++];
+		for (; ct < mc; ct++)
+                   ss += ", " + SendProp[0, ct];
+		MIDIio.Info($"Attach(): CC properties {ss} not Map[]ed");
+            }
 	}	// Attach()
     }
 }

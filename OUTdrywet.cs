@@ -81,7 +81,7 @@ namespace blekenbleu.MIDIspace
             if (Connected && e.Event is ControlChangeEvent CC)
             {
                 MIDIio.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
-                if ((MIDIio.Properties.SendCt[0] <= MIDIio.Properties.Unmap[CC.ControlNumber]) && !MIDIio.DoEcho)	// unassigned ?
+                if ((MIDIio.Properties.SendCt[0, 0] <= MIDIio.Properties.Unmap[CC.ControlNumber]) && !MIDIio.DoEcho)	// unassigned ?
                     MIDIio.Info("OnEventSent(): Mystery " + MIDIio.Properties.CCname[CC.ControlNumber]);
             }
             else MIDIio.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");

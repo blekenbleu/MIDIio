@@ -22,8 +22,8 @@ Search for `midi` in **SimHub Available properties**:
 
 -  `ExternalScript.MIDIecho`:  
    `> 0`:&nbsp; forwards unconfigured `MIDIin` CC messages to `MIDIout` with no corresponding properties generated  
-   `== 0`:&nbsp; dynamically generates properties `MIDIio.CC[0-127]` for unconfigured CC messages received  
-   &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; when `ExternalScript.MIDIecho == 0`.&nbsp; They can be used to identify CC numbers for configuring.  
+   `== 0`:&nbsp; dynamically generates properties `MIDIio.CC[0-127]` for unconfigured CC messages received.  
+   These can be used to identify CC numbers for configuring [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini).
 -  `ExternalScript.MIDIsend[0-7]` identify properties for which value changes become CC messages to `MIDIout`.  
    If first 7 characters of those property names are 'MIDIio.', then those are among `MIDIin` CC properties
    `MIDIio.knob[0-7]`, `slider[0-7]`, `button[0-7]`, or `CC[0-127]`, with matching `MIDIin` CC changes sent.
@@ -41,9 +41,9 @@ Search for `midi` in **SimHub Available properties**:
    If configured names' first 7 characters are 'MIDIio.', then those properties should be among `MIDIio.button[0-7]`.  
 
 -  `ExternalScript.VJDaxis[0-7]` specify properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp; selecting among  
-   `MIDIio.slider[0-7]`, `MIDIio.knob[0-7]`, or `MIDIio.CC[0-127]` sends their changes as vJoy axes.  
+   `MIDIio.slider[0-7]`, `MIDIio.knob[0-7]`, or `MIDIio.CC[0-127]` sends their rescaled property changes as vJoy axes values.  
 
--  Each MIDIin CC property may get multiple send assignments.  
+-  Each property may get multiple send assignments.  
 
 **MIDI supports only 127 CC message numbers per channel.**  
 For example, if `ExternalScript.MIDIsend[0-7]` are configured  
@@ -53,28 +53,28 @@ For `MIDIecho > 0` in this exampe, `MIDIsend[0-7]` would mix with unconfigured C
 but `ping[0-7]` are specifically implemented to enable configuring any `MIDIin CCn` Events for mixing.
 
 Since configured `MIDIio.*` properties are NOT forwarded by default,  
-MIDIio maps `MIDIsend[0-7]` properties *not* configured for `MIDIio.*`  
- to use CC numbers from first configured `MIDIin.*` properties.  
+MIDIio may remap `MIDIsend[0-7]` properties *not* configured for `MIDIio.*`  
+ to use CC numbers from `MIDIin.*` properties *not* configured for `MIDIout`.  
 Anytime *non*-`MIDIio.*` properties configured as `MIDIsend[0-7] >` configured `MIDIin` properties,  
-excess `MIDIsend[0-7]` properties will appropriate lowest unconfigured CC numbers, risking potential mixing.
+excess `MIDIsend[0-7]` properties will appropriate highest unconfigured CC numbers, risking potential mixing.
 
-If/when e.g. a `MIDIsend0` definition is removed from `NCalcScripts/MIDIio.ini`  
-then other configured `MIDIsend1-7]` properties not set to `MIDIio.*` will send *changed* CC numbers to `MIDIout`.
+If/when e.g. a `MIDIsend` definition is removed from `NCalcScripts/MIDIio.ini`  
+then other configured `MIDIsend` properties not set to `MIDIio.*` may send *changed* CC numbers to `MIDIout`.
 
-When restarted by SimHub, MIDIio resends saved values for configured `MIDIin.*` properties,  
+When restarted by SimHub, MIDIio in DoEcho mode resends values for unconfigured `MIDIin.*` properties,  
 but NOT from SimHub properties, e.g. `ShakeITBSV3Plugin.Export.*`
 * properties from a game before restart may be inappropriate for a possibly different newly started game.
-* properties for configured `MIDIin` numbers may be used for configuring `MIDIout` target,  
+* DoEcho'ed `MIDIin` CC messages *might* help [re]configure a `MIDIout` target,  
   which may have also been restarted.
 
 ### Run time operation
 SimHub's licensed update rate is 60Hz.&nbsp;  The **MIDIio** plugin handles *only its configured* properties.  
-**MIDIio** sends property change values to 3 destinations, provided those destinations are enabled:  
+**MIDIio** rescales and sends property change values among 3 destinations, provided those destinations are enabled:  
 `MIDI out`, `vJoy axes`, `vJoy buttons`, where `MIDI out` may be slider, knob or button CCs.  
 Any *destination* property may be configured from one of 4 *source* property types:  
-`MIDI in`, `JoySick axes`, `JoyStick buttons`, and `game telemetry` (most likely ShakeIt).  
-**MIDIio** refreshes destinations for those first 3 source types even when games are not running;  
-game property changes are forwarded only while games run.  
+`MIDIin`, `JoySick axes`, `JoyStick buttons`, and `game telemetry` (most likely ShakeIt).  
+**MIDIio** refreshes destinations for those first 3 (hardware) source types even when games are not running;  
+game property changes are forwarded *only while games run*.  
 
 To minimize runtime overhead, output (from `DoSend()`) is table driven:  
 -  2 `table[][]` entries index ranges of `table[][]` indices to send with games running [1] or anytime [0]
@@ -85,13 +85,13 @@ To minimize runtime overhead, output (from `DoSend()`) is table driven:
 Those `table[][]` entries index into a `Map[][]` array, where:  
 - one `Map` dimension indexes one `Send[][]` source property array dimension per destination type  
 - another `Map` dimension indexes another `Send[][]` array dimension  
-  for each property change for that indexed destination type.
+  for each configured property change for that indexed destination type.
 
 `Map[][]` and `Send[][]` are so-called [jagged arrays](https://www.programiz.com/csharp-programming/jagged-array).  
-Property counts from any source to any destination are variable, only *total* counts are constrained.  
-These indirections support sending zero up to a configured maximum number of properties.  
+Property counts for any source to any destination are variable, only *total* counts are constrained.  
+These table indirections support sending from none up to the configured maximum number of properties  
 from any source to any destination.&nbsp; The `table[][]` array has fixed dimensions:   
 - index range limit pairs for each of 4 sources, presorted  
 - index range limit pairs for game vs non-game sources, presorted  
 
-This arrangement also allows for relatively low pain extension to additional sources and destinations. 
+This arrangement should also allow for relatively low pain extension to additional sources and destinations. 

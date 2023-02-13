@@ -9,7 +9,7 @@ namespace blekenbleu.MIDIspace
     [PluginName("MIDIio")]
     public class MIDIio : IPlugin, IDataPlugin
     {
-	private byte size = 8;						// default configurable output count
+	internal static byte size = 8;						// default configurable output count
 	internal static byte[] Size;
 	private bool[,] Once;
 	private byte[][] Sent;
@@ -111,6 +111,8 @@ namespace blekenbleu.MIDIspace
 
 	    VJD = new VJsend();			// vJoy
 	    VJDmaxval = VJD.Init(1);		// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
+            if (0 == VJDmaxval)
+		Size[2] = Size[3] = 0;
 
 	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
 	    // Launch Outer before Reader and Properties
@@ -127,8 +129,8 @@ namespace blekenbleu.MIDIspace
 		Outer.Init(prop);	// may zero Size[0]
 	    }
 
-	    Properties = new IOproperties();    // MIDI and vJoy property configuration
-	    Properties.Init(this);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
+	    Properties = new IOproperties();	// MIDI and vJoy property configuration
+	    Properties.Init(this);		// send unconfigured DoEchoes, set SendCt[,], sort Send[][]
 
 	    prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 	    if (null == prop)
