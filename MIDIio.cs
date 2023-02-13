@@ -10,7 +10,7 @@ namespace blekenbleu.MIDIspace
     public class MIDIio : IPlugin, IDataPlugin
     {
 	private byte size = 8;						// default configurable output count
-	internal byte[] Size;
+	internal static byte[] Size;
 	private bool[,] Once;
 	private byte[][] Sent;
 	internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
@@ -57,10 +57,10 @@ namespace blekenbleu.MIDIspace
 	public void DataUpdate(PluginManager pluginManager, ref GameData data)
 	{
 	    if (data.GameRunning && data.OldData != null && data.NewData != null)
-		DoSend(pluginManager, false);
+		DoSend(pluginManager, 1);
 
 	    // Send my property messages anytime (echo)
-	    DoSend(pluginManager, true);
+	    DoSend(pluginManager, 0);
 //	    VJD.Run();				// for testing: loops thru configured axes and buttons
 	}
 
@@ -95,6 +95,13 @@ namespace blekenbleu.MIDIspace
 	    prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
 	    DoEcho = (null != prop && 0 < Int32.Parse(prop));
 	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
+	    count += 1;		// increments for each restart, provoked e.g. by game change or restart
+	    pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
+
+	    // Log() level configuration
+	    prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
+	    Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
+            Log(8, $"log Level {Level}");
 
 	    int s = size;
 	    prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
@@ -102,29 +109,26 @@ namespace blekenbleu.MIDIspace
 		Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
 	    else size = (byte)s;
 
-	    // Log() level configuration
-	    prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
-	    Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
-            Log(8, $"log Level {Level}");
-
 	    VJD = new VJsend();			// vJoy
 	    VJDmaxval = VJD.Init(1);		// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
 
 	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
-	    Properties = new IOproperties();    // MIDI and vJoy property configuration
-	    Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
-
-	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
+	    // Launch Outer before Reader and Properties
 	    prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
-	    if (null == prop)
-		Info("Init(): missing " + Ini + "out entry!");
-	    else if (0 < prop.Length)
+	    if (null == prop || 0 == prop.Length)
+	    {
+		Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
+		Size[0] = 0;
+	    }
+	    else
 	    {
 	    	pluginManager.AddProperty("out", this.GetType(), prop);
 		Outer = new OUTdrywet();
-		Outer.Init(this, prop, Properties.SendCt[0]);
+		Outer.Init(prop);	// may zero Size[0]
 	    }
-	    else Info("Init(): " + Ini + "out is undefined" );
+
+	    Properties = new IOproperties();    // MIDI and vJoy property configuration
+	    Properties.Init(this);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
 
 	    prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 	    if (null == prop)
@@ -138,8 +142,6 @@ namespace blekenbleu.MIDIspace
 	    }
 	    else Info("Init(): " + Ini + "in is undefined" );
 
-	    count += 1;		// increments for each restart, provoked e.g. by game change or restart
-	    pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 	    Once = new bool[Properties.Send.GetLength(0), size];
 
 	    for (int i = 0; i < size; i++)
@@ -199,57 +201,66 @@ namespace blekenbleu.MIDIspace
 	// Properties.Map[][] a prioritized array of destination indices
 	// Properties.Map[0] are MIDIout CCn corresponding to Settings.Sent[]
 	// Properties.Map[1-2] are vJoy axis and button indices, requiring their own Sent[,] array.
-	private void DoSend(PluginManager pluginManager, bool always)
+	private void DoSend(PluginManager pluginManager, byte index)
 	{
-	    byte end, j, b, cc, value;
+	    byte j, b, value;
             string send;
-
-	    for (j = 0; j < Properties.Send.GetLength(0); j++)
-	    {
-		end = (always) ? Properties.MySendCt[j] : Properties.SendCt[j];
-
-		for (b = (byte)((always) ? 0 : Properties.MySendCt[j]); b < end; b++)
-		{
-		    cc = Properties.Map[j][b];	// MIDIout CC number or vJoy button or axis
-                        
-		    if (!Once[j, b])
-		       continue;
-
-		    prop = Properties.Send[j, b];
-		    send = pluginManager.GetPropertyValue(prop)?.ToString();
-
-		    if (null == send)
-		    {
-			Once[j, b] = false;
-			Info("DoSend(): null " + prop);
-		    }
-		    else if (0 < send.Length)
-		    {
+	    byte[,] table = {{ 2, 5}, {5, 6}, {0, SendCt[0]}, {SendCt[1], SendCt[2]}, {SendCt[2], SendCt[3]}, {SendCt[3], SendCt[4]}};
 /*
  ; At least 3 possibilities:
  ; 1) 0 <= MIDI value < 128
  ; 2) 0 <= ShakeIt property <= 100.0
  ; 3) 0 <= JoyStick property <= VJDmaxval
  */
-			double property = Convert.ToDouble(send);
-			if (Properties.MySendCt[j] <= b)
-			    property *= 1.27;				// ShakeIt properties <= 100
-			value = (byte)(0.5 * property);
+            double[,] scale =  {{ 1.0,               	127.0 / VJDmaxval, 1.27 },
+				{ VJDmaxval / 127.0, 	1.0,               VJDmaxval / 100.0},
+				{ 100.0 / 127,		100.0 / VJDmaxval, 1.0}};
 
+	    for (int i = table[index, 0]; i < table[index, 1]; i++)
+                for (byte k = table[i, 0]; k < table[i, 0]; k++)
+	    	   for (j = 0; j < Properties.Send.GetLength(0); j++)
+	    	   {
+		
+		    ushort cc = Properties.Map[j][k];	// MIDIout CC number or vJoy button or axis
+                    b = (byte)(cc / 1000);
+                    cc %= 10000;
+		    if (!Once[j, b])
+		       continue;
+
+		    prop = Properties.Send[j, b];
+		  send = pluginManager.GetPropertyValue(prop)?.ToString();
+
+                    if (null == send)
+                    {
+                        Once[j, b] = false;
+                        Info("DoSend(): null " + prop);
+                    }
+                    else if (0 < send.Length)
+                    {  
+			double property = Convert.ToDouble(send);
+			value = (byte)(0.5 + property * scale[0, j]);
 			value &= 0x7F;
-			if (Sent[j][cc] != value) {			// send only changed values
-			    Sent[j][cc] = value;
-			    if (1 == j)
-				VJD.Axis(cc, (int) (63.5 + property * VJDmaxval) / 127);	// rescale from MIDI to vJoy
-			    else if (2 == j)
-				VJD.Button( ++cc, 0.5 < property);	// first VJoy button is 1, not 0
-			    else if (Properties.CC == (Properties.CC & Properties.Which[b]))
-				Outer.SendCCval(cc, value);		// DoSendCC()
+			if (value == Sent[j][cc])
+			    continue;				// send only changed values
+                        Sent[j][cc] = value;
+		    switch (b)
+		    {
+			case 0:
+				Outer.SendCCval((byte)cc, value);		// DoSendCC()
+			    break;
+			case 1:
+				VJD.Axis((byte)cc, (int) (0.5 * property * scale[1, j]));	// rescale from MIDI to vJoy
+			    break;
+			case 2:
+				VJD.Button((byte)(1 + cc), 0.5 < property);	// first VJoy button is 1, not 0
+			    break;
+			default:
+			    Info($"DoSend(): mystery type {b} ignored");
+			    break;
 			}
 		    }
 		    else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
 		}
-	    }
 	}		// DoSend()
     }
 }
