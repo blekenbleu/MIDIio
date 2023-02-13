@@ -67,3 +67,31 @@ but NOT from SimHub properties, e.g. `ShakeITBSV3Plugin.Export.*`
 * properties for configured `MIDIin` numbers may be used for configuring `MIDIout` target,  
   which may have also been restarted.
 
+### Run time operation
+SimHub's licensed update rate is 60Hz.&nbsp;  The **MIDIio** plugin handles *only its configured* properties.  
+**MIDIio** sends property change values to 3 destinations, provided those destinations are enabled:  
+`MIDI out`, `vJoy axes`, `vJoy buttons`, where `MIDI out` may be slider, knob or button CCs.  
+Any *destination* property may be configured from one of 4 *source* property types:  
+`MIDI in`, `JoySick axes`, `JoyStick buttons`, and `game telemetry` (most likely ShakeIt).  
+**MIDIio** refreshes destinations for those first 3 source types even when games are not running;  
+game property changes are forwarded only while games run.  
+
+To minimize runtime overhead, output (from `DoSend()`) is table driven:  
+-  2 `table[][]` entries index ranges of `table[][]` indices to send with games running [1] or anytime [0]
+-  3 `table[][]` entries index `Map[][]` ranges of `MIDI in`, `JoyStick axis`, `JoyStick button` destinations  
+   for configured `MIDI in`, `JoySick axis`, and `JoyStick button` sources.
+-  the final table entry indexes `Map[][]` range of game (`ShakeIt`) property sources.
+
+Those `table[][]` entries index into a `Map[][]` array, where:  
+- one `Map` dimension indexes one `Send[][]` source property array dimension per destination type  
+- another `Map` dimension indexes another `Send[][]` array dimension  
+  for each property change for that indexed destination type.
+
+`Map[][]` and `Send[][]` are so-called [jagged arrays](https://www.programiz.com/csharp-programming/jagged-array).  
+Property counts from any source to any destination are variable, only *total* counts are constrained.  
+These indirections support sending zero up to a configured maximum number of properties.  
+from any source to any destination.&nbsp; The `table[][]` array has fixed dimensions:   
+- index range limit pairs for each of 4 sources, presorted  
+- index range limit pairs for game vs non-game sources, presorted  
+
+This arrangement also allows for relatively low pain extension to additional sources and destinations. 
