@@ -21,17 +21,16 @@ namespace blekenbleu.MIDIspace
 	private string[,] SendProp;
 
 	// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
-	internal void Init(MIDIio I, byte[] Size)
+	internal void Init(MIDIio I)
 	{								// configuration property name prefixes
+	    SendType = new string[] { "send", "vJDaxis", "vJDbutton" };
             if (null != I.Outer)
             {
-		SendType = new string[] { MIDIio.Ini + "send", MIDIio.Ini + "vJDaxis", MIDIio.Ini + "vJDbutton"};
 		MySendCt = new byte[SendType.Length];
 		SendCt = new byte[SendType.Length];
             }
             else
             {
-		SendType = new string[0];
                 SendCt = MySendCt = new byte[] {0};
 //		SendCt = new byte[] {0};
             }
@@ -60,8 +59,20 @@ namespace blekenbleu.MIDIspace
 		Unmap[i] = i;
 		CCname[i] = "CC" + i;
 	    }
+	    byte j = 0;
+            if (MIDIio.DoEcho)
+	    {
+                for (byte i = 0, j < count && i < 128; i++)                         // resend saved CCs
+                {
+                    if (0 < (MIDIio.Properties.unconfigured & MIDIio.Properties.Which[i]))  // unconfigured CC number?
+                    {
+                        SendCC(i, M.Settings.Sent[i]);              // much time may have passed;  reinitialize MIDIout device
+                        j++;
+                    }
+                }
+	        MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
+	    }
 	    MIDIio.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
-
 	    Send = new string[SendType.Length, Size[0]];			// these will be used at 60Hz
 	    Configured = new byte[Size[0]];				// temporarily acumulate configured Sends
 	    bool[,] ok = new bool[SendType.Length,Size[0]];			// valid send properties non I.my
@@ -74,11 +85,11 @@ namespace blekenbleu.MIDIspace
                 string ss = "";
 
 		MySendCt[j] = 0;
-                MIDIio.Log(8, $"send[{j}] = '{SendType[j]}'");
+                MIDIio.Log(8, $"SendType[{j}] = '{SendType[j]}'");
 		for (byte i = 0; i < Size[j]; i++)   			// snag 'My' configured sends
 		{
                     byte k = (2 > j) ? i : (byte)(i + 1);		// first vJoy button is 1, not 0
-		    SendProp[j, i] = I.PluginManager.GetPropertyValue($"{SendType[j]}{k}")?.ToString();
+		    SendProp[j, i] = I.PluginManager.GetPropertyValue($"{MIDIio.Ini + SendType[j]}{k}")?.ToString();
 		    if (ok[j, i] = (null != SendProp[j, i] && 0 < SendProp[j, i].Length))
 			// test for properties with "my" MIDIio.My prefix
 			if ((3 + MIDIio.My.Length) < SendProp[j, i].Length && MIDIio.My == (SendProp[j, i].Substring(0, MIDIio.My.Length)))

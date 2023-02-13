@@ -45,10 +45,8 @@ namespace blekenbleu.MIDIspace
             return false;
         }
 
-        internal void Init(MIDIio M, String MIDIout, int count)
+        internal void Init(String MIDIout)
         {
-            if (null == MIDIout)
-                return;
             CCout = MIDIout;
             Connected = true;       	// assume the best
 
@@ -58,21 +56,11 @@ namespace blekenbleu.MIDIspace
                 OutputDevice.EventSent += OnEventSent;
                 OutputDevice.PrepareForEventsSending();
                 MIDIio.Info("OUTwetdry(): Found " + MIDIout);
-                byte j = 0;
-                if (MIDIio.DoEcho)
-                    for (byte i = 0; j < count && i < 128; i++)				// resend saved CCs
-                    {
-                        if (0 < (MIDIio.Properties.unconfigured & MIDIio.Properties.Which[i]))	// unconfigured CC number?
-                        {
-                            SendCC(i, M.Settings.Sent[i]);		// much time may have passed;  reinitialize MIDIout device
-                            j++;
-                        }
-                    }
             }
-            
             catch (Exception)
             {
                 Connected = false;
+		MIDIio.Size[0] = 0;
                 MIDIio.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
                 foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
                     MIDIio.Info("Init(): " +outputDevice.Name);
