@@ -85,7 +85,7 @@ namespace blekenbleu.MIDIspace
 	/// </summary>
 	/// <param name="pluginManager"></param>
 	private static int count = 0;
-        private long VJDmaxval;
+        private static long VJDmaxval;
 	public void Init(PluginManager pluginManager)
 	{
 	    Log(4, "Init()");
@@ -146,7 +146,7 @@ namespace blekenbleu.MIDIspace
 
 	    Once = new bool[Properties.Send.GetLength(0), size];
 
-	    for (int i = 0; i < size; i++)
+	    for (int i = 0; i < size && i < Properties.Map[0].Length; i++)
 		Settings.Sent[Properties.Map[0][i]] = 129;	// impossible first Send[i] values
 	    for (byte j = 0; j < Properties.Send.GetLength(0); j++)
 		for (int i = 0; i < Size[j]; i++)
@@ -209,29 +209,32 @@ namespace blekenbleu.MIDIspace
  ; 0 <= ShakeIt property <= 100.0
  ; 0 <= JoyStick property <= VJDmaxval
  */
-	private double vMax = (double)VJDmaxval;
-        private double[,] scale ={{ 1.0,	127.0/vMax, 1.27	},
-				  { vMax/127,	1.0,	    vMax/100.0	},
-				  { 100.0/127,	100.0/vMax, 1.0		}};
+	private static readonly double vMax = (double)VJDmaxval;
+	private readonly double[,] scale ={{ 1.0,	127.0/vMax, 1.27	},
+					   { vMax/127,	1.0,	    vMax/100.0	},
+					   { 100.0/127,	100.0/vMax, 1.0		}};
 
 	private void DoSend(PluginManager pluginManager, byte index)
 	{
 	    byte j, b, value;
-            string send;
-	    for (int i = table[index, 0]; i < table[index, 1]; i++)
-            for (byte k = table[i, 0]; k < table[i, 0]; k++)
-	        for (j = 0; j < Properties.Send.GetLength(0); j++)
-	    	{
-		    ushort cc = Properties.Map[j][k];	// MIDIout CC number or vJoy button or axis
-		    byte[,] table = {{2, 5}, {5, 6}, {0, SendCt[j,0]}, {SendCt[j,0], SendCt[j,1]},
-				     {SendCt[j,1], SendCt[j,2]}, {SendCt[j,2], SendCt[j,3]}};
+	    string send;
+	    for (j = 0; j < Properties.Send.GetLength(0); j++)
+	    {
+		byte[,] table = {{2, 5}, {5, 6}, {0, Properties.SendCt[j,0]},
+				 {Properties.SendCt[j,0], Properties.SendCt[j,1]},
+				 {Properties.SendCt[j,1], Properties.SendCt[j,2]},
+				 {Properties.SendCt[j,2], Properties.SendCt[j,3]}};
 
+	    	for (int i = table[index, 0]; i < table[index, 1]; i++) // which SendCt table entries to use
+            	for (byte k = table[i, 0]; k < table[i, 1] && k < Properties.Map[j].Length; k++)
+		{
+		    ushort cc = Properties.Map[j][k];	// MIDIout CC number or vJoy button or axis
                     b = (byte)(cc / 1000);
                     cc %= 1000;
 		    if (!Once[j, b])
 		       continue;
 
-		    prop = Properties.Send[j, b];
+		    prop = Properties.Send[j][b];
 		    send = pluginManager.GetPropertyValue(prop)?.ToString();
 
                     if (null == send)
@@ -262,8 +265,9 @@ namespace blekenbleu.MIDIspace
 				Info($"DoSend(): mystery type {b} ignored");
 				break;
 			}
+		    }
+		    else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
 		}								// 0 < send.Length
-		else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
 	    }
 	}		// DoSend()
     }

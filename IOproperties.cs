@@ -27,8 +27,8 @@ namespace blekenbleu.MIDIspace
 	    SendProp = new string[SendType.Length, MIDIio.size];	// accumulate property names in discovered order
 	    SendCt = new byte[SendType.Length, 1 + MIDIio.Real.Length];	// SendCt entries sorted for SendType[], then game properties
 
-	    Send = new string[][] {new string[Size[0]], new string[Size[1]], new string[Size[2]] }; // SendProp[][] sorted by SendCt[,]
-	    Map = new byte[][] { new byte[Size[0]], new byte[Size[1]], new byte[Size[2]] };	// Send[][] indices sorted by SendCt[,]
+	    Send = new string[][] {new string[MIDIio.Size[0]], new string[MIDIio.Size[1]], new string[MIDIio.Size[2]] }; // SendProp[][] sorted by SendCt[,]
+	    Map = new byte[][] { new byte[MIDIio.Size[0]], new byte[MIDIio.Size[1]], new byte[MIDIio.Size[2]] };	// Send[][] indices sorted by SendCt[,]
 
 	    Which = new byte[128];					// OUTwetdry.Init() resends unconfigured CCs on restart
 									//                  if DoEcho && (0 < unconfigured & Which[i])
@@ -56,11 +56,11 @@ namespace blekenbleu.MIDIspace
 	    byte j = 0;
             if (MIDIio.DoEcho)
 	    {
-                for (byte i = 0, j < ct && i < 128; i++)                         // resend saved CCs
+                for (byte i = 0; j < ct && i < 128; i++)                         // resend saved CCs
                 {
                     if (0 < (MIDIio.Properties.unconfigured & MIDIio.Properties.Which[i]))  // unconfigured CC number?
                     {
-                        SendCC(i, M.Settings.Sent[i]);              // much time may have passed;  reinitialize MIDIout device
+                        I.Outer.SendCCval(i, I.Settings.Sent[i]);              // much time may have passed;  reinitialize MIDIout device
                         j++;
                     }
                 }
@@ -76,11 +76,11 @@ namespace blekenbleu.MIDIspace
 	    {
 	    	SendCt[ct,0] = 0;
 		for (j = 0; j < MIDIio.size; j++)
-		    game[ct. j] = ! (ok[ct, j] = false);
+		    game[ct, j] = ! (ok[ct, j] = false);
 	    }
 
-	    Ping = new string[Size[0]];
-	    for (byte i = 0; i < Size[0]; i++)
+	    Ping = new string[MIDIio.Size[0]];
+	    for (byte i = 0; i < MIDIio.Size[0]; i++)
 		Ping[i] = "ping" + i;
 
 	    // Search MIDIio.ini for send properties.  MIDIio.size may have been configured for each, but destinations may accept less, even 0
@@ -97,13 +97,16 @@ namespace blekenbleu.MIDIspace
 		    {
 			ok[j, i] = true;					// a valid send
 			// test for properties with  Real prefix
-			if ((3 + MIDIio.Real[j].Length) < SendProp[j, i].Length && MIDIio.Real[9] == (SendProp[j, i].Substring(0, MIDIio.My.Length)))
+			if ((3 + MIDIio.Real[j].Length) < SendProp[j, i].Length && MIDIio.Real[j] == (SendProp[j, i].Substring(0, MIDIio.My.Length)))
 			{
 			    game[j, i] = false;					// Real match, so not game; lots of not ok game remain set to true
-			    Send[j, SendCt[ct, j]] = SendProp[j, i];
-			    Map[j][MySendCt[ct, j]] = i;
-			    MySendCt[ct, j]++;
-			    if (0 == ss[ct].Length]
+			    if (SendCt[ct, j] < Map[j].Length)
+			    {
+			        Send[j][SendCt[ct, j]] = SendProp[j, i];
+				Map[j][SendCt[ct, j]] = i;
+			    }
+			    SendCt[ct, j]++;
+			    if (0 == ss[ct].Length)
 			        ss[ct] += SendProp[j, i] + ",";
 			    else ss[ct] += "\n\t\t\t" + SendProp[j, i] + ",";
 			}
@@ -111,15 +114,18 @@ namespace blekenbleu.MIDIspace
 		}
 
 		SendCt[ct, j + 1] = SendCt[ct, j];			// previous SendCt entries are starts for subsequent
-		for (byte i = 0; i < ok[j].Length; i++)   			// now, configured sends NOT from I.my.send[n < MySendCt]
+		for (byte i = 0; i < MIDIio.size; i++)  	// now, configured sends NOT from I.my.send[n < MySendCt]
 		{
 		    if (ok[j,i] && game[j, i])				// not already assigned to Send[,]?
 		    {
 			if (0 == j)
-			    Configured[SendCt[0, SendCt[ct, j]] = i;			// find a CC number to reuse for this send
-			Map[j][SendCt[ct, j]] = i;
-			Send[j][SendCt[ct, j]++] = SendProp[j, i];
-			if (0 == ss[ct].Length]
+			    Configured[SendCt[0, SendCt[ct, j]]] = i;			// find a CC number to reuse for this send
+			if (SendCt[ct, j] < Map[j].Length)
+			{
+			    Map[j][SendCt[ct, j]] = i;
+			    Send[j][SendCt[ct, j]++] = SendProp[j, i];
+			}
+			if (0 == ss[ct].Length)
 			    ss[ct] += SendProp[j, i] + ",";
 			else ss[ct] += "\n\t\t\t" + SendProp[j, i] + ",";
 		    }
@@ -127,7 +133,7 @@ namespace blekenbleu.MIDIspace
 	    }
 	    for (ct = 0; ct < SendType.Length; ct++)
 	    {
-		MIDIio.Log(4, $"Properties.Map[{tc}] SendCt = {SendCt[ct, SendType.Length]}:  " + string.Join(",", Array.ConvertAll(Map[ct], ele => ele.ToString())));
+		MIDIio.Log(4, $"Properties.Map[{ct}] SendCt = {SendCt[ct, SendType.Length]}:  " + string.Join(",", Array.ConvertAll(Map[ct], ele => ele.ToString())));
 		MIDIio.Log(4, $"Properties.Send[{ct}]:  " + ss);
 	    }
 	}	// Init()
@@ -149,6 +155,7 @@ namespace blekenbleu.MIDIspace
 	private void Action(MIDIio I, byte bn, byte CCnumber)
 	{
 	    I.AddEvent(CCname[CCnumber]);
+			if (bn < Ping.Length)
 	    switch (bn)				// configure button property and event
 	    {
 		case 0:
@@ -592,7 +599,7 @@ namespace blekenbleu.MIDIspace
 	    {
 		for (byte j = 0; j < Send.GetLength(0); j++)
 		    for (byte i = 0; i < SendCt[j, 0]; i++)
-			MIDIio.Info("\t" + Send[j, i] + " AKA " + Send[j, i].Substring(L, Send[j, i].Length - L));
+			MIDIio.Info("\t" + Send[j][i] + " AKA " + Send[j][i].Substring(L, Send[j][i].Length - L));
 	    }
 
 	    for (byte s = 1; s < CCtype.Length; s++)		// reserve s == 0 for sends and unassigned CCs
@@ -623,13 +630,13 @@ namespace blekenbleu.MIDIspace
 			Which[cc] |= Wmap[s];
 
 			MIDIio.Log(8, $"Attach():  {CCname[cc]} = CC{cc}");
-			for (byte mi = 0; mi < SendCt[0, 0]; mi++)
-			    if (CCname[cc].Length == (Send[0, mi].Length - L) && CCname[cc] == Send[0, mi].Substring(L, CCname[cc].Length))
+			for (byte mi = 0; mi < SendCt[0, 0] && mi < Send[0].Length; mi++)
+			    if (CCname[cc].Length == (Send[0][mi].Length - L) && CCname[cc] == Send[0][mi].Substring(L, CCname[cc].Length))
 			    {
 				Unmap[cc] = my;
 				Map[0][my++] = cc;			// reuse this input CC number for output
 			    }
-			    else if (mc < I.Size[0])
+			    else if (mc < MIDIio.Size[0])
 				Configured[mc++] = cc;
 
  			SetProp(I, cc, I.Settings.Sent[cc]);	// set property for newly configured input
@@ -664,7 +671,7 @@ namespace blekenbleu.MIDIspace
 		Map[0][ct++] = Configured[my];			// recycle configured MIDIin CC numbers
 
 	    // appropriate previously unallocated CC numbers;  those controls will be unavailable in DeEcho mode..
-	    for (my = 127; MySendCt[0] <= my && ct < mc; my--)	// configure CC numbers for MySendCt <= i < SendCt
+	    for (my = 127; SendCt[0, MIDIio.Real.Length] <= my && ct < mc; my--)	// configure CC numbers for MySendCt <= i < SendCt
 	    {
 		if (0 == Which[my])
 		{
