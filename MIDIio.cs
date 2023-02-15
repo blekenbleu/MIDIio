@@ -203,6 +203,7 @@ namespace blekenbleu.MIDIspace
 	// Properties.Map[][] a prioritized array of destination indices
 	// Properties.Map[0] are MIDIout CCn corresponding to Settings.Sent[]
 	// Properties.Map[1-2] are vJoy axis and button indices, requiring their own Sent[,] array.
+	// Properties.Map[3] is game properties, also in the Sent[,] array
 /*
  ; Accomdate device value range differences:
  ; 0 <= MIDI value <= 127
@@ -216,57 +217,57 @@ namespace blekenbleu.MIDIspace
 
 	private void DoSend(PluginManager pluginManager, byte index)
 	{
-	    byte j, b, value;
+	    byte i, s, value;
 	    string send;
-	    for (j = 0; j < Properties.Send.GetLength(0); j++)
+	    for (s = 0; s < Properties.Send.GetLength(0); s++)	// destination index
 	    {
-		byte[,] table = {{2, 5}, {5, 6}, {0, Properties.SendCt[j,0]},
-				 {Properties.SendCt[j,0], Properties.SendCt[j,1]},
-				 {Properties.SendCt[j,1], Properties.SendCt[j,2]},
-				 {Properties.SendCt[j,2], Properties.SendCt[j,3]}};
+		byte[,] table = {{0, 3}, {3, 4},		// [0-2]: real, 3: game
+				 {0, Properties.SendCt[s,0]},	// source indices
+				 {0, Properties.SendCt[s,1]},
+				 {0, Properties.SendCt[s,2]},
+				 {0, Properties.SendCt[s,3]}};
 
-	    	for (int i = table[index, 0]; i < table[index, 1]; i++) // which SendCt table entries to use
-            	for (byte k = table[i, 0]; k < table[i, 1] && k < Properties.Map[j].Length; k++)
+	    	for (i = table[index, 0]; i < table[index, 1]; i++) 	// source index
+            	for (byte k = table[i + 2, 0]; k < table[i + 2, 1] && k < Properties.Map[i].Length; k++)
 		{
-		    ushort cc = Properties.Map[j][k];	// MIDIout CC number or vJoy button or axis
-                    b = (byte)(cc / 1000);
-                    cc %= 1000;
-		    if (!Once[j, b])
+		    byte cc = Properties.Map[i][k];	// MIDIout CC number or index to unique configured game or JoyStick button or axis
+
+		    if (!Once[i, k])
 		       continue;
 
-		    prop = Properties.Send[j][b];
+		    prop = Properties.Send[i][cc];
 		    send = pluginManager.GetPropertyValue(prop)?.ToString();
 
                     if (null == send)
                     {
-                        Once[j, b] = false;
-                        Info("DoSend(): null " + prop);
+                        Once[i, k] = false;
+                        Info("DoSend(): null " + prop + $" for Send[{i}][{cc}]");
                     }
                     else if (0 < send.Length)
                     {  
 			double property = Convert.ToDouble(send);
-			value = (byte)(0.5 + property * scale[0, j]);
+			value = (byte)(0.5 + property * scale[0, i]);
 			value &= 0x7F;
-			if (value == Sent[j][cc])
+			if (value == Sent[i][k])
 			    continue;				// send only changed values
-                	Sent[j][cc] = value;
-			switch (b)
+                	Sent[i][k] = value;
+			switch (s)
 			{
 			    case 0:
 				Outer.SendCCval((byte)cc, value);		// DoSendCC()
 				break;
 			    case 1:						// rescale from MIDI to vJoy
-				VJD.Axis((byte)cc, (int) (0.5 * property * scale[1, j]));
+				VJD.Axis((byte)cc, (int) (0.5 * property * scale[1, i]));
 				break;
 			    case 2:
 				VJD.Button((byte)(1 + cc), 0.5 < property);	// first VJoy button is 1, not 0
 				break;
 			    default:
-				Info($"DoSend(): mystery type {b} ignored");
+				Info($"DoSend(): mystery type {k} ignored");
 				break;
 			}
 		    }
-		    else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
+		    else Info($"DoSend(): 0 length {prop} Map[{i}][{k}]");
 		}								// 0 < send.Length
 	    }
 	}		// DoSend()
