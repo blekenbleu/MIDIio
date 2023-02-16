@@ -94,7 +94,7 @@ namespace blekenbleu.MIDIspace
 
 	    prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
 	    DoEcho = (null != prop && 0 < Int32.Parse(prop));
-	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
+	    Info("Init(): unconfigured MIDIin CCs will" + (DoEcho ? "" : " not") + " be forwarded to MIDIout");
 	    count += 1;		// increments for each restart, provoked e.g. by game change or restart
 	    pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 
@@ -146,8 +146,10 @@ namespace blekenbleu.MIDIspace
 
 	    Once = new bool[Properties.Send.GetLength(0), size];
 
-	    for (int i = 0; i < size && i < Properties.Map[0].Length; i++)
-		Settings.Sent[Properties.Map[0][i]] = 129;	// impossible first Send[i] values
+	    for (byte j = 0; j < Properties.Send.GetLength(0); j++)
+		for (int i = 0; i < size && i < Properties.SendCt[j, 0]; i++)
+		    Settings.Sent[Properties.Map[j][i]] = 129;	// impossible first Send[i] values
+
 	    for (byte j = 0; j < Properties.Send.GetLength(0); j++)
 		for (int i = 0; i < Size[j]; i++)
 		    Once[j, i] = true;
