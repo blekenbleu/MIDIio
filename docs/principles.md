@@ -68,30 +68,37 @@ but NOT from SimHub properties, e.g. `ShakeITBSV3Plugin.Export.*`
   which may have also been restarted.
 
 ### Run time operation
-SimHub's licensed update rate is 60Hz.&nbsp;  The **MIDIio** plugin handles *only its configured* properties.  
+SimHub's licensed update rate is 60Hz.  
 **MIDIio** rescales and sends property change values among 3 destinations, provided those destinations are enabled:  
 `MIDI out`, `vJoy axes`, `vJoy buttons`, where `MIDI out` may be slider, knob or button CCs.  
-Any *destination* property may be configured from one of 4 *source* property types:  
-`MIDIin`, `JoySick axes`, `JoyStick buttons`, and `game telemetry` (most likely ShakeIt).  
-**MIDIio** refreshes destinations for those first 3 (hardware) source types even when games are not running;  
+Any *destination* property may be configured from one of 6 *source* property types:  
+`MIDIin` sliders+knosbs+buttons, `JoySick axes`, `JoyStick buttons`, and `game telemetry` (most likely ShakeIt).  
+**MIDIio** refreshes destinations for those first 5 (hardware) source types even when games are not running;  
 game property changes are forwarded *only while games run*.  
 
 To minimize runtime overhead, output (from `DoSend()`) is table driven:  
 -  2 `table[][]` entries index ranges of `table[][]` indices to send with games running [1] or anytime [0]
 -  3 `table[][]` entries index `Map[][]` ranges of `MIDI in`, `JoyStick axis`, `JoyStick button` destinations  
-   for configured `MIDI in`, `JoySick axis`, and `JoyStick button` sources.
+   for configured `MIDIin`, `JoySick axis`, and `JoyStick button` sources.
 -  the final table entry indexes `Map[][]` range of game (`ShakeIt`) property sources.
 
-Those `table[][]` entries index into a `Map[][]` array, where:  
-- one `Map` dimension indexes one `Send[][]` source property array dimension per destination type  
-- another `Map` dimension indexes another `Send[][]` array dimension  
-  for each configured property change for that indexed destination type.
+Those `table[2-5][0]` entries index into CCname[] and Send[,] arrays for MIDIin properties, where:  
+CCname[] is 128 entries for each possible MIDIin property, whether or not configured
+Send[,] is a SendType by configured `size` name array for configured  `JoySick axis`, `JoyStick button` and game properties.  
 
-`Map[][]` and `Send[][]` are so-called [jagged arrays](https://www.programiz.com/csharp-programming/jagged-array).  
-Property counts for any source to any destination are variable, only *total* counts are constrained.  
+SendCt[3,4] is a count array for each SendType of configured property types.  
+- each SendCt[,] value is limited to configured `size`.
+- SendCt[SendType, [0-2]] are counts to iterate for selected MIDIin sliders, knobs, buttons via CCname[Map[SendType, ]]
+- SendCt[SendType, [3-4]] count JoyStick axis, button property names in Send[[1-2], ] array
+- SendCt[SendType, 5] count game property names in Send[3, ] array
+- first `Map` dimension is indexed for destination type.
+- second `Map` dimension is configured CC numbers to index among up to 128 CCname[] properties.  
+  Up to configured `size` entries may have been configured for each of MIDIin sliders, knobs, buttons.  
+
+Property counts configured for any source to any destination are variable, only *total* counts are constrained by `size`.  
 These table indirections support sending from none up to the configured maximum number of properties  
-from any source to any destination.&nbsp; The `table[][]` array has fixed dimensions:   
-- index range limit pairs for each of 4 sources, presorted  
+ &nbsp; from any source to any destination.&nbsp; The `table[,]` array has fixed dimensions:   
+- index range limit pairs for each of 5 sources, presorted  
 - index range limit pairs for game vs non-game sources, presorted  
 
-This arrangement should also allow for relatively low pain extension to additional sources and destinations. 
+This arrangement should also allow for *relatively* low pain extension to additional sources and destinations. 
