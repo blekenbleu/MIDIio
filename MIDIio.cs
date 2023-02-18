@@ -11,8 +11,9 @@ namespace blekenbleu.MIDIspace
     {
 	internal static byte size = 8;						// default configurable output count
 	internal static byte[] Size;
-	private bool[,] Once;
+	private bool[,,] Once;
 	private byte[][] Sent;
+	private byte[] DoSendCt;
 	internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
 	internal static readonly string My = "MIDIio.";					// PluginName + '.'
         internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
@@ -157,20 +158,31 @@ namespace blekenbleu.MIDIspace
 	    }
 	    else Info("Init(): " + Ini + "in is undefined" );
 
-	    Once = new bool[Properties.SendType.Length, size];
+	    Once = new bool[Properties.SendType.Length, 4, size];
 
 	    for (byte j = 0; j < Properties.CCtype.Length - 1; j++)
 		for (int i = 0; i < Properties.CCsndCt[j]; i++)
 		    Settings.Sent[Properties.Map[j, i]] = 129;	// impossible first CC Send[i] values
 
-	    for (byte j = 0; j < Properties.SendType.Length; j++)
-		for (int i = 0; i < size; i++)
-		    Once[j, i] = true;
+	    for (s = 0; s < Properties.SendType.Length; s++)
+		for (byte j = 0; j < 4; j++)			// send source count
+		    for (int i = 0; i < size; i++)
+			Once[s, j, i] = true;
 
+	    DoSendCt = new byte[3];
 	    Sent = new byte[][] {Settings.Sent, new byte[Size[1]], new byte[Size[2]]};
-	    for (byte j = 1; j < Properties.SendType.Length; j++)
+	    for (byte j = 0; j < Properties.SendType.Length; j++)
+	    {
 		for (byte i = 0; i < Size[j]; i++)
 		    Sent[j][i] = 0;
+
+		DoSendCt[j] = Properties.CCsndCt[j];
+		for (byte i = 0; i < 3; i++)
+		    DoSendCt[j] += Properties.SendCt[i, j];
+
+		if (DoSendCt[j] > Size[j])
+		    DoSendCt[j] = Size[j];
+	    }
 
 //	    data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //	    pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
@@ -233,40 +245,37 @@ namespace blekenbleu.MIDIspace
 
 	private void DoSend(PluginManager pluginManager, byte index)
 	{
-	    byte i, s, value;
-	    string send;
-	    for (s = 0; s < Properties.SendType.Length; s++)	// destination index
+	    for (byte s = 0; s < Properties.SendType.Length; s++)	// destination index
 	    {
-		byte[,] table = {{0, 3}, {3, 4},		// [0-2]: real, 3: game
-				 {0, Properties.SendCt[s,0]},	// source indices
-				 {0, Properties.SendCt[s,1]},
-				 {0, Properties.SendCt[s,2]},
-				 {0, Properties.SendCt[s,3]}};
+		byte[,] table = {{0, 3}, {3, 4}};		// [0-2]: real, 3: game SendCt[s][] source indices
 
-	    	for (i = table[index, 0]; i < table[index, 1]; i++) 	// source index
-	    	for (byte k = table[i + 2, 0]; k < table[i + 2, 1] && k < size; k++)
+	    	for (byte i = table[index, 0]; i < table[index, 1]; i++) 	// source index
+	    	for (byte k = 0; k < Properties.SendCt[(byte)s, i]; k++)
 		{
-		    byte cc = Properties.Map[i, k];	// MIDIout CC number or index to unique configured game or JoyStick button or axis
+		    byte cc;
 
-		    if (!Once[i, k])
+						if (0 == i)
+							prop = My + Properties.CCname[cc = Properties.Map[s, k]];    // MIDIout CC number
+						else prop = Properties.Send[s][i][cc = k];
+
+		    if (!Once[s, i, k])
 		       continue;
 
-		    prop = Properties.Send[i][k][cc];
-		    send = pluginManager.GetPropertyValue(prop)?.ToString();
+		    string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
 		    if (null == send)
 		    {
-		        Once[i, k] = false;
-                        Info("DoSend(): null " + prop + $" for Send[{i}, {cc}]");
+		        Once[s, i, k] = false;
+                        Info($"DoSend({Properties.SendType[s]}): null {prop} for " + ((0 == i) ? $"CCname[{cc}]" : $"Send[{s}][{i}][{k}]"));
                     }
                     else if (0 < send.Length)
                     {  
 			double property = Convert.ToDouble(send);
-			value = (byte)(0.5 + property * scale[0, i]);
+			byte value = (byte)(0.5 + property * scale[0, i]);
 			value &= 0x7F;
-			if (value == Sent[i][k])
+			if (cc >= DoSendCt[s] || value == Sent[s][cc])
 			    continue;				// send only changed values
-                	Sent[i][k] = value;
+                	Sent[s][cc] = value;
 			switch (s)
 			{
 			    case 0:
@@ -279,11 +288,12 @@ namespace blekenbleu.MIDIspace
 				VJD.Button((byte)(1 + cc), 0.5 < property);	// first VJoy button is 1, not 0
 				break;
 			    default:
-				Info($"DoSend(): mystery type {k} ignored");
+				Info($"DoSend(): mystery type {s} ignored");
 				break;
 			}
 		    }
-		    else Info($"DoSend(): 0 length {prop} Map[{i}, {k}]");
+		    else Info($"DoSend(): 0 length {prop}"
+			    + ((0 == i) ? $" from Map[{s}, {k}]" : ""));
 		}								// 0 < send.Length
 	    }
 	}		// DoSend()
