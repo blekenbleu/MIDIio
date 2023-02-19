@@ -12,7 +12,7 @@ namespace blekenbleu.MIDIspace
 	internal static byte size = 8;						// default configurable output count
 	internal static byte[] Size;
 	private bool[,,] Once;
-	private byte[][] Sent;
+	private byte[,] Sent;
 	private byte[] DoSendCt;
 	internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
 	internal static readonly string My = "MIDIio.";					// PluginName + '.'
@@ -36,7 +36,7 @@ namespace blekenbleu.MIDIspace
 	{
 	    bool b = 0 < (level & Level);
 
-	    if (b)
+	    if (b && 0 < str.Length)
 		SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Log()
 	    return b;
 	}
@@ -95,7 +95,7 @@ namespace blekenbleu.MIDIspace
 	    Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
             Log(8, $"log Level {Level}");
 
-	    Log(4, "Init()");
+//	    Log(4, "Init()");
 	    // Load settings
 	    Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
 
@@ -161,7 +161,7 @@ namespace blekenbleu.MIDIspace
 	    Once = new bool[Properties.SendType.Length, 4, size];
 
 	    for (byte j = 0; j < Properties.CCtype.Length - 1; j++)
-		for (int i = 0; i < Properties.CCsndCt[j]; i++)
+		for (int i = 0; i < Properties.SendCt[j,0]; i++)
 		    Settings.Sent[Properties.Map[j, i]] = 129;	// impossible first CC Send[i] values
 
 	    for (s = 0; s < Properties.SendType.Length; s++)
@@ -170,15 +170,15 @@ namespace blekenbleu.MIDIspace
 			Once[s, j, i] = true;
 
 	    DoSendCt = new byte[3];
-	    Sent = new byte[][] {Settings.Sent, new byte[Size[1]], new byte[Size[2]]};
+	    Sent = new byte[Properties.SendType.Length, size];
 	    for (byte j = 0; j < Properties.SendType.Length; j++)
 	    {
-		for (byte i = 0; i < Size[j]; i++)
-		    Sent[j][i] = 0;
+		for (byte i = 0; i < size; i++)
+		    Sent[j, i] = 222;
 
-		DoSendCt[j] = Properties.CCsndCt[j];
-		for (byte i = 0; i < 3; i++)
-		    DoSendCt[j] += Properties.SendCt[i, j];
+		DoSendCt[j] = 0;
+		for (byte i = 0; i < 4; i++)
+		    DoSendCt[j] += Properties.SendCt[j, i];
 
 		if (DoSendCt[j] > Size[j])
 		    DoSendCt[j] = Size[j];
@@ -227,16 +227,14 @@ namespace blekenbleu.MIDIspace
 	    return Properties.SetProp(this, CCnumber);
 	}	// Active()
 
-	// Properties.Send[,] is an array of property names
-	// Properties.Map[, ] a prioritized array of destination indices
-	// Properties.Map[0] are MIDIout CCn corresponding to Settings.Sent[]
-	// Properties.Map[1-2] are vJoy axis and button indices, requiring their own Sent[] arrays.
-	// Properties.Map[3] is game properties, also in the Sent[][] array
 /*
- ; Accomdate device value range differences:
+ ; Properties.Send[,] is an array of property names for other than MIDIin
+ ; My + CCname[cc = Properties.Map[,]] are MIDIin properties corresponding to Settings.Sent[cc]
+ ;
+ ; Accomodate device value range differences:
  ; 0 <= MIDI value <= 127
- ; 0 <= ShakeIt property <= 100.0
  ; 0 <= JoyStick property <= VJDmaxval
+ ; 0 <= ShakeIt property <= 100.0
  */
 	private static readonly double vMax = (double)VJDmaxval;
 	private readonly double[,] scale ={{ 1.0,	127.0/vMax, 1.27	},
@@ -245,56 +243,60 @@ namespace blekenbleu.MIDIspace
 
 	private void DoSend(PluginManager pluginManager, byte index)
 	{
-	    for (byte s = 0; s < Properties.SendType.Length; s++)	// destination index
+	    for (byte s = 0; s < Properties.SendType.Length; s++)			// destination index
 	    {
-		byte[,] table = {{0, 3}, {3, 4}};		// [0-2]: real, 3: game SendCt[s][] source indices
+		byte[,] table = {{0, 3}, {3, 4}};			// source indices [0-2]: real; 3: game
 
-	    	for (byte i = table[index, 0]; i < table[index, 1]; i++) 	// source index
+	    	for (byte i = table[index, 0]; i < table[index, 1]; i++)		// source index
 	    	for (byte k = 0; k < Properties.SendCt[(byte)s, i]; k++)
 		{
 		    byte cc;
 
-						if (0 == i)
-							prop = My + Properties.CCname[cc = Properties.Map[s, k]];    // MIDIout CC number
-						else prop = Properties.Send[s][i][cc = k];
-
 		    if (!Once[s, i, k])
-		       continue;
+		       continue;							// skip null properties
+
+		    if (0 == i)
+			prop = My + Properties.CCname[cc = Properties.Map[s, k]];	// MIDIout CC number
+		    else prop = Properties.Send[s][i][cc = k];
 
 		    string send = pluginManager.GetPropertyValue(prop)?.ToString();
 
 		    if (null == send)
 		    {
 		        Once[s, i, k] = false;
-                        Info($"DoSend({Properties.SendType[s]}): null {prop} for " + ((0 == i) ? $"CCname[{cc}]" : $"Send[{s}][{i}][{k}]"));
+                        Info($"DoSend({Properties.SendType[s]}): null {prop} for "
+			   + ((0 == i) ? $"CCname[{cc}]" : $"Send[{s}][{i}][{k}]"));
                     }
                     else if (0 < send.Length)
                     {  
 			double property = Convert.ToDouble(send);
 			byte value = (byte)(0.5 + property * scale[0, i]);
 			value &= 0x7F;
-			if (cc >= DoSendCt[s] || value == Sent[s][cc])
-			    continue;				// send only changed values
-                	Sent[s][cc] = value;
+
+			if (k >= DoSendCt[s] || value == Sent[s, k])
+			    continue;							// send only changed values
+
+                	Sent[s, k] = value;
 			switch (s)
 			{
 			    case 0:
-				Outer.SendCCval((byte)cc, value);		// DoSendCC()
+				Outer.SendCCval((byte)cc, Settings.Sent[cc] = value);
 				break;
-			    case 1:						// rescale from MIDI to vJoy
-				VJD.Axis((byte)cc, (int) (0.5 * property * scale[1, i]));
+			    case 1:							// rescale to vJoy
+				VJD.Axis(cc, (int)(0.5 * property * scale[1, i]));
 				break;
 			    case 2:
-				VJD.Button((byte)(1 + cc), 0.5 < property);	// first VJoy button is 1, not 0
+				VJD.Button((byte)(1 + ), 0.5 < property);		// first VJoy button is 1, not 0
 				break;
 			    default:
-				Info($"DoSend(): mystery type {s} ignored");
+				Info($"DoSend(): mystery type {s} ignored: Send[{s}][{i}][{k}] = {prop}");
+				Once[s, i, k] = false;
 				break;
 			}
 		    }
 		    else Info($"DoSend(): 0 length {prop}"
 			    + ((0 == i) ? $" from Map[{s}, {k}]" : ""));
-		}								// 0 < send.Length
+		}									// 0 < send.Length
 	    }
 	}		// DoSend()
     }
