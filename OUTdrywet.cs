@@ -61,7 +61,7 @@ namespace blekenbleu.MIDIspace
 			catch (Exception)
 			{
 				Connected = false;
-				MIDIio.Size[0] = 0;
+				MIDIio.Size[2] = 0;
 				MIDIio.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
 				foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
 					MIDIio.Info("Init(): " +outputDevice.Name);
