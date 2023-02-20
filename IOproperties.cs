@@ -118,193 +118,202 @@ namespace blekenbleu.MIDIspace
  ;	and SendCt[, 4] is counts for corresponding Send[][][] JoyStick entries,
  ;	and SendCt[, 5] is counts for corresponding Send[][][] game entries, which DoSend indexes only when games are active.
  */
-		SendType = new string[] { "send", "vJDaxis", "vJDbutton" };	// prefixes to search
-		SendCt =	 new byte[SendType.Length, 4];				// entries in SendType[], game order
-		byte size = MIDIio.size;
-		Send = new string[3][][];				 // non-CC source properties configured for output
-		CCmap =	  new byte[SendType.Length, MIDIio.size];   	// configured MIDIin CC numbers
-		Map =		new byte[SendType.Length, MIDIio.size];   	// CC numbers configured to send
-		byte ct, j;
-		for (ct = 0; ct < 3; ct++)
-		{
-		Send[ct] = new string[4][];
-		for (j = 0; j < 4; j++)
-			Send[ct][j] = new string[MIDIio.size];
-		for (j = 0; j < MIDIio.size; j++)
-			CCmap[ct, j] = Map[ct, j] = 222;   // impossible match
-		}
-
-		Ping = new string[MIDIio.Size[0]];
-		for (j = 0; j < MIDIio.Size[0]; j++)
-		Ping[j] = "ping" + j;
-
-		// 1) restart CC restoration
-
-//		MIDIio.Log(8, "Properties.send.Length = " + SendType.Length);
-		for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
-		{
-		Unmap[j] = j;
-		CCname[j] = "CC" + j;
-
-		if (0 < (0x80 & I.Settings.Sent[j]))
-		{
-			ct++;
-			I.Settings.Sent[j] &= 0x7F;
-			Which[j] = Unc;
-		}
-		else Which[j] = 0;
-		}
-
-		if (MIDIio.DoEcho)
-		{
-		for (byte i = j = 0; j < ct && i < 128; i++)			// resend saved CCs
-		{
-			if (0 < (Unc & Which[i]))  // unconfigured CC number?
+			SendType = new string[] { "send", "vJDaxis", "vJDbutton" };	// prefixes to search
+			SendCt =	 new byte[SendType.Length, 4];				// entries in SendType[], game order
+			byte size = MIDIio.size;
+			Send = new string[3][][];				 // non-CC source properties configured for output
+			CCmap =	  new byte[SendType.Length, MIDIio.size];   	// configured MIDIin CC numbers
+			Map =		new byte[SendType.Length, MIDIio.size];   	// CC numbers configured to send
+			byte ct, j;
+			for (ct = 0; ct < 3; ct++)
 			{
-				I.Outer.SendCCval(i, I.Settings.Sent[i]);	// much time may have passed;  reinitialize MIDIout device
-				j++;
+				Send[ct] = new string[4][];
+				for (j = 0; j < 4; j++)
+					Send[ct][j] = new string[MIDIio.size];
+				for (j = 0; j < MIDIio.size; j++)
+					CCmap[ct, j] = Map[ct, j] = 222;   // impossible match
 			}
-		}
-		MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
-		} else MIDIio.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
 
-		// 2) Collect properties to be sent: SendType.Length destinations, 4 == MIDIio.Real.Length + game sources
+			Ping = new string[MIDIio.Size[0]];
+			for (j = 0; j < MIDIio.Size[0]; j++)
+				Ping[j] = "ping" + j;
 
-		// Collect MIDIin properties from MIDIio.ini
-		for (ct = 1; ct < CCtype.Length; ct++)
-		{
-		string type = MIDIio.Ini + CCtype[ct];
-		string property = I.PluginManager.GetPropertyValue(type + 's')?.ToString();
-		if (null == property && MIDIio.Info($"Init(): '{type + 's'}' not found"))
-			continue;
+// 1) restart CC restoration
 
-		// bless the Internet
-		byte[] array = property.Split(',').Select(byte.Parse).ToArray();
-//		MIDIio.Log(4, $"Init(): '{MIDIio.Ini + CCtype[ct]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
-
-		j = 0;
-		foreach (byte cc in array)		  // array has cc numbers assigned for this type
-		{
-			byte k;
-
-			if (CCinCt[ct] >= MIDIio.size)	// ct is 1-based
-			continue;
-
-			bool found = false;
-			for (k = 0; (!found) && k <= CCinCt[ct]; k++)
-			if (found = (cc == CCmap[ct - 1, k]))
-				MIDIio.Info("Init():  {type + j} {cc} already configured as {CCname[cc]}");
-
-			if (!found)
+//			MIDIio.Log(8, "Properties.send.Length = " + SendType.Length);
+			for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
 			{
-			CCmap[ct - 1, CCinCt[ct]++] = cc;
-			CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
-			Which[cc] = Wflag[ct];
+				Unmap[j] = j;
+				CCname[j] = "CC" + j;
+
+				if (0 < (0x80 & I.Settings.Sent[j]))
+				{
+					ct++;
+					I.Settings.Sent[j] &= 0x7F;
+					Which[j] = Unc;
+				}
+				else Which[j] = 0;
 			}
-		}
-		}	   // ct < CCtype.Length
-   		// all configured MIDIin properties are now in CCname[] and CCmap
+
+			if (MIDIio.DoEcho)
+			{
+				for (byte i = j = 0; j < ct && i < 128; i++)			// resend saved CCs
+				{
+					if (0 < (Unc & Which[i]))  // unconfigured CC number?
+					{
+						I.Outer.SendCCval(i, I.Settings.Sent[i]);	// much time may have passed;  reinitialize MIDIout device
+						j++;
+					}
+				}
+				MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
+			} else MIDIio.Log(4, $"CCProperties.Init():  {ct} unconfigured CCs restored");
+
+// 2) Collect properties to be sent: SendType.Length destinations, 4 == MIDIio.Real.Length + game sources
+
+			// Collect MIDIin properties from MIDIio.ini
+			for (ct = 1; ct < CCtype.Length; ct++)
+			{
+				string type = MIDIio.Ini + CCtype[ct];
+				string property = I.PluginManager.GetPropertyValue(type + 's')?.ToString();
+				if (null == property && MIDIio.Info($"Init(): '{type + 's'}' not found"))
+					continue;
+
+				// bless the Internet
+				byte[] array = property.Split(',').Select(byte.Parse).ToArray();
+//				MIDIio.Log(4, $"Init(): '{MIDIio.Ini + CCtype[ct]}' {string.Join(",", array.Select(p => p.ToString()).ToArray())}");
+
+				j = 0;
+				foreach (byte cc in array)		  // array has cc numbers assigned for this type
+				{
+					byte k;
+
+					if (CCinCt[ct] >= MIDIio.size)	// ct is 1-based
+						continue;
+
+					bool found = false;
+					for (k = 0; (!found) && k <= CCinCt[ct]; k++)
+						if (found = (cc == CCmap[ct - 1, k]))
+							MIDIio.Info("Init():  {type + j} {cc} already configured as {CCname[cc]}");
+
+					if (!found)
+					{
+						CCmap[ct - 1, CCinCt[ct]++] = cc;
+						CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
+						Which[cc] = Wflag[ct];
+					}
+				}
+			}	   // ct < CCtype.Length
+   			// all configured MIDIin properties are now in CCname[] and CCmap
 /*
-		if (MIDIio.Log(8, $"Init.CCmap[]:"))		// OK 18 Feb 2023
-		{
-		string st = "";
-		for (ct = 1; ct < CCtype.Length; ct++)
-		{
-			st += CCtype[ct] + ": ";
-			for (j = 0; j < CCinCt[ct]; j++)
-			st += " " + CCname[CCmap[ct - 1, j]];
+			if (MIDIio.Log(8, $"Init.CCmap[]:"))		// OK 18 Feb 2023
+			{
+				string st = "";
+				for (ct = 1; ct < CCtype.Length; ct++)
+				{
+					st += CCtype[ct] + ": ";
+					for (j = 0; j < CCinCt[ct]; j++)
+						st += " " + CCname[CCmap[ct - 1, j]];
 					st += "\n";
-		}
-		MIDIio.Info(st);
-		}
+				}
+				MIDIio.Info(st);
+			}
  */
+
 // 3) Good CCmap[,], CCname[] (without MIDIO.My);  now collect Send[][][] and Map[,] input properties configured for output
 
-		for (byte st = 0; st < SendType.Length; st++)
-		for (j = 0; j < 3; j++)
-		{
-//			MIDIio.Log(4, $"{SendType[st]} for {MIDIio.Real[j]}");
-			byte k = (byte)((2 > j) ? 0 : 1);
-			for (byte i = 0; i < MIDIio.size; i++)	  // snag Real[j] configured sends
+			for (byte st = 0; st < SendType.Length; st++)
 			{
-			string prop = I.PluginManager.GetPropertyValue(MIDIio.Ini + SendType[st] + (k + i).ToString() )?.ToString();
+				j = (byte)((2 == st) ? 1 : 0);								// destination buttons are 1-based
+				for (byte t = 0; t < 3; t++)
+				{
+//					MIDIio.Log(4, $"{SendType[st]} for {MIDIio.Real[t]}");
+					byte k = (byte)((2 == t) ? 1 : 0);						// source buttons are 1-based; axes are 0-based
+					byte d = 0;												// cumulative destination index
+					for (byte i = 0; i < MIDIio.size; i++)	 			 	// snag Real[t] configured sends
+					{
+						string prop = I.PluginManager.GetPropertyValue(MIDIio.Ini + SendType[st] + (k + i).ToString() )?.ToString();
 
-			if (null != prop && 11 < prop.Length)
-			{
-				string prop7 = prop.Substring(0, 7);
+						if (null != prop && 11 < prop.Length)
+						{
+							string prop7 = prop.Substring(0, 7);
 
-				if (MIDIio.My == prop7)
-				WhichCC(st, prop);		// Unique CC property names are in CCname[]
-				else if ("Joystic" == prop7)
-				UniqueSend(st, 1, prop);
-				else if ("InputSt" == prop7)
-				UniqueSend(st, 2, prop);
-				else UniqueSend(st, 3, prop);
+							if (0 < st)
+								MIDIio.Dest[st - 1, d++] = (byte)(j + i);	// i skips missing properties; buttons are 1-based
+
+							if (MIDIio.My == prop7)
+								WhichCC(st, prop);							// Unique CC property names are in CCname[]
+							else if ("Joystic" == prop7)
+								UniqueSend(st, 1, prop);
+							else if ("InputSt" == prop7)
+								UniqueSend(st, 2, prop);
+							else UniqueSend(st, 3, prop);
+						}
+						else if (null != prop)
+							MIDIio.Info($"Init(): unrecognized Send {SendType[st]} property:  {prop}");
+					}
+				}
 			}
-			else if (null != prop)
-				MIDIio.Info($"Init(): unrecognized Send {SendType[st]} property:  {prop}");
-			}
-		}
 
 // 4) optionally log
 
-		string s = "";
-		for (byte st = 0; st < SendType.Length; st++)
-		{
-		if (0 < st)
-			s += "\n\t\t\t	";
-		s += SendType[st] + ":\t" + SendCt[st, 0].ToString();
-		for (j = 1; j <= MIDIio.Real.Length; j++)
-			s += "," + SendCt[st, j].ToString();
-		}
+			if (MIDIio.Log(4, ""))
+			{
+				string s = "";
+				for (byte st = 0; st < SendType.Length; st++)
+				{
+					if (0 < st)
+						s += "\n\t\t\t	";
+					s += SendType[st] + ":\t" + SendCt[st, 0].ToString();
+					for (j = 1; j <= MIDIio.Real.Length; j++)
+						s += "," + SendCt[st, j].ToString();
 
-		if (MIDIio.Log(4, $"Properties.SendCt {s}"))
-		{
-		s = "";
-		for (byte st = 0; st < SendType.Length; st++)
-		{
-			if (0 < st && 0 < SendCt[st,0])
-			s += "\n";
-			if (0 < SendCt[st,0])
-			{
-			s += "CCname[Map[" + SendType[st] + ",]  = ";
-			for (j = 0; j < SendCt[st,0]; j++)
-			{
-				if (0 < j)
-				s += ", ";
-				s += (128 > Map[st, j]) ? CCname[Map[st, j]] : $"invalid Map[{st}, {j}]";
-			}
-			}
-		}
-		MIDIio.Info(s);
-		}
+					MIDIio.Info($"Properties.SendCt {s}");
+				}
+				s = "";
+				for (byte st = 0; st < SendType.Length; st++)
+				{
+					if (0 < st && 0 < SendCt[st,0])
+						s += "\n";
+					if (0 < SendCt[st,0])
+					{
+						s += "CCname[Map[" + SendType[st] + ",]  = ";
+						for (j = 0; j < SendCt[st,0]; j++)
+						{
+							if (0 < j)
+								s += ", ";
+							s += (128 > Map[st, j]) ? CCname[Map[st, j]] : $"invalid Map[{st}, {j}]";
+						}
+					}
+				}
+				MIDIio.Info(s);
 
-		s = "";
-		for (byte st = 0; st < SendType.Length; st++)
-		{
-		if (0 < st)
-			s += "\n";
-		s +=  $"Properties.Send[{SendType[st]}]:  ";
-		for (j = 0; j < SendCt[st, 0]; j++)
-		{
-			if (0 < j)
-			s += ", ";
-			s += (128 > Map[st, j]) ? CCname[Map[st, j]] : $"invalid Map[{st}, {j}]";
-		}
-		for (byte pt = 1; pt < 4; pt++)					// property type: CC, Joy axis, Joy button, game
-			for (j = 0; j < SendCt[st, pt]; j++)
-			{
-			if (0 < j)
-				s += ",\n\t\t\t\t";
-			else if (0 < SendCt[st, 0])
-				s += "\n\t\t\t\t";
-			if(null != Send[st][pt][j])
-				s += Send[st][pt][j];
-			else s += "\nnull == Send["  + st.ToString() + "][" + pt.ToString() + "][" + j.ToString() + "]\n\t\t\t\t\t";
+				s = "";
+				for (byte st = 0; st < SendType.Length; st++)
+				{
+					if (0 < st)
+						s += "\n";
+					s +=  $"Properties.Send[{SendType[st]}]:  ";
+					for (j = 0; j < SendCt[st, 0]; j++)
+					{
+						if (0 < j)
+						s += ", ";
+						s += (128 > Map[st, j]) ? CCname[Map[st, j]] : $"invalid Map[{st}, {j}]";
+					}
+					for (byte pt = 1; pt < 4; pt++)					// property type: CC, Joy axis, Joy button, game
+						for (j = 0; j < SendCt[st, pt]; j++)
+						{
+							if (0 < j)
+								s += ",\n\t\t\t\t";
+							else if (0 < SendCt[st, 0])
+								s += "\n\t\t\t\t";
+							if(null != Send[st][pt][j])
+								s += Send[st][pt][j];
+							else s += "\nnull == Send["  + st.ToString() + "][" + pt.ToString() + "][" + j.ToString() + "]\n\t\t\t\t\t";
+						}
+				}
+				MIDIio.Info(s);
 			}
-		}
-		MIDIio.Log(4, s);
-	}									// Init()
+		}									// Init()
 
 
 // End of Init();  beginning of End()
