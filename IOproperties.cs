@@ -8,13 +8,15 @@ namespace blekenbleu.MIDIspace
 	// Working around the SimHub limitation that AttachDelegate() fails for variables.
 	internal class IOproperties
 	{
-		internal string[][][] SendName;				   		// these properties may be sent at 60Hz
+		internal string[][] SourceName;				   		// these properties may be sent at 60Hzl 3 source types by size
+		internal byte[,,] SourceArray;					// port,port index by size for 4 source types; CC port index also indexes CCname[]
+		internal byte[]		SourceCt;						// No skipping around
+
 		internal string[]   SendType;				  		// configuration by NCalc script
-		internal byte[,]	SendCt;							// SendType subtotals for non-CC configured outputs
 
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
 		private  byte[]	 	CCinCt;							// configured MIDIin CC
-		internal byte[,]	CCmap, Map;					  	// configured CC numbers:  MIDIin, send
+		internal byte[,]	CCmap;						  	// configured CC numbers:  MIDIin, send
 		internal byte[]	 	Which, Wflag, Unmap;			// CCtype;  reverse map CC numbers to configured CCmap[,] indices.
 		internal readonly byte Unc = 4, CC = 1, Button = 2;	// flags for Wflag
 		internal byte[,]	Remap;							// indexed by Unmap; indexes CCmap[,]
@@ -60,14 +62,9 @@ namespace blekenbleu.MIDIspace
 				if (CCname[cc] == prop.Substring(7, prop.Length - 7))
 				{
 					// prop is configured; is it already in Map[dest]?
-					for (byte i = 0; i < SendCt[dest, 3]; i++)
-						if (cc == Map[dest, i])
-							return Map[dest, i];			// already in Map[dest]
-
-					if (MIDIio.size > SendCt[dest, 3])
-						Map[dest, SendCt[dest, 3]++] = cc;		// added
-					else MIDIio.Info($"WhichCC():  more than {MIDIio.size} MIDIin properties configured" +
-									 $" for {SendType[dest]};  ignoring:  {CCname[cc]}");
+					for (byte i = 0; i < SourceCt[dest]; i++)
+						if (cc == SourceArray[dest,ct, i])
+							return cc;			// already in Map[dest]
 					return cc;
 				}
 			}
@@ -76,26 +73,26 @@ namespace blekenbleu.MIDIspace
 			return -1;
 		}
 
-		private byte Unique(byte dest, byte s, string prop)
+		private byte Unique(byte dest, string prop)
 		{
-			string[] name = SendName[dest][s];
+			string[] name = SourceName[dest];
 			byte i;
 
-			for (i = 0; i < SendCt[dest, s]; i++)
+			for (i = 0; i < SourceCt[dest]; i++)
 				if (name[i].Length == prop.Length && name[i] == prop)
 					return i;
 			return i;
 		}
 
-		private int UniqueSend(byte dest, byte s, string prop)	// returns index for unique SendName[s,] property name
+		private int UniqueSend(byte dest, string prop)	// returns index for unique SourceName[s,] property name
 		{
 			int z;
 
-			if (SendCt[dest, s] <= (z = Unique(dest, s, prop)))		// not an existing match?
+			if (SourceCt[dest] <= (z = Unique(dest, prop)))		// not an existing match?
 			{
-				if (SendCt[dest, s] < MIDIio.size)				// perhaps a duplicate send, but a unique source 
-					SendName[dest][s][SendCt[dest, s]++] = prop;		// bump source count and save the unique property
-				else return (MIDIio.Info($"UniqueSend():  {SendType[dest]} count {SendCt[dest, s]} maxed; ignoring {prop}")) ? -1 : -1;
+				if (SourceCt[dest] < MIDIio.size)				// perhaps a duplicate send, but a unique source 
+					SourceName[dest][SourceCt[dest]] = prop;		// bump source count and save the unique property
+				else return (MIDIio.Info($"UniqueSend():  {SendType[dest]} count {SourceCt[dest]} maxed; ignoring {prop}")) ? -1 : -1;
 			}
 			return z;
 		}
@@ -114,28 +111,27 @@ namespace blekenbleu.MIDIspace
 /* DoSend() may send 4 source property value types for each of 3 destinations (MIDIout, vJoy axes, vJoy buttons)
  ; DoSend() needs not distinguish among MIDIin types (slider vs knob vs button), since all have 0-127 range scaling.
  ; The 4 source property types: JoyStick axis or button, MIDIin, game
- ; DoSend() indexes MIDIin CCnames[] by Map[,] using CCinCt[], and indexes property names SendName[,,] using SendCt[,].
- : First Map[,], SendCt[,] and Dest[,] dimension is SendType; last Dest[,] dimension is cumulative configured destination indices.
- ; Last Map[,] and SendName[,,] are cumulative configured CC and non-CC source indices, respectively;
- ; last SendCt[,] dimension is non-CC source type
- ; First SendName[,,] dimension is SendType; second dimension is non-CC source type; last diminension is cumulative configured indices
- ; SendCt[, 0] counts SendName[][0][] JoyStick axis entries, SendCt[, 1] counts SendName[][1][] JoyStick button entries
- ; SendCt[, 2] counts SendName[][2][] game entries, which DoSend(1) is called to index only when games are active.
+ ; DoSend() indexes MIDIin CCnames[] by Map[,] using CCinCt[], and indexes property names SourceName[,,] using SourceCt[,].
+ : First Map[,], SourceCt[,] and Dest[,] dimension is SendType; last Dest[,] dimension is cumulative configured destination indices.
+ ; SourceName[][] are cumulative configured CC and non-CC source indices, respectively;
+ ; last SourceCt[,] dimension is non-CC source type
+ ; First SourceName[][] dimension is non-CC SourceType; last diminension is cumulative configured indices
+ ; SourceCt[, 0] counts SendName[][0][] JoyStick axis entries, SourceCt[, 1] counts SendName[][1][] JoyStick button entries
+ ; SourceCt[, 2] counts SendName[][2][] game entries, which DoSend(1) is called to index only when games are active.
  */
 			SendType =	new string[] { "vJDaxis", "vJDbutton", "CCsend" };	// destination prefixes to search
-			SendName = 	new string[3][][];									// non-CC source properties configured for output
-			SendCt =	new byte[SendType.Length, 4];						// entries in game, Joy axis, Joy button, CC order
 			CCmap =	  	new byte[3, MIDIio.size];   						// configured MIDIin CC numbers
-			Map =		new byte[SendType.Length, MIDIio.size];   			// CC numbers configured to send from CCmap[,]
-			byte ct, j, size = MIDIio.size;
+			byte st, ct, j, size = MIDIio.size;
+			SourceName = new string[3][];
+			SourceArray = new byte[3,2,size];
+			SourceCt = new byte[] { 0, 0, 0, 0 };
 
-			for (ct = 0; ct < SendType.Length; ct++)
+			for (st = 0; st < 3; st++)
 			{
-				SendName[ct] = new string[3][];
-				for (j = 0; j < 3; j++)					// game, Joystick axis, button
-					SendName[ct][j] = new string[MIDIio.size];
-				for (j = 0; j < MIDIio.size; j++)		// ct here repurposed for MIDIin type
-					CCmap[ct, j] = Map[ct, j] = 222;	// impossible match
+				SourceName[st] = new string[size];
+
+				for (j = 0; j < size; j++)		// ct here repurposed for MIDIin type
+					CCmap[st, j] = 222;	// impossible match
 			}
 
 			Ping = new string[MIDIio.Size[2]];
@@ -224,35 +220,60 @@ namespace blekenbleu.MIDIspace
 			}
  */
 
-// 3) Good CCmap[,], CCname[] (without MIDIO.My);  now collect SendName[][][] and Map[,] source properties configured for output
+// 3) Good CCmap[,], CCname[] (without MIDIO.My);  now collect SourceName[][], SourceArray[,,] from source properties configured for output
 
 			string[] source = {"game", "Joystick axis", "Joystick button"};
-			for (byte st = 0; st < SendType.Length; st++)					//  vJoy axis, vJoy button, CC
+			for (st = 0; st < SendType.Length; st++)							//  vJoy axis, vJoy button, CC
 			{
-				j = (byte)((1 == st) ? 1 : 0);								// destination buttons are 1-based
+				j = (byte)((1 == st) ? 1 : 0);										// destination buttons are 1-based
 
-				byte d = 0;													// cumulative destination index
 				for (byte t = 0; t < source.Length; t++)
 				{
 //					MIDIio.Log(4, $"{SendType[st]} for {source[t]}");
-					for (byte i = 0; i < MIDIio.size; i++)	 			 	// snag Real[t] configured sends
+					for (byte i = 0; i < MIDIio.size; i++)	 			 			// snag Real[t] configured sends
 					{
-						string prop = I.PluginManager.GetPropertyValue(MIDIio.Ini + SendType[st] + (j + i).ToString() )?.ToString();
+						string prop = I.PluginManager.GetPropertyValue(MIDIio.Ini
+									+ SendType[st] + (j + i).ToString() )?.ToString();
 						if (null != prop && 11 < prop.Length)
 						{
 							string prop7 = prop.Substring(0, 7);
-							int z;
+							byte cc;
 
-							if (MIDIio.My == prop7)
-								z = WhichCC(st, prop);							// Unique CC property names are in CCname[]
-							else if ("Joystic" == prop7)
-								z = UniqueSend(st, 1, prop);
-							else if ("InputSt" == prop7)
-								z = UniqueSend(st, 2, prop);
-							else z = UniqueSend(st, 0, prop);					// game
-
-							if (2 > st && 0 <= z && d < size)
-								MIDIio.Dest[st, d++] = (byte)(j + i);			// i skips missing properties; buttons are 1-based
+							switch (prop7)
+							{
+								case "MIDIio.":
+									if (0 <= (cc = (byte)WhichCC(st, prop))
+									 && size > SourceCt[3])							// CC property names are in CCname[]
+									{
+										SourceArray[3,0,SourceCt[3]] = st;
+										SourceArray[3,1,SourceCt[3]++] = cc;
+									}
+									break;
+								case "Joystic":
+									if (0 <= UniqueSend(st, prop) && size > SourceCt[1])
+									{
+										SourceName[1][SourceCt[1]] = prop;
+										SourceArray[1,0,SourceCt[1]] = st;
+										SourceArray[1,1,SourceCt[1]++] = i;			// i is index of st configuration property matched
+									}
+									break;
+								case "InputSt":
+									if (0 <= UniqueSend(st, prop) && size > SourceCt[2])
+									{
+										SourceName[2][SourceCt[2]] = prop;
+										SourceArray[2,0,SourceCt[2]] = st;
+										SourceArray[2,1,SourceCt[2]++] = ++i;		// i is index of st configuration property matched; buttons are base-1
+									}
+									break;
+								default:											// no real way to validate game properties during setup
+									if (size > SourceCt[0])
+									{
+										SourceName[0][SourceCt[0]] = prop;
+										SourceArray[0,0,SourceCt[0]] = st;
+										SourceArray[0,1,SourceCt[0]++] = i;				// i is index of st configuration property matched
+									}
+									break;
+							}
 						}
 						else if (null != prop)
 							MIDIio.Info($"Init(): unrecognized Send {SendType[st]} property:  {prop}");
@@ -270,21 +291,21 @@ namespace blekenbleu.MIDIspace
 				{
 					if (0 < st)
 						s += "\n\t\t\t	";
-					s += SendType[st] + ":\t" + SendCt[st, 0].ToString();
+					s += SendType[st] + ":\t" + SourceCt[st, 0].ToString();
 					for (j = 1; j <= MIDIio.Real.Length; j++)
-						s += "," + SendCt[st, j].ToString();
+						s += "," + SourceCt[st, j].ToString();
 
-					MIDIio.Info($"Properties.SendCt {s}");
+					MIDIio.Info($"Properties.SourceCt {s}");
 				}
 				s = "";
 				for (byte st = 0; st < SendType.Length; st++)
 				{
-					if (0 < st && 0 < SendCt[st,3])
+					if (0 < st && 0 < SourceCt[st,3])
 						s += "\n";
-					if (0 < SendCt[st,3])
+					if (0 < SourceCt[st,3])
 					{
 						s += "CCname[Map[" + SendType[st] + ",]  = ";
-						for (j = 0; j < SendCt[st,3]; j++)
+						for (j = 0; j < SourceCt[st,3]; j++)
 						{
 							if (0 < j)
 								s += ", ";
@@ -295,27 +316,22 @@ namespace blekenbleu.MIDIspace
 				MIDIio.Info(s);
 				s = "";
  */
-				for (byte st = 0; st < SendType.Length; st++)
+				for (st = 0; st < SendType.Length; st++)
 				{
 					if (0 < st)
 						s += "\n";
-					s +=  $"Properties.SendName[{SendType[st]}]:  ";
-					for (j = 0; j < SendCt[st, 3]; j++)
-					{
-						if (0 < j)
-						s += ", ";
-						s += (128 > Map[st, j]) ? CCname[Map[st, j]] : $"invalid Map[{st}, {j}]";
-					}
+					s +=  $"Properties.SourceName[{SendType[st]}]:  ";
+
 					for (byte pt = 0; pt < 3; pt++)					// property type: CC, Joy axis, Joy button, game
-						for (j = 0; j < SendCt[st, pt]; j++)
+						for (j = 0; j < SourceCt[pt]; j++)
 						{
 							if (0 < j)
 								s += ",\n\t\t\t\t";
-							else if (0 < SendCt[st, 0])
+							else if (0 < SourceCt[0])
 								s += "\n\t\t\t\t";
-							if(null != SendName[st][pt][j])
-								s += SendName[st][pt][j];
-							else s += "\nnull == SendName["  + st.ToString() + "][" + pt.ToString() + "][" + j.ToString() + "]\n\t\t\t\t\t";
+							if(null != SourceName[pt][j])
+								s += SourceName[pt][j];
+							else s += "\nnull == SourceName["  + st.ToString() + "][" + pt.ToString() + "][" + j.ToString() + "]\n\t\t\t\t\t";
 						}
 				}
 				MIDIio.Info(s);
@@ -781,19 +797,11 @@ namespace blekenbleu.MIDIspace
 				byte L = (byte)MIDIio.Ini.Length;
 				string s = "Attach() MIDIio.in sends:";
 
-				for (byte st = 0; st < 3; st++)
-					for (j = 0; j < SendCt[st,3]; j++)
-						s += "\t" + CCname[Map[st, j]] + "\n";
-
 				s += "Attach() other sends: ";
-				for (byte st = 0; st < SendType.Length; st++)
-				{
-					s += SendType[st] + ":\n";
 					for (pt = 0; pt < 3; pt++)
-						for (j = 1; j < SendCt[st, pt]; j++)
-							if(null != SendName[st][pt][j])
-								s += "\t" + SendName[st][pt][j] + " AKA " + SendName[st][pt][j].Substring(L, SendName[st][pt][j].Length - L) + "\n";
-				}
+						for (j = 1; j < SourceCt[pt]; j++)
+							if(null != SourceName[pt][j])
+								s += "\t" + SourceName[pt][j] + " AKA " + SourceName[pt][j].Substring(L, SourceName[pt][j].Length - L) + "\n";
 				MIDIio.Info(s);
 			}
 

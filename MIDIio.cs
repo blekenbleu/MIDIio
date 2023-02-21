@@ -21,7 +21,6 @@ namespace blekenbleu.MIDIspace
 		internal static byte[] Size;
 		internal static byte[,] Dest;												// which VJD axis or button
 		internal static bool DoEcho;
-		private byte[] DoSendCt;
 		private static byte Level;
 		private bool[,] Once;
 		private int[,] Sent;														// remember and don't repeat
@@ -168,28 +167,14 @@ namespace blekenbleu.MIDIspace
 
 			Once = new bool[Properties.SendType.Length, size];		// null game properties
 
-			for (byte j = 0; j < Properties.SendType.Length - 1; j++)
-				for (int i = 0; i < Properties.SendCt[j, 3]; i++)	// CC counts
-					Settings.Sent[Properties.Map[j, i]] = 129;		// impossible first CC Send[i] values
-
-			for (s = 0; s < Properties.SendType.Length; s++)
+			for (s = 0; s < Properties.SourceCt.Length; s++)
 				for (byte i = 0; i < size; i++)
 					Once[s, i] = true;
 
-			DoSendCt = new byte[3];
-			Sent = new int[Properties.SendType.Length, size];
-			for (byte j = 0; j < Properties.SendType.Length; j++)
-			{
+			Sent = new int[Properties.SourceCt.Length, size];
+			for (byte j = 0; j < Properties.SourceCt.Length; j++)
 				for (byte i = 0; i < size; i++)
-				Sent[j, i] = 222;
-
-				DoSendCt[j] = 0;
-				for (byte i = 0; i < 4; i++)
-					DoSendCt[j] += Properties.SendCt[j, i];
-
-				if (DoSendCt[j] > Size[j])
-					DoSendCt[j] = Size[j];
-			}
+					Sent[j, i] = 222;
 
 //			data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //			pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
@@ -243,63 +228,61 @@ namespace blekenbleu.MIDIspace
  ; 0 <= JoyStick property <= VJDmaxval
  ; 0 <= ShakeIt property <= 100.0
  */
-		private void DoSend(PluginManager pluginManager, byte index)					// 0: game;	1: always
+		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
 		{
 			int a;
-			byte[,] table = {{0, 1}, {1, 4}};			// source indices 0: game, 1: axis, 2: button, 3: CC
-			byte cc = 0;																// for MIDIout
+			byte[,] table = {{0, 1}, {1, 4}};	// source indices 0: game, 1: axis, 2: button, 3: CC
+			byte s, cc;														// for MIDIout
 			string send;
 
-			for (byte s = 0; s < Properties.SendType.Length; s++)						// destination index
-			{
-				int d = -1;									// Dest index
+			for (byte t = table[index, 0]; t < table[index, 1]; t++)		// source type index
+				for (byte p = 0; p < Properties.SourceCt[t]; p++)			// index properties of a type
+				{
+					if (!Once[t, p] && 0 == t)
+							continue;										// skip null (game) properties
 
-				for (byte t = table[index, 0]; t < table[index, 1]; t++)				// source type index
-					for (byte p = 0; p < Properties.SendCt[s, t]; p++)					// index properties of a type
+					cc = Properties.SourceArray[t, 1, p];
+					if (3 > t)
+						prop = Properties.SourceName[t][p];					// t: game, axis, button
+					else prop = My + Properties.CCname[cc];					// MIDIout CC number to name
+					s = Properties.SourceArray[t, 0, p];
+
+					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
 					{
-						if (!Once[s, ++d] && 0 == t)
-							continue;													// skip null (game) properties
+						if (1 == t)											// Joystick button properties do not appear until pressed
+							continue;
 
-						if (3 > t)
-							prop = Properties.SendName[s][t][p];						// t: game, axis, button
-						else prop = My + Properties.CCname[cc = Properties.Map[s, p]];	// MIDIout CC number to name
-
-						if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
-						{
-							if (1 == t)								// Joystick button properties do not appear until pressed
-								continue;
-
-							if (Once[s, d])
-								Info($"DoSend({Properties.SendType[s]}): null {prop} for Send[{s}][{t}][{p}]");
-							Once[s, d] = false;						// property not configured
-						}
-						else if (0 < send.Length)
-						{
-							double property = Convert.ToDouble(send);
-
-							a = (int)(0.5 + scale[s, t] * property);
-							if (d >= DoSendCt[s] || 0 > a || Sent[s, d] == a)
-								continue;										// send only changed values
-
-							Sent[s, d] = a;
-							switch (s)
-							{
-								case 0:												// rescale to vJoy
-									VJD.Axis(Dest[0, d], a);						// 0-based axes
-									break;
-								case 1:
-									VJD.Button(Dest[1, d], 0 < a);					// 1-based buttons
-									break;
-								case 2:
-									Outer.SendCCval(cc, Settings.Sent[cc] = (byte)(0x7F & a));
-									break;
-								default:											// should be impossible
-									Info($"DoSend(): mystery property {prop} send type {s}, source type {t}, index{p}");
-									break;
-							}
-						}
-						else Info($"DoSend({Properties.SendType[s]}): 0 length {prop}");
+						if (Once[t, p])
+							Info($"DoSend({Properties.SendType[s]}): "
+								+"null {prop} for SourceArray[{t},, {p}]");
+						Once[t, p] = false;									// property not configured
 					}
+					else if (0 < send.Length)
+					{
+						double property = Convert.ToDouble(send);
+
+						a = (int)(0.5 + scale[s, t] * property);
+						if ( 0 > a || Sent[t, p] == a)
+							continue;										// send only changed values
+
+						Sent[t, p] = a;
+						switch (s)
+						{
+							case 0:											// rescale to vJoy
+								VJD.Axis(cc, a);						// 0-based axes
+								break;
+							case 1:
+								VJD.Button(cc, 0 < a);						// 1-based buttons
+								break;
+							case 2:
+								Outer.SendCCval(cc, Settings.Sent[cc] = (byte)(0x7F & a));
+								break;
+							default:											// should be impossible
+								Info($"DoSend(): mystery property {prop} send type {s}, source type {t}, index{p}");
+								break;
+						}
+					}
+					else Info($"DoSend({Properties.SendType[s]}): 0 length {prop}");
 			}
 		}		// DoSend()
 	}
