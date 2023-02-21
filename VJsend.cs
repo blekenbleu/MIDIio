@@ -32,7 +32,7 @@ namespace blekenbleu.MIDIspace
 		private long maxval;
 		private uint count;
 		internal byte nButtons, nAxes;
-		private HID_USAGES[] Usage;
+		internal HID_USAGES[] Usage;
 		private int[] AxVal;
 
 		internal long Init(uint ID)		// return maxval
@@ -53,35 +53,34 @@ namespace blekenbleu.MIDIspace
 			if (!joystick.vJoyEnabled())
 				return MIDIio.Info($"VJsend(): vJoy driver not enabled: Failed Getting vJoy attributes.") ? 0 : 0;
 
-			MIDIio.Info("VJsend(): Found " + joystick.GetvJoyProductString());
-			MIDIio.Log(2, $"vJoy.Version: {joystick.GetvJoySerialNumberString()}\n"
-				   + $"\t	 Developer: {joystick.GetvJoyManufacturerString()}");
+			string s = "VJsend.Init(): Found " + joystick.GetvJoyProductString();
+			s += $"\nvJoy.Version: {joystick.GetvJoySerialNumberString()}\n"
+				   + $"Developer: {joystick.GetvJoyManufacturerString()}\n";
 			
 
 			// Test if DLL matches the driver
 			UInt32 DllVer = 0, DrvVer = 0;
-			bool match = joystick.DriverMatch(ref DllVer, ref DrvVer);
-			if (match)
-				MIDIio.Log(4, $"MIDIio.VJsend.Init():  vJoy driver version {DrvVer:X} Matches DLL Version {DllVer:X}");
-			else MIDIio.Info($"MIDIio.VJsend.Init():  Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})");
+			if (joystick.DriverMatch(ref DllVer, ref DrvVer))
+				s += $"vJoy driver version {DrvVer:X} Matches DLL Version {DllVer:X}\n";
+			else s += $"Driver version {DrvVer:X} does NOT match DLL version ({DllVer:X})\n";
 
 			// Get the state of the requested device
 			VjdStat status = joystick.GetVJDStatus(id);
 			switch (status) {
 				case VjdStat.VJD_STAT_OWN:
-					MIDIio.Info($"vJoy Device {id} is already owned by this feeder, with capabilities:");
+					s += $"vJoy Device {id} is already owned by this feeder, with capabilities:\n";
 					break;
 				case VjdStat.VJD_STAT_FREE:
-					MIDIio.Log(4, $"MIDIio.VJsend.Init():  vJoy Device {id} is available, with capabilities:");
+					s += $"vJoy Device {id} is available, with capabilities:\n";
 					acquire = true;
 					break;
 				case VjdStat.VJD_STAT_BUSY:
-					return MIDIio.Info($"vJoy Device {id} is already owned by another feeder\nCannot continue") ? 0 : 0;
+					return MIDIio.Info(s += $"vJoy Device {id} is already owned by another feeder;  cannot continue\n") ? 0:0;
 				case VjdStat.VJD_STAT_MISS:
-					return MIDIio.Info($"vJoy Device {id} is not installed or disabled\nCannot continue") ? 0 : 0;
+					return MIDIio.Info(s += $"vJoy Device {id} is not installed or disabled;  cannot continue\n") ? 0:0;
 				default:
-					return MIDIio.Info($"vJoy Device {id} general error\nCannot continue") ? 0 : 0;
-			};
+					return MIDIio.Info(s += $"vJoy Device {id} general error;  cannot continue\n") ? 0:0;
+			}
  
 #if FFB
 			FFBReceiver = new VJoyFFBReceiver();
@@ -104,6 +103,7 @@ namespace blekenbleu.MIDIspace
 
 			// Get button count, and count axes for this vJoy device
 			nButtons = (byte)joystick.GetVJDButtonNumber(id);
+
 			// GetVJDAxisExist() responds only to HID_USAGES Enums, not equivalent integers..?
 			string got = "";
 			for (uint i = nAxes = 0; i < usages.Length; i++)
@@ -118,15 +118,15 @@ namespace blekenbleu.MIDIspace
 					got += HIDaxis[i];
 				}
 			}
-			MIDIio.Log(4, $"  {nButtons} Buttons, {nAxes} Axes{got}");
 
 			joystick.GetVJDAxisMax(id, HID_USAGES.HID_USAGE_X, ref maxval);
+			s += $"  {nButtons} Buttons; {nAxes} Axes{got}; axis maxval={maxval}.\n";
 			if (acquire)		// Acquire the target?
 			{
 				if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
-					return MIDIio.Info($"VJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
-				else MIDIio.Log(4, $"VJsend.Init(): vJoy device number {id} acquired;  axis maxval={maxval}.");
-			} else MIDIio.Log(4, $"VJsend.Init():  axis maxval={maxval}.");
+					return MIDIio.Info(s + $"\nVJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
+				else MIDIio.Log(4, s + $"vJoy device number {id} acquired.");
+			}
 #if FFB
 			StartAndRegisterFFB();
 #endif
