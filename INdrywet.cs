@@ -34,7 +34,6 @@ namespace blekenbleu.MIDIspace
 				return false;
 			}
 			M = that;
-			MIDIio.Info("INdrywet(): Found " + MIDIin); 
 			return true;
 		}
 

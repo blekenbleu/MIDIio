@@ -10,18 +10,15 @@ namespace blekenbleu.MIDIspace
 	{
 		internal string[][] SourceName;				   		// these non-CC SourceType[] Property names may be sent at 60Hz to 3 DestType[]s
 		internal byte[,,] 	SourceArray;					// Destination port,port index for 3 SourceType[]s
-		internal byte[,]	CCarray;
+		internal byte[,]	CCarray;						// Destination port,port index for CC source type
 		internal byte[]		SourceCt;						// No skipping around
 
 		internal string[]   DestType;				  		// configuration by NCalc script
 
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
-		private  byte[]	 	CCinCt;							// configured MIDIin CC
-		internal byte[,]	CCmap;						  	// configured CC numbers:  MIDIin, send
-		internal byte[]	 	Which, Wflag, Unmap;			// CCtype;  reverse map CC numbers to configured CCmap[,] indices.
+		internal byte[]	 	Which, Wflag, Unmap;			// CCtype,  reverse map CC numbers to Remap[,] for sources using MIDIin
 		internal readonly byte Unc = 4, CC = 1, Button = 2;	// flags for Wflag
-		internal byte[] 	Map;							// a CC array for MIDIin properties
-		internal byte[,]	Remap;							// indexed by Unmap; indexes CCmap[,]
+		internal byte[,]	Remap;							// indexed by Unmap; indexes CCarray
 		private string[]	Ping;					  		// ping[0-7]
 		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};
 		private byte size;
@@ -54,18 +51,13 @@ namespace blekenbleu.MIDIspace
 
 			for (cc = 0; cc < CCname.Length; cc++)
 				if (l == CCname[cc].Length && CCname[cc] == prop7)
-					break;
+				{
+					Which[cc] |= CC;					// perhaps already configured as a Button
+					Which[cc] &= (byte)(~Unc);			// no longer unconfigured
+					return cc;
+				}
 
-			if (cc < 128)
-			{
-				Which[cc] |= CC;					// perhaps already configured as a Button
-				Which[cc] &= (byte)(~Unc);			// no longer unconfigured
-				if (SourceCt[3] < 3 * size)
-					return Map[SourceCt[3]] = cc;
-
-				MIDIio.Info($"WhichCC(): Map[] is full; ignoring {DestType[dt]} property:  {prop}");
-			}
-			else MIDIio.Info($"WhichCC() unrecognized {DestType[dt]} property:  {prop}");
+			MIDIio.Info($"WhichCC() unrecognized {DestType[dt]} property:  {prop}");
 			return -1;
 		}
 
@@ -86,7 +78,6 @@ namespace blekenbleu.MIDIspace
 		internal void Init(MIDIio I)
 		{							   // CC configuration property name prefixes
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };   // Which CC types
-			CCinCt = new byte[] { 0, 0, 0, 0 };				// unused CCinCt[0], to work with CCtype[]
 			Wflag = new byte[] { Unc, CC, CC, Button };				// Which type flag bits
 			Which = new byte[128];				  				// OUTwetdry.Init() resends unconfigured CCs on restart
 			Unmap = new byte[128];				  			// OnEventSent() warns of unexpected CC numbers sent
@@ -105,11 +96,9 @@ namespace blekenbleu.MIDIspace
  */
 			DestType =	new string[] { "vJDaxis", "vJDbutton", "CCsend" };	// destination prefixes to search
 			size = MIDIio.size;
-			CCmap =	  	new byte[3, size];   								// configured MIDIin CC numbers
-			Map =		new byte[3 * size];									// 3 CC types
 			SourceName = new string[3][];									// CCname instead of SourceName[3]
 			SourceArray = new byte[3,2,size];
-			CCarray = 	new byte[2, 3 * size];
+			CCarray = 	new byte[3, 3 * size];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
 			byte[][] Darray = new byte[DestType.Length][];					// configured destination indices
 			byte dt, ct, j;
@@ -118,9 +107,6 @@ namespace blekenbleu.MIDIspace
 			{
 				SourceName[dt] = new string[size];
 				string pts;
-
-				for (j = 0; j < size; j++)		// ct here repurposed for MIDIin type
-					CCmap[dt, j] = 222;	// impossible match
 
 				// configured destination indices
 				string ds = I.PluginManager.GetPropertyValue(pts = MIDIio.Ini + DestType[dt] + 's')?.ToString();
@@ -166,7 +152,7 @@ namespace blekenbleu.MIDIspace
 					MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
 			}
 
-// 2) Collect configured MIDIin CCmap[,] and CCname[] properties; accumulate CCinCt[]
+// 2) Collect configured MIDIin Which[] and CCname[] properties
 
 			// Collect MIDIin properties from MIDIio.ini
 			for (ct = 1; ct < CCtype.Length; ct++)				// skipping CCtype[0]: Unconfigured
@@ -183,47 +169,45 @@ namespace blekenbleu.MIDIspace
 				j = 0;
 				foreach (byte cc in array)		  // array has cc numbers assigned for this type
 				{
-					byte k;
-
-					if (CCinCt[ct] >= MIDIio.size)	// ct is 1-based
-						continue;
-
-					bool found = false;
-					for (k = 0; (!found) && k <= CCinCt[ct]; k++)
-						if (found = (cc == CCmap[ct - 1, k]))
-							MIDIio.Info("Init():  {type + j} {cc} already configured as {CCname[cc]}");
-
-					if (!found)
+					if (128 > cc)
 					{
-						CCmap[ct - 1, CCinCt[ct]++] = cc;
-						CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
-						Which[cc] = Wflag[ct];
+						if (0 == (3 & Which[cc]))
+						{
+							Which[cc] = Wflag[ct];
+							CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
+						}
+						else MIDIio.Info($"Init({type + j}):  {cc} already configured as {CCname[cc]}");
 					}
+					else MIDIio.Info($"Init({type + j}) invalid CC value: {cc}");
 				}
 			}	   // ct < CCtype.Length
 
    			// all configured MIDIin properties are now in CCname[] and CCmap[,]
 /*
-			if (MIDIio.Log(8, $"Init.CCmap[]:"))		// OK 18 Feb 2023
+			if (MIDIio.Log(8, $"Init(CC):"))		// OK 18 Feb 2023
 			{
 				string st = "";
 				for (ct = 1; ct < CCtype.Length; ct++)
 				{
+					string t = CCtype[ct].SubString(0,4);
 					st += CCtype[ct] + ": ";
-					for (j = 0; j < CCinCt[ct]; j++)
-						st += " " + CCname[CCmap[ct - 1, j]];
+					for (j = 0; j < 128; j++)
+						if (0 < (3 & Which[j]) && t == CCname[j].SubString(0,4))
+							st += " " + CCname[j];
 					st += "\n";
 				}
 				MIDIio.Info(st);
 			}
  */
 
-// 3) Good CCmap[,], CCname[] (without MIDIO.My);  now use Darray[] to collect SourceName[][], SourceArray[,,] CCarray[,]
+// 3) Good CCname[] (without MIDIO.My);  now use Darray[] to collect SourceName[][], SourceArray[,,] CCarray[,]
 
 			string dp;
 			for (dt = 0; dt < DestType.Length; dt++)									//  vJoy axis, vJoy button, CC
 			{
 				byte b = (byte)((2 == dt) ? 1 : 0);
+				int cc;
+
 				if (null == Darray[dt])
 					continue;
 				for(byte i = 0; i < Darray[dt].Length; i++)
@@ -240,9 +224,10 @@ namespace blekenbleu.MIDIspace
 					switch (prop7)
 					{
 						case "MIDIio.":
-						if (0 <= WhichCC(prop, dt))											// CC property names are in CCname[]
+						if (0 <= (cc = WhichCC(prop, dt)) && SourceCt[3] < 3 * size)											// CC property names are in CCname[]
 						{
 							CCarray[0,SourceCt[3]] = dt;
+							CCarray[2,SourceCt[3]] = (byte)cc;
 							CCarray[1,SourceCt[3]++] = (byte)(b + i);
 						}
 						break;
@@ -282,7 +267,7 @@ namespace blekenbleu.MIDIspace
 						s += "\n";
 					if (0 < SourceCt[dt,3])
 					{
-						s += "CCname[Map[" + DestType[dt] + ",]  = ";
+						s += "CCname[" + DestType[dt] + "]  = ";
 						for (j = 0; j < SourceCt[st,3]; j++)
 						{
 							if (0 < j)
@@ -297,7 +282,7 @@ namespace blekenbleu.MIDIspace
 				for (dt = 0; dt < DestType.Length; dt++)
 				{
 					if (0 < dt)
-						s += "\n";
+						s += "\n\t";
 					s +=  $"Properties.SourceName[{DestType[dt]}]:  ";
 
 					for (byte pt = 0; pt < 4; pt++)					// property type: game, Joy axis, Joy button, CC
@@ -307,10 +292,10 @@ namespace blekenbleu.MIDIspace
 						{
 							if (dt != ((3 > pt) ? SourceArray[pt, 0, j] : CCarray[0, j]))
 								continue;
-							byte si = (3 > pt) ? j : Map[j];
+							byte si = (3 > pt) ? j : CCarray[2, j];
 							if (0 < k++)
 								s += ",\n\t\t\t\t";
-							else if (0 < SourceCt[0])
+							else if (0 < SourceCt[pt])
 								s += "\n\t\t\t\t";
 							if(null != N[si])
 								s += N[si];
@@ -774,26 +759,23 @@ namespace blekenbleu.MIDIspace
 
 		internal void Attach(MIDIio I)
 		{
-			byte j, ct, pt;
+			byte j, cc, pt;
 
 			if (0 < MIDIio.Size[2] && MIDIio.Log(4, ""))
 			{
-				byte L = (byte)MIDIio.Ini.Length;
-				string s = "Attach() MIDIio.in sends:";
+				string s = "Attach() non-MIDI source properties:\n";
 
-				s += "Attach() other sends: ";
-					for (pt = 0; pt < 3; pt++)
-						for (j = 1; j < SourceCt[pt]; j++)
-							if(null != SourceName[pt][j])
-								s += "\t" + SourceName[pt][j] + " AKA " + SourceName[pt][j].Substring(L, SourceName[pt][j].Length - L) + "\n";
+				for (pt = 0; pt < 3; pt++)
+					for (j = 1; j < SourceCt[pt]; j++)
+						if(null != SourceName[pt][j])
+							s += "\t\t" + SourceName[pt][j] +"\n";
 				MIDIio.Info(s);
 			}
 
-			for (byte an = ct = 0; ct < 3; ct++)
-				for (j = 0; j < CCinCt[1 + ct]; j++)	// CCinCt[] is 1-based
+			for (byte an = cc = 0; cc < 128; cc++)
+				if (0 < (3 & Which[cc]))
 				{
-					byte cc = CCmap[ct, j];
-//		MIDIio.Log(4, $"CCprop({CCname[cc]})"); 
+//					MIDIio.Log(4, $"CCprop({CCname[cc]})"); 
  					CCprop(I, cc);				// set property for configured input
 					if (Button == Which[cc])
 					{
@@ -806,10 +788,10 @@ namespace blekenbleu.MIDIspace
 
 			if (!MIDIio.DoEcho)
 			{
-				for (j = ct = 0; ct < 128; ct++)
-					if (0 < (Unc & Which[ct]))
+				for (j = cc = 0; cc < 128; cc++)
+					if (0 < (Unc & Which[cc]))
 					{
-						CCprop(I, ct);			// restore previous received unconfigured CCs
+						CCprop(I, cc);			// restore previous received unconfigured CCs
 						j++;
 					}
 					if (0 < j)
