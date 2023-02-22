@@ -206,7 +206,7 @@ namespace blekenbleu.MIDIspace
 			if (DoEcho)
 			{
 				if (value != Settings.Sent[CCnumber])				// send only changes
-					Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not SetProp()
+					Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not CCprop()
 				return true;
 			}
 
@@ -215,7 +215,7 @@ namespace blekenbleu.MIDIspace
 //			this.AddEvent(Properties.CCname[CCnumber]);			// Users may assign CCn events to e.g. Ping()
 //			this.TriggerEvent(Properties.CCname[CCnumber]);
 			Settings.Sent[CCnumber] = value;
-			return Properties.SetProp(this, CCnumber);
+			return Properties.CCprop(this, CCnumber);
 		}	// Active()
 
 /*

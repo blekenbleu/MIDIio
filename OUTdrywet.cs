@@ -62,9 +62,10 @@ namespace blekenbleu.MIDIspace
 			{
 				Connected = false;
 				MIDIio.Size[2] = 0;
-				MIDIio.Info("Init(): Failed to find MIDIout device " + MIDIout + ";\nKnown devices:");
+				string s = $"OUTdrywet.Init():  Failed to find {MIDIout};  found devices:";
 				foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
-					MIDIio.Info("Init(): " +outputDevice.Name);
+					s += "\n\t" + outputDevice.Name;
+				MIDIio.Info(s);
 			}
 		}
 
