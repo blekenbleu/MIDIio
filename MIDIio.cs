@@ -165,16 +165,15 @@ namespace blekenbleu.MIDIspace
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
 
-			Once = new bool[Properties.SendType.Length, size];		// null game properties
+			Once = new bool[Properties.SourceCt.Length, size];		// null game properties
+			Sent = new int[Properties.SourceCt.Length, size];
 
 			for (s = 0; s < Properties.SourceCt.Length; s++)
 				for (byte i = 0; i < size; i++)
+				{
 					Once[s, i] = true;
-
-			Sent = new int[Properties.SourceCt.Length, size];
-			for (byte j = 0; j < Properties.SourceCt.Length; j++)
-				for (byte i = 0; i < size; i++)
-					Sent[j, i] = 222;
+					Sent[s, i] = 222;
+				}
 
 //			data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
 //			pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
@@ -232,7 +231,7 @@ namespace blekenbleu.MIDIspace
 		{
 			int a;
 			byte[,] table = {{0, 1}, {1, 4}};	// source indices 0: game, 1: axis, 2: button, 3: CC
-			byte s, cc;														// for MIDIout
+			byte d, i;														// destination type, index
 			string send;
 
 			for (byte t = table[index, 0]; t < table[index, 1]; t++)		// source type index
@@ -241,11 +240,18 @@ namespace blekenbleu.MIDIspace
 					if (!Once[t, p] && 0 == t)
 							continue;										// skip null (game) properties
 
-					cc = Properties.SourceArray[t, 1, p];
 					if (3 > t)
+					{
 						prop = Properties.SourceName[t][p];					// t: game, axis, button
-					else prop = My + Properties.CCname[cc];					// MIDIout CC number to name
-					s = Properties.SourceArray[t, 0, p];
+						d = Properties.SourceArray[t, 0, p];
+						i = Properties.SourceArray[t, 1, p];
+					}
+					else
+					{
+						prop = My + Properties.CCname[Properties.Map[p]];			// MIDIout CC number to name
+						d = Properties.CCarray[0, p];
+						i = Properties.CCarray[1, p];
+					}
 
 					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
 					{
@@ -253,7 +259,7 @@ namespace blekenbleu.MIDIspace
 							continue;
 
 						if (Once[t, p])
-							Info($"DoSend({Properties.SendType[s]}): "
+							Info($"DoSend({Properties.DestType[d]}): "
 								+"null {prop} for SourceArray[{t},, {p}]");
 						Once[t, p] = false;									// property not configured
 					}
@@ -261,28 +267,30 @@ namespace blekenbleu.MIDIspace
 					{
 						double property = Convert.ToDouble(send);
 
-						a = (int)(0.5 + scale[s, t] * property);
+						a = (int)(0.5 + scale[d, t] * property);
 						if ( 0 > a || Sent[t, p] == a)
 							continue;										// send only changed values
 
 						Sent[t, p] = a;
-						switch (s)
+						switch (d)
 						{
-							case 0:											// rescale to vJoy
-								VJD.Axis(cc, a);						// 0-based axes
+							case 0:
+								if (VJD.Usage.Length > i)
+									VJD.Axis(i, a);						// 0-based axes
+								else Info($"DoSend({Properties.DestType[d]}): invalid axis {i} from {prop}");
 								break;
 							case 1:
-								VJD.Button(cc, 0 < a);						// 1-based buttons
+								VJD.Button(i, 0 < a);						// 1-based buttons
 								break;
 							case 2:
-								Outer.SendCCval(cc, Settings.Sent[cc] = (byte)(0x7F & a));
+								Outer.SendCCval(i, Settings.Sent[i] = (byte)(0x7F & a));
 								break;
 							default:											// should be impossible
-								Info($"DoSend(): mystery property {prop} send type {s}, source type {t}, index{p}");
+								Info($"DoSend(): mystery property {prop} send type {d}, source type {t}, index{p}");
 								break;
 						}
 					}
-					else Info($"DoSend({Properties.SendType[s]}): 0 length {prop}");
+					else Info($"DoSend({Properties.DestType[d]}): 0 length {prop}");
 			}
 		}		// DoSend()
 	}

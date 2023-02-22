@@ -71,7 +71,7 @@ namespace blekenbleu.MIDIspace
 					s += $"vJoy Device {id} is already owned by this feeder, with capabilities:\n";
 					break;
 				case VjdStat.VJD_STAT_FREE:
-					s += $"vJoy Device {id} is available, with capabilities:\n";
+					s += $"vJoy Device {id} is available with capabilities:\n";
 					acquire = true;
 					break;
 				case VjdStat.VJD_STAT_BUSY:
@@ -125,7 +125,7 @@ namespace blekenbleu.MIDIspace
 			{
 				if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
 					return MIDIio.Info(s + $"\nVJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
-				else MIDIio.Log(4, s + $"vJoy device number {id} acquired.");
+				else MIDIio.Log(4, s + $"vJoy Device {id} is now acquired.");
 			}
 #if FFB
 			StartAndRegisterFFB();
