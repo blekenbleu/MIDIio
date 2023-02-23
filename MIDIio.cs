@@ -213,9 +213,12 @@ namespace blekenbleu.MIDIspace
 					Outer.Latest = value;											// drop pass to Ping()
 					this.TriggerEvent(Properties.CCname[CCnumber]);
 				}
-				if (0 < (3 & which))												// call Send()
-				{
-				}
+/*	near-real-time routing					
+				if (0 < (56 & which))												// call Send()
+					for (byte dt = 0; dt < Properties.Route.Length; dt++)			// at most one Send() to the each dt from each cc
+					if (0 < (Properties.Route[dt] & which))
+						Send((double)value, dt, Properties.CCarray[1, Properties.Remap[dt, Properties.Unmap[cc]]], 3, cc);
+  */
 
 				return false;
 			}
@@ -301,7 +304,7 @@ namespace blekenbleu.MIDIspace
 
 					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
 					{
-						if (1 == t)											// null Joystick button properties until pressed
+						if (2 == t)											// null Joystick button properties until pressed
 							continue;
 
 						if (Once[t][p])

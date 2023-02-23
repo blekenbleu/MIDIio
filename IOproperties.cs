@@ -18,10 +18,11 @@ namespace blekenbleu.MIDIspace
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
 		internal byte[]	 	Which, Wflag, Unmap;			// CCtype,  reverse map CC numbers to Remap[,] for sources using MIDIin
 		internal readonly byte Unc = 4, CC = 1, Button = 2;	// flags for Wflag
+		internal readonly byte[] Route = {8, 16, 32};		// Which[] flags for Remap[,]
 		internal byte[,]	Remap;							// indexed by Unmap; indexes CCarray
-		private string[]	Ping;					  		// ping[0-7]
-		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};
-		private byte size;
+		private  string[]	Ping;					  		// ping[0-7]
+		private  byte		size, RouteCt = 0;
+		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};	// for SourceName[][], SourceArray[,,]
 /*
 		private string Join_strings(string s, string[] vector, byte length)
 		{
@@ -42,18 +43,22 @@ namespace blekenbleu.MIDIspace
 		}
  */
 
-		// build Map to configured CCnames, return CC number
+        /// <summary>
+        /// Called by Init(); adds source property data to CCname[], Which[]
+        /// </summary>
 		private int WhichCC(string prop, byte dt)
 		{
 			byte cc;
-			int l;
-			string prop7 = prop.Substring(7, l = prop.Length - 7);		// lop off 'MIDIio.'
+			int L;
+			string prop7 = prop.Substring(7, L = prop.Length - 7);		// lop off 'MIDIio.'
 
 			for (cc = 0; cc < CCname.Length; cc++)
-				if (l == CCname[cc].Length && CCname[cc] == prop7)
+				if (L == CCname[cc].Length && CCname[cc] == prop7)
 				{
-					Which[cc] |= CC;					// perhaps already configured as a Button
 					Which[cc] &= (byte)(~Unc);			// no longer unconfigured
+					Which[cc] |= (CC);					// perhaps already configured as a Button
+					if (2 == dt)						// routed to a vJoy button?
+						Which[cc] |= Button;			// make it so
 					return cc;
 				}
 
@@ -61,6 +66,9 @@ namespace blekenbleu.MIDIspace
 			return -1;
 		}
 
+        /// <summary>
+        /// Called by Init(); adds source property data to SourceName[], SourceArray[,,]
+        /// </summary>
 		private void Source(byte dt, byte st, int index, string dp, string prop)
 		{
 			if (size > SourceCt[st])
@@ -75,14 +83,17 @@ namespace blekenbleu.MIDIspace
 		}
 
 		// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
+        /// <summary>
+        /// Calls Source() and WhichCC() to build MIDI and vJouy routing tables
+        /// </summary>
 		internal void Init(MIDIio I)
-		{							   // CC configuration property name prefixes
-			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };   // Which CC types
-			Wflag = new byte[] { Unc, CC, CC, Button };				// Which type flag bits
-			Which = new byte[128];				  				// OUTwetdry.Init() resends unconfigured CCs on restart
-			Unmap = new byte[128];				  			// OnEventSent() warns of unexpected CC numbers sent
+		{																	// CC configuration property types
+			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
+			Wflag = new byte[] { Unc, CC, CC, Button };						// Which type flag bits
+			Which = new byte[128];				  							// OUTwetdry.Init() resends unconfigured CCs on restart
+			Unmap = new byte[128];				  							// OnEventSent() warns of unexpected CC numbers sent
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
-			CCname = new string[128];				   			// Initialized to CC[0-128]
+			CCname = new string[128];				   						// Initialized to CC[0-128]
 
 /* DoSend() may send 4 property value SourceType[]s to each of 3 DestType[]s  (MIDIout, vJoy axes, vJoy buttons)
  ; DoSend() needs not distinguish among MIDIin types (slider vs knob vs button), since all have 0-127 range scaling.
@@ -100,6 +111,7 @@ namespace blekenbleu.MIDIspace
 			SourceArray = new byte[3,2,size];
 			CCarray = 	new byte[3, 3 * size];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
+			Remap = new byte[DestType.Length, 128];
 			byte[][] Darray = new byte[DestType.Length][];					// configured destination indices
 			byte dt, ct, j;
 
@@ -200,7 +212,7 @@ namespace blekenbleu.MIDIspace
 			}
  */
 
-// 3) Good CCname[] (without MIDIO.My);  now use Darray[] to collect SourceName[][], SourceArray[,,] CCarray[,]
+// 3) Good CCname[]s (without MIDIO.My);  now use Darray[] to collect SourceName[][], SourceArray[,,] CCarray[,]
 
 			string dp;
 			for (dt = 0; dt < DestType.Length; dt++)									//  vJoy axis, vJoy button, CC
@@ -212,8 +224,8 @@ namespace blekenbleu.MIDIspace
 					continue;
 				for(byte i = 0; i < Darray[dt].Length; i++)
 				{
-					string prop = I.PluginManager.GetPropertyValue(dp = MIDIio.Ini
-									+ DestType[dt] + (Darray[dt][i]).ToString() )?.ToString();
+					string prop = I.PluginManager.GetPropertyValue(dp = MIDIio.Ini + DestType[dt]
+									+ (Darray[dt][i]).ToString() )?.ToString();
 			 		if (null == prop) 													// Configured properties should not be null
 					{
 						MIDIio.Info($"Init(): null Send {DestType[dt]} property {dp}");
@@ -224,11 +236,19 @@ namespace blekenbleu.MIDIspace
 					switch (prop7)
 					{
 						case "MIDIio.":
-						if (0 <= (cc = WhichCC(prop, dt)) && SourceCt[3] < 3 * size)											// CC property names are in CCname[]
+						if (0 <= (cc = WhichCC(prop, dt)) && SourceCt[3] < 3 * size)	// CC property names are in CCname[]
 						{
 							CCarray[0,SourceCt[3]] = dt;
+							CCarray[1, SourceCt[3]] = (byte)(b + i);
 							CCarray[2,SourceCt[3]] = (byte)cc;
-							CCarray[1,SourceCt[3]++] = (byte)(b + i);
+							if (0 == (56 & Which[cc]))									// not already routed for another destination?
+								Unmap[cc] = RouteCt++;									// add it
+/* As used in Active():
+ ;							if (0 < (Properties.Route[dt] & which))
+ ;								Send((double)value, dt, Properties.CCarray[1, Properties.Remap[dt, Properties.Unmap[cc]]], 3, cc);
+ */                                                                             
+							Which[cc] |= Route[dt];										// Active() can check Which Route[]	flags
+							Remap[dt, Unmap[cc]] = SourceCt[3]++;						// no need to check "impossible" Remap[,] values
 						}
 						break;
 						case "Joystic":
@@ -237,7 +257,7 @@ namespace blekenbleu.MIDIspace
 						case "InputSt":													// JoyStick button properties do not exist until pressed.
 							Source(dt, 2, b + i, dp, prop);
 							break;
-						default:														// no obvious way to validate game properties during setup
+						default: // "game"
 							Source(dt, 0, b + i, dp, prop);
 							break;
 					}
