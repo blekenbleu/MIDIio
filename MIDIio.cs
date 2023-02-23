@@ -182,44 +182,44 @@ namespace blekenbleu.MIDIspace
 //			pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
 		}
 
-		// track active CCs and save values
-		internal bool Active(byte CCnumber, byte value)					// returns true if first time
+/*  Called for each MIDIin CC message
+ ; track active CCs and save values
+ */
+		internal bool Active(byte CCnumber, byte value)								// returns true if first time
 		{
 			byte which = Properties.Which[CCnumber];
+
+			if (0 < which && Settings.Sent[CCnumber] == value)
+				return false;
+
+			Settings.Sent[CCnumber] = value;
+/*
 			if (5 == CCnumber)
-			Log(8, "Active(): " + Properties.CCname[CCnumber]);			// just a debugging breakpoint
+				Log(8, "Active(): " + Properties.CCname[CCnumber]);					// just a debugging breakpoint
 
 			Log(8, $"Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
-			if (0 < which)						// Known?
+ */
+			if (0 < which)															// Known and changed?
 			{
-				if (Settings.Sent[CCnumber] != value)
+				if (0 < (Properties.Button & which))
 				{
-					Settings.Sent[CCnumber] = value;
-					if (0 < (Properties.Button & which))
-					{
-						Outer.Latest = value;				// drop pass to Ping()
-						this.TriggerEvent(Properties.CCname[CCnumber]);
-					}
-					if (DoEcho && 0 < (Properties.Unc & which))
-						return !Outer.SendCCval(CCnumber, value); 	// unconfigured may also be appropriated configured
+					Outer.Latest = value;											// drop pass to Ping()
+					this.TriggerEvent(Properties.CCname[CCnumber]);
 				}
+				if (0 < (3 & which))												// call Send()
+				{
+				}
+
 				return false;
 			}
 
 			if (DoEcho)
-			{
-				if (value != Settings.Sent[CCnumber])				// send only changes
-					Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not CCprop()
-				return true;
-			}
+				return Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not CCprop()
 
 			// First time CC number seen
-			Properties.Which[CCnumber] = Properties.Unc;		// dynamic CC configuration
-//			this.AddEvent(Properties.CCname[CCnumber]);			// Users may assign CCn events to e.g. Ping()
-//			this.TriggerEvent(Properties.CCname[CCnumber]);
-			Settings.Sent[CCnumber] = value;
+			Properties.Which[CCnumber] = Properties.Unc;							// dynamic CC configuration
 			return Properties.CCprop(this, CCnumber);
-		}	// Active()
+		}																			// Active()
 
 /*
  ; Properties.SourceName[][] is an array of property names for other than MIDI
