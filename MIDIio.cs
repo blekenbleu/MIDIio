@@ -4,252 +4,318 @@ using System;
 
 namespace blekenbleu.MIDIspace
 {
-    [PluginDescription("MIDI slider I/O")]
-    [PluginAuthor("blekenbleu")]
-    [PluginName("MIDIio")]
-    public class MIDIio : IPlugin, IDataPlugin
-    {
-	private byte size = 8;						// default configurable output count
-	internal byte[] Size;
-	private bool[,] Once;
-	private byte[][] Sent;
-	internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-	internal static readonly string My = "MIDIio.";					// PluginName + '.'
-        internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
-	internal MIDIioSettings Settings;
-	internal static IOproperties Properties;
-	internal VJsend VJD;
-	internal INdrywet Reader;
-	internal OUTdrywet Outer;
-	private static byte Level;
-	internal static bool DoEcho;
-        private string prop;
-
-	internal static bool Info(string str)
+	[PluginDescription("MIDI slider I/O")]
+	[PluginAuthor("blekenbleu")]
+	[PluginName("MIDIio")]
+	public class MIDIio : IPlugin, IDataPlugin
 	{
-	    SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Info()
-	    return true;
-	}
+		internal MIDIioSettings Settings;
+		internal static IOproperties Properties;
+		internal VJsend VJD;
+		internal INdrywet Reader;
+		internal OUTdrywet Outer;
+		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
+		internal static readonly string My = "MIDIio.";								// SimHub Plugin Name + '.'
+		internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
+		internal static byte size = 8;												// default configurable output count
+		internal static byte[] Size;
+		internal static byte[,] Dest;												// which VJD axis or button
+		internal static bool DoEcho;
+		private static byte Level;
+		private bool[][] Once;
+		private int[][] Sent;														// remember and don't repeat
+		private string prop;
+		private  double[,] scale;
 
-	internal static bool Log(byte level, string str)
-	{
-	    bool b = 0 < (level & Level);
-
-	    if (b)
-		SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Log()
-	    return b;
-	}
-
-	/// <summary>
-	/// Instance of the current plugin manager
-	/// </summary>
-	public PluginManager PluginManager { get; set; }
-
-	/// <summary>
-	/// Called one time per game data update, contains all normalized game data,
-	/// raw data are intentionnally "hidden" under a generic object type (A plugin SHOULD NOT USE IT)
-	///
-	/// This method is on the critical path, it must execute as fast as possible and avoid throwing any error
-	///
-	/// </summary>
-	/// <param name="pluginManager"></param>
-	/// <param name="data">Current game data, including current and previous data frame.</param>
-	public void DataUpdate(PluginManager pluginManager, ref GameData data)
-	{
-	    if (data.GameRunning && data.OldData != null && data.NewData != null)
-		DoSend(pluginManager, false);
-
-	    // Send my property messages anytime (echo)
-	    DoSend(pluginManager, true);
-//	    VJD.Run();				// for testing: loops thru configured axes and buttons
-	}
-
-	/// <summary>
-	/// Called at plugin manager stop, close/dispose anything needed here !
-	/// Plugins are rebuilt at game change
-	/// </summary>
-	/// <param name="pluginManager"></param>
-	public void End(PluginManager pluginManager)
-	{
-	    if (null != Reader)
-		Reader.End();
-	    if (null != Outer)
-		Outer.End();
-	    VJD.End();
-	    Properties.End(this);
-	    this.SaveCommonSettings("GeneralSettings", Settings);
-	}
-
-	/// <summary>
-	/// Called at SimHub start then after game changes
-	/// </summary>
-	/// <param name="pluginManager"></param>
-	private static int count = 0;
-        private long VJDmaxval;
-	public void Init(PluginManager pluginManager)
-	{
-	    Log(4, "Init()");
-	    // Load settings
-	    Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
-
-	    prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
-	    DoEcho = (null != prop && 0 < Int32.Parse(prop));
-	    Info("Init(): unconfigured CCs will" + (DoEcho ? "" : " not") + " be echo'ed");
-
-	    int s = size;
-	    prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
-	    if (null != prop && 0 < prop.Length && (0 >= (s = Int32.Parse(prop)) || 128 < s))
-		Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
-	    else size = (byte)s;
-
-	    // Log() level configuration
-	    prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
-	    Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
-            Log(8, $"log Level {Level}");
-
-	    VJD = new VJsend();			// vJoy
-	    VJDmaxval = VJD.Init(1);		// obtain joystick button and axis counts VJD.nButtons, VJD.nAxes
-
-	    Size = new byte[] {size, (size < VJD.nAxes) ? size : VJD.nAxes, (size < VJD.nButtons) ? size : VJD.nButtons};
-	    Properties = new IOproperties();    // MIDI and vJoy property configuration
-	    Properties.Init(this, Size);	// set SendCt[], sort My Send[,] first and unconfigured before Outer.Init()
-
-	    // Launch Outer before Reader, which tries to send stored MIDI CC messages
-	    prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
-	    if (null == prop)
-		Info("Init(): missing " + Ini + "out entry!");
-	    else if (0 < prop.Length)
-	    {
-	    	pluginManager.AddProperty("out", this.GetType(), prop);
-		Outer = new OUTdrywet();
-		Outer.Init(this, prop, Properties.SendCt[0]);
-	    }
-	    else Info("Init(): " + Ini + "out is undefined" );
-
-	    prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
-	    if (null == prop)
-		Info("Init(): missing " + Ini + "in entry!");
-	    else if (0 < prop.Length)
-	    {
-		pluginManager.AddProperty("in", this.GetType(), prop);
-		Reader = new INdrywet();
-		if(Reader.Init(prop, this))
-		    Properties.Attach(this);	// AttachDelegate buttons, sliders and knobs
-	    }
-	    else Info("Init(): " + Ini + "in is undefined" );
-
-	    count += 1;		// increments for each restart, provoked e.g. by game change or restart
-	    pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
-	    Once = new bool[Properties.Send.GetLength(0), size];
-
-	    for (int i = 0; i < size; i++)
-		Settings.Sent[Properties.Map[0][i]] = 129;	// impossible first Send[i] values
-	    for (byte j = 0; j < Properties.Send.GetLength(0); j++)
-		for (int i = 0; i < Size[j]; i++)
-		    Once[j, i] = true;
-
-	    Sent = new byte[][] {Settings.Sent, new byte[Size[1]], new byte[Size[2]]};
-	    for (byte j = 1; j < Properties.Send.GetLength(0); j++)
-		for (byte i = 0; i < Size[j]; i++)
-		    Sent[j][i] = 0;
-
-//	    data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
-//	    pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
-	}
-
-	// track active CCs and save values
-	internal bool Active(byte CCnumber, byte value)			// returns true if first time
-	{
-	    byte which = Properties.Which[CCnumber];
-	    if (5 == CCnumber)
-		Log(8, "Active(): " + Properties.CCname[CCnumber]);			// just a debugging breakpoint
-
-	    Log(8, $"Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
-	    if (0 < which)						// Known?
-	    {
-		if (Properties.CCvalue[CCnumber] != value)
+		/// <summary>
+		/// wraps SimHub.Logging.Current.Info(); prefixes MIDIio.My
+		/// </summary>
+		internal static bool Info(string str)
 		{
-		    Properties.CCvalue[CCnumber] = value;
-		    if (0 < (Properties.Button & which))
-		    {
-			Outer.Latest = value;				// drop pass to Ping()
-			this.TriggerEvent(Properties.CCname[CCnumber]);
-		    }
-		    if (DoEcho && 0 < (Properties.unconfigured & which))
-			return !Outer.SendCCval(CCnumber, value); 	// unconfigured may also be appropriated configured
+			SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Info()
+			return true;
 		}
-		return false;
-	    }
 
-	    if (DoEcho)
-	    {
-		if (value != Properties.CCvalue[CCnumber])				// send only changes
-		    Outer.SendCCval(CCnumber, Properties.CCvalue[CCnumber] = value);	// do not SetProp()
-		return true;
-	    }
-
-	    // First time CC number seen
-	    Properties.Which[CCnumber] = Properties.unconfigured;	// dynamic CC configuration
-//	    this.AddEvent(Properties.CCname[CCnumber]);			// Users may assign CCn events to e.g. Ping()
-//	    this.TriggerEvent(Properties.CCname[CCnumber]);
-	    return Properties.SetProp(this, CCnumber, Properties.CCvalue[CCnumber] = value);
-	}	// Active()
-
-	// Properties.Send[,] is an array of property names
-	// Properties.Map[][] a prioritized array of destination indices
-	// Properties.Map[0] are MIDIout CCn corresponding to Settings.Sent[]
-	// Properties.Map[1-2] are vJoy axis and button indices, requiring their own Sent[,] array.
-	private void DoSend(PluginManager pluginManager, bool always)
-	{
-	    byte end, j, b, cc, value;
-            string send;
-
-	    for (j = 0; j < Properties.Send.GetLength(0); j++)
-	    {
-		end = (always) ? Properties.MySendCt[j] : Properties.SendCt[j];
-
-		for (b = (byte)((always) ? 0 : Properties.MySendCt[j]); b < end; b++)
+		/// <summary>
+		/// as Info(), with log level 1/2/4/8
+		/// </summary>
+		internal static bool Log(byte level, string str)
 		{
-		    cc = Properties.Map[j][b];	// MIDIout CC number or vJoy button or axis
-                        
-		    if (!Once[j, b])
-		       continue;
+			bool b = 0 < (level & Level);
 
-		    prop = Properties.Send[j, b];
-		    send = pluginManager.GetPropertyValue(prop)?.ToString();
+			if (b && 0 < str.Length)
+			SimHub.Logging.Current.Info(MIDIio.My + str);	// bool Log()
+			return b;
+		}
 
-		    if (null == send)
-		    {
-			Once[j, b] = false;
-			Info("DoSend(): null " + prop);
-		    }
-		    else if (0 < send.Length)
-		    {
-/*
- ; At least 3 possibilities:
- ; 1) 0 <= MIDI value < 128
- ; 2) 0 <= ShakeIt property <= 100.0
- ; 3) 0 <= JoyStick property <= VJDmaxval
- */
-			double property = Convert.ToDouble(send);
-			if (Properties.MySendCt[j] <= b)
-			    property *= 1.27;				// ShakeIt properties <= 100
-			value = (byte)(0.5 * property);
+		/// <summary>
+		/// Instance of the current plugin manager
+		/// </summary>
+		public PluginManager PluginManager { get; set; }
 
-			value &= 0x7F;
-			if (Sent[j][cc] != value) {			// send only changed values
-			    Sent[j][cc] = value;
-			    if (1 == j)
-				VJD.Axis(cc, (int) (63.5 + property * VJDmaxval) / 127);	// rescale from MIDI to vJoy
-			    else if (2 == j)
-				VJD.Button( ++cc, 0.5 < property);	// first VJoy button is 1, not 0
-			    else if (Properties.CC == (Properties.CC & Properties.Which[b]))
-				Outer.SendCCval(cc, value);		// DoSendCC()
+		/// <summary>
+		/// Called one time per game data update, contains all normalized game data,
+		/// raw data are intentionnally "hidden" under a generic object type (A plugin SHOULD NOT USE IT)
+		///
+		/// This method is on the critical path, it must execute as fast as possible and avoid throwing any error
+		///
+		/// </summary>
+		/// <param name="pluginManager"></param>
+		/// <param name="data">Current game data, including current and previous data frame.</param>
+		public void DataUpdate(PluginManager pluginManager, ref GameData data)
+		{
+			if (data.GameRunning && data.OldData != null && data.NewData != null)
+				DoSend(pluginManager, 0);
+
+			// Send my property messages anytime (echo)
+			DoSend(pluginManager, 1);
+//			VJD.Loop();									// for testing: loops thru configured axes and buttons
+		}
+
+		/// <summary>
+		/// Called at plugin manager stop, close/dispose anything needed here !
+		/// Plugins are rebuilt at game change
+		/// </summary>
+		/// <param name="pluginManager"></param>
+		public void End(PluginManager pluginManager)
+		{
+			if (null != Reader)
+			Reader.End();
+			if (null != Outer)
+				Outer.End();
+			if (null != VJD)
+				VJD.End();
+			Properties.End(this);
+			this.SaveCommonSettings("GeneralSettings", Settings);
+		}
+
+		private static int count = 0;
+		private static long VJDmaxval;
+		/// <summary>
+		/// Called at SimHub start then after game changes
+		/// </summary>
+		/// <param name="pluginManager"></param>
+		public void Init(PluginManager pluginManager)
+		{
+			// Log() level configuration
+			prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
+			Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
+			Log(8, $"log Level {Level}");
+
+// Load settings
+
+			Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
+
+			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
+			DoEcho = (null != prop && 0 < Int32.Parse(prop));
+			Info("Init(): unconfigured MIDIin CCs will" + (DoEcho ? "" : " not") + " be forwarded to MIDIout");
+			count += 1;		// increments for each restart, provoked e.g. by game change or restart
+			pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
+
+			int s = size;
+			prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
+			if (null != prop && 0 < prop.Length && (0 >= (s = Int32.Parse(prop)) || 128 < s))
+				Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
+			else size = (byte)s;
+
+			Size = new byte[] { size, size, size };
+			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
+			if (null != prop && 1 == prop.Length && ("0" != prop))
+			{
+				VJD = new VJsend();				// vJoy
+				VJDmaxval = VJD.Init(1);		// obtain vJoy parameters
+				if (size > VJD.nAxes)
+					Size[0] = VJD.nAxes;
+				if (size > VJD.nButtons)
+					Size[1] = VJD.nButtons;
 			}
-		    }
-		    else Info($"DoSend(): 0 length {prop} map[{j}, {b}]");
+			else
+			{
+				VJDmaxval = 65535;
+				Size[0] = Size[1] = 0;
+			}
+			double vMax = (double)VJDmaxval;
+								   // game			Joystick axis	button	MIDIin
+			scale = new double[,] {	{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127},	// vJoy axis
+						 			{ 0.02,			2.0/65535.0,	1,		2.0/127 },	// vJoy button
+									{ 1.27,			127.0/65535.0,  127,	1.0		}};	// MIDIout
+
+			// Launch Outer before Reader and Properties
+			prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
+			if (null == prop || 0 == prop.Length)
+			{
+				Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
+				Size[2] = 0;
+			}
+			else
+			{
+				pluginManager.AddProperty("out", this.GetType(), prop);
+				Outer = new OUTdrywet();
+				Outer.Init(prop);	// may zero Size[2]
+			}
+
+			Properties = new IOproperties();		// MIDI and vJoy property configuration
+			Dest = new byte[2 , size];				// for vJoy
+			Properties.Init(this);					// send unconfigured DoEchoes, set Dest[,] SendCt[,], sort Send[, ]
+
+			prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
+			if (null == prop)
+				Info("Init(): missing " + Ini + "in entry!");
+			else if (0 < prop.Length)
+			{
+				pluginManager.AddProperty("in", this.GetType(), prop);
+				Reader = new INdrywet();
+				if(Reader.Init(prop, this))
+					Properties.Attach(this);		// AttachDelegate buttons, sliders and knobs
+			}
+			else Info("Init(): " + Ini + "in is undefined" );
+
+			Once = new bool[Properties.SourceCt.Length][];		// null game properties
+			Sent = new int[Properties.SourceCt.Length][];
+			for (s = 0; s < Properties.SourceCt.Length; s++)
+			{
+				Once[s] = new bool[Properties.SourceCt[s]];
+				Sent[s] = new int[Properties.SourceCt[s]];
+			}
+			for (s = 0; s < Properties.SourceCt.Length; s++)
+				for (byte p = 0; p < Properties.SourceCt[s]; p++)
+				{
+					Once[s][p] = true;
+					Sent[s][p] = 222;
+				}
+
+//			data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
+//			pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
 		}
-	    }
-	}		// DoSend()
-    }
+
+		/// <summary>
+		/// Called Called for each MIDIin CC message;
+		/// track active CCs and save values
+		/// </summary>
+		internal bool Active(byte CCnumber, byte value)								// returns true if first time
+		{
+			byte which = Properties.Which[CCnumber];
+
+			if (0 < which && Settings.Sent[CCnumber] == value)
+				return false;
+
+			Settings.Sent[CCnumber] = value;
+/*
+			if (5 == CCnumber)
+				Log(8, "Active(): " + Properties.CCname[CCnumber]);					// just a debugging breakpoint
+
+			Log(8, $"Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
+ */
+			if (0 < which)															// Known and changed?
+			{
+				if (0 < (Properties.Button & which))
+				{
+					Outer.Latest = value;											// drop pass to Ping()
+					this.TriggerEvent(Properties.CCname[CCnumber]);
+				}
+/*	near-real-time routing					
+				if (0 < (56 & which))												// call Send()
+					for (byte dt = 0; dt < Properties.Route.Length; dt++)			// at most one Send() to the each dt from each cc
+					if (0 < (Properties.Route[dt] & which))
+						Send((double)value, dt, Properties.CCarray[1, Properties.Remap[dt, Properties.Unmap[cc]]], 3, cc);
+  */
+
+				return false;
+			}
+
+			if (DoEcho)
+				return Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not CCprop()
+
+			// First time CC number seen
+			Properties.Which[CCnumber] = Properties.Unc;							// dynamic CC configuration
+			return Properties.CCprop(this, CCnumber);
+		}																			// Active()
+
+/*
+ ; Properties.SourceName[][] is an array of property names for other than MIDI
+ ; My + CCname[cc] MIDI properties correspond to Settings.Sent[cc]
+ ;
+ ; Accomodate device value range differences:
+ ; 0 <= MIDI cc and value < 128
+ ; 0 <= JoyStick property <= VJDmaxval
+ ; 0 <= ShakeIt property <= 100.0
+ */
+		/// <summary>
+		/// Called Called for each property change sent;
+		/// d: 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;  i:d address
+		/// t: 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;  p:t address
+		/// prop: source property name for error log
+		/// </summary>
+		internal void Send(double property, byte d, byte i, byte p, byte t, string prop)
+		{
+			int	a = (int)(0.5 + scale[d, t] * property);
+
+			if ( 0 > a || Sent[t][p] == a)
+				return;										// send only changed values
+
+			Sent[t][p] = a;
+			switch (d)
+			{
+				case 0:
+					if (VJD.Usage.Length > i)
+						VJD.Axis(i, a);						// 0-based axes
+					else Info($"DoSend({Properties.DestType[d]}): invalid axis {i} from {prop}");
+					break;
+				case 1:
+					VJD.Button((byte)(1 + i), 0 < a);						// 1-based buttons
+					break;
+				case 2:
+					Outer.SendCCval(i, Settings.Sent[i] = (byte)(0x7F & a));
+					break;
+				default:											// should be impossible
+					Info($"DoSend(): mystery property {prop} send type {d}, source type {t}, index{p}");
+					break;
+			}
+		}
+
+		/// <summary>
+		/// Called by ; calls Send()
+		/// index: 0=game; 1=Joystick+MIDIin Source property types
+		/// </summary>
+		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
+		{
+			byte[,] table = {{0, 1}, {1, 4}};	// source indices 0: game, 1: axis, 2: button, 3: CC
+			byte d, i, cc = 0;														// destination type, index
+			string send;
+
+			for (byte t = table[index, 0]; t < table[index, 1]; t++)		// source type index
+				for (byte p = 0; p < Properties.SourceCt[t]; p++)			// index properties of a type
+				{
+					if (3 > t)
+					{
+						prop = Properties.SourceName[t][p];					// t: game, axis, button
+						d = Properties.SourceArray[t, 0, p];
+						i = Properties.SourceArray[t, 1, p];
+					}
+					else
+					{
+						prop = My + Properties.CCname[cc = Properties.CCarray[2, p]];	// MIDI CC number to name
+						d = Properties.CCarray[0, p];
+						i = Properties.CCarray[1, p];
+					}
+
+					if ((0 == t) && !Once[t][p])
+							continue;										// skip null (game) properties
+
+					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
+					{
+						if (2 == t)											// null Joystick button properties until pressed
+							continue;
+
+						if (Once[t][p])
+							Info($"DoSend({Properties.DestType[d]}): null {prop} for"
+								+ ((3 > t) ? $"SourceName[{t}][{p}]" : $"CCarray[2, {p}] = {cc}"));
+						Once[t][p] = false;									// property not configured
+					}
+					else if (0 == send.Length)
+						Info($"DoSend({Properties.DestType[d]}): 0 length {prop}");
+					else Send(Convert.ToDouble(send), d, i, p, t, prop);
+				}
+		}			// DoSend()
+	}
 }
