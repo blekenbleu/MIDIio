@@ -133,9 +133,10 @@ namespace blekenbleu.MIDIspace
 			for (j = 0; j < MIDIio.Size[2]; j++)
 				Ping[j] = "ping" + j;
 
+//			MIDIio.Log(8, "Properties.Dest.Length = " + DestType.Length);
+
 // 1) initialize CC
 
-//			MIDIio.Log(8, "Properties.Dest.Length = " + DestType.Length);
 			for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
 			{
 				Unmap[j] = j;
@@ -186,6 +187,7 @@ namespace blekenbleu.MIDIspace
 						if (0 == (3 & Which[cc]))
 						{
 							Which[cc] = Wflag[ct];
+//							MIDIio.Log(4, $"CCProperties.Init(): CCname[{cc}] = " + CCtype[ct] + j);
 							CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
 						}
 						else MIDIio.Info($"Init({type + j}):  {cc} already configured as {CCname[cc]}");
