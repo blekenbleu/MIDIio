@@ -17,15 +17,15 @@ Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are v
 #### Notes:
 - This plugin **is compatible with SimHub's Controllers plugin**  
   - This allows e.g. forwarding *real* **JoystickPlugin** properties to MIDIout or vJoy;  
-    **Do NOT** forward *vJoy* properties from **JoystickPlugin**;&nbsp; that would provoke feedback loops!  
+    **Do NOT** configure *vJoy* properties from **JoystickPlugin**;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's Midi Controllers Input plugin**  
     - Enabling both causes SimHub to crash!!!   
 - Like SimHub's **Midi Controllers Input** plugin, **MIDIio** can automatically set CCn properties  
   for received CCn messages not already configured, but (unlike SimHub's) from only the single configured MIDI device.  
   This is expected to be most useful for identifying CC numbers to configure.
 - DirectInput requires [vJoy v2.1.6 device driver](https://sourceforge.net/projects/vjoystick/files/Beta%202.x/2.1.6.20-030216/), which probably cannot work in Windows 11.  
-- This plugin provides NO user interface window.
-    - configure **MIDIio** plugin by editing [`MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
+- This plugin is configured by [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini);&nbsp; it has NO interactive interface window.
+    - configure this plugin by editing [`MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
     - **check System log for MIDI-related messages:**  
       ![log messages](docs/log.png)  
 
