@@ -28,9 +28,10 @@ namespace blekenbleu.MIDIspace
 			
 			catch (Exception)
 			{
-				MIDIio.Info($"INdrywet() Failed to find {MIDIin};\nKnown devices:");
+				string s = $"INdrywet.Init() Failed to find {MIDIin};\nKnown devices:";
 				foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
-					MIDIio.Info("\t" + inputDevice.Name);
+					s += "\n\t" + inputDevice.Name;
+				MIDIio.Info(s);
 				return false;
 			}
 			M = that;
