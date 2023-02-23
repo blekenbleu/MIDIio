@@ -232,28 +232,29 @@ namespace blekenbleu.MIDIspace
  */
 		internal void Send(double property, byte d, byte i, byte p, byte t, string prop)
 		{
-			int			a = (int)(0.5 + scale[d, t] * property);
-						if ( 0 > a || Sent[t][p] == a)
-							return;										// send only changed values
+			int	a = (int)(0.5 + scale[d, t] * property);
 
-						Sent[t][p] = a;
-						switch (d)
-						{
-							case 0:
-								if (VJD.Usage.Length > i)
-									VJD.Axis(i, a);						// 0-based axes
-								else Info($"DoSend({Properties.DestType[d]}): invalid axis {i} from {prop}");
-								break;
-							case 1:
-								VJD.Button((byte)(1 + i), 0 < a);						// 1-based buttons
-								break;
-							case 2:
-								Outer.SendCCval(i, Settings.Sent[i] = (byte)(0x7F & a));
-								break;
-							default:											// should be impossible
-								Info($"DoSend(): mystery property {prop} send type {d}, source type {t}, index{p}");
-								break;
-						}
+			if ( 0 > a || Sent[t][p] == a)
+				return;										// send only changed values
+
+			Sent[t][p] = a;
+			switch (d)
+			{
+				case 0:
+					if (VJD.Usage.Length > i)
+						VJD.Axis(i, a);						// 0-based axes
+					else Info($"DoSend({Properties.DestType[d]}): invalid axis {i} from {prop}");
+					break;
+				case 1:
+					VJD.Button((byte)(1 + i), 0 < a);						// 1-based buttons
+					break;
+				case 2:
+					Outer.SendCCval(i, Settings.Sent[i] = (byte)(0x7F & a));
+					break;
+				default:											// should be impossible
+					Info($"DoSend(): mystery property {prop} send type {d}, source type {t}, index{p}");
+					break;
+			}
 		}
 
 		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
