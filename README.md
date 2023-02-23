@@ -1,5 +1,5 @@
 ### blekenbleu.MIDIio SimHub plugin
- For one MIDI device, this [SimHub](https://github.com/SHWotever/SimHub) plugin sends up to 8 and reads up to 8 each configured Button, Slider and Knob  
+ For one MIDI device, this [SimHub](https://github.com/SHWotever/SimHub) plugin sends and reads configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
  to e.g. on-the-fly tweak suitably customized **ShakeIt Bass Shaker** effects.  
 Unconfigured CC messages received dynamically generate new properties or are forwarded to a target Device.  
@@ -21,7 +21,7 @@ Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are v
 - This plugin is **incompatible with SimHub's Midi Controllers Input plugin**  
     - Enabling both causes SimHub to crash!!!   
 - Like SimHub's **Midi Controllers Input** plugin, **MIDIio** can automatically set CCn properties  
-  for received CCn messages not already configured, but from only a single configured MIDI device.  
+  for received CCn messages not already configured, but (unlike SimHub's) from only the single configured MIDI device.  
   This is expected to be most useful for identifying CC numbers to configure.
 - DirectInput requires [vJoy v2.1.6 device driver](https://sourceforge.net/projects/vjoystick/files/Beta%202.x/2.1.6.20-030216/), which probably cannot work in Windows 11.  
 - This plugin provides NO user interface window.
