@@ -8,7 +8,7 @@
  ;		Init() gets and reports information about it and specified virtual device
  ;		Init() then checks axes existence and button count, then acquires and resets the virtual device.
  ;
- ;		Run() exercises available buttons and axes of that virtual device.
+ ;		Loop() exercises available buttons and axes of that virtual device.
  ;
  ;-----------------------------------------------------------------------------------------------------*/
 //#define FFB
@@ -137,7 +137,7 @@ namespace blekenbleu.MIDIspace
 			return maxval;
 		}						// Init()
 
-		internal void Run()
+		internal void Loop()
 		{
 			int[] inc = { 150, 250, 350, 220, 200, 180, 165, 300, 330 };
 			if (0 == maxval)
@@ -146,7 +146,7 @@ namespace blekenbleu.MIDIspace
 			count++;
 			if (0 < (31 & count))
 				return;
-			MIDIio.Log(8, $"VJd.Run(): count = {count}");
+			MIDIio.Log(8, $"VJd.Loop(): count = {count}");
 
 			// Feed the device in endless loop
 			// Set axes positions
@@ -160,10 +160,10 @@ namespace blekenbleu.MIDIspace
 
 			// Press/Release Buttons
 			uint set = 1 + (count >> 5) % nButtons, unset = 1 + (1 + (count >> 5)) % nButtons;
-			MIDIio.Log(8, $"VJd.Run(): set {set};  unset {unset}");
+			MIDIio.Log(8, $"VJd.Loop(): set {set};  unset {unset}");
 			joystick.SetBtn(true, id, set);						// 1 <= nButtons <= 32
 			joystick.SetBtn(false, id, unset);
-		} 														// Run()
+		} 														// Loop()
 
 		internal void Axis(byte axis, int valint)
 		{
