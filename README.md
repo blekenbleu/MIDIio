@@ -1,4 +1,4 @@
-### blekenbleu.MIDIio SimHub plugin
+### blekenbleu.MIDIio [SimHub](https://www.simhubdash.com/) plugin
  For one MIDI device, this [SimHub](https://github.com/SHWotever/SimHub) plugin sends and reads configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
  to e.g. on-the-fly tweak suitably customized **ShakeIt Bass Shaker** effects.  
@@ -8,7 +8,8 @@ using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL 
 
 MIDIio also generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
 reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
-Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are values from configured SimHub properties, e.g. **ShakeIt Bass Shaker** effects.
+MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled values from configured SimHub properties,
+ e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
@@ -37,3 +38,5 @@ Sent MIDI CCs and [DirectInputs](https://blekenbleu.github.io/Windows/HID) are v
       ![button event names and actions](docs/events.png)  
     - this is *not* (nor can it become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).
+
+For testing, [this ShakeIt profile has a custom effect](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile) with ShakeITBSV3Plugin properties from MIDI sliders.
