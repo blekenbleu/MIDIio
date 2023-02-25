@@ -16,12 +16,11 @@ namespace blekenbleu.MIDIspace
 		internal string[]   DestType;				  		// configuration by NCalc script
 
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
-		internal byte[]	 	Which, Wflag, Unmap;			// CCtype,  reverse map CC numbers to Remap[,] for sources using MIDIin
-		internal readonly byte Unc = 4, CC = 1, Button = 2;	// flags for Wflag
-		internal readonly byte[] Route = {8, 16, 32};		// Which[] flags for Remap[,]
-		internal byte[,]	Remap;							// indexed by Unmap; indexes CCarray
+		internal byte[]	 	Which, Wflag;					// CCtype
+		internal readonly byte Unc = 4, CC = 1, Button = 2;	// Wflag[] input type bits for Which[]
+		internal readonly byte[] Route = {8, 16, 32};		// Which[] flags for near-real-time MIDIin forwarding
 		private  string[]	Ping;					  		// ping[0-7]
-		private  byte		size, RouteCt = 0;
+		private  byte		size;
 		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};	// for SourceName[][], SourceArray[,,]
 /*
 		private string Join_strings(string s, string[] vector, byte length)
@@ -91,7 +90,6 @@ namespace blekenbleu.MIDIspace
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
 			Wflag = new byte[] { Unc, CC, CC, Button };						// Which type flag bits
 			Which = new byte[128];				  							// OUTwetdry.Init() resends unconfigured CCs on restart
-			Unmap = new byte[128];				  							// OnEventSent() warns of unexpected CC numbers sent
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
 			CCname = new string[128];				   						// Initialized to CC[0-128]
 
@@ -111,7 +109,6 @@ namespace blekenbleu.MIDIspace
 			SourceArray = new byte[3,2,size];
 			CCarray = 	new byte[3, 3 * size];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
-			Remap = new byte[DestType.Length, 128];
 			byte[][] Darray = new byte[DestType.Length][];					// configured destination indices
 			byte dt, ct, j;
 
@@ -139,7 +136,6 @@ namespace blekenbleu.MIDIspace
 
 			for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
 			{
-				Unmap[j] = j;
 				CCname[j] = "CC" + j;
 
 				if (0 < (0x80 & I.Settings.Sent[j]))
@@ -187,8 +183,8 @@ namespace blekenbleu.MIDIspace
 						if (0 == (3 & Which[cc]))
 						{
 							Which[cc] = Wflag[ct];
-//							MIDIio.Log(4, $"CCProperties.Init(): CCname[{cc}] = " + CCtype[ct] + j);
 							CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
+//							MIDIio.Log(4, $"CCProperties.Init(): CCname[{cc}] = " + CCname[cc]);
 						}
 						else MIDIio.Info($"Init({type + j}):  {cc} already configured as {CCname[cc]}");
 					}
@@ -243,14 +239,7 @@ namespace blekenbleu.MIDIspace
 							CCarray[0,SourceCt[3]] = dt;
 							CCarray[1, SourceCt[3]] = (byte)(b + i);
 							CCarray[2,SourceCt[3]] = (byte)cc;
-							if (0 == (56 & Which[cc]))									// not already routed for another destination?
-								Unmap[cc] = RouteCt++;									// add it
-/* As used in Active():
- ;							if (0 < (Properties.Route[dt] & which))
- ;								Send((double)value, dt, Properties.CCarray[1, Properties.Remap[dt, Properties.Unmap[cc]]], 3, cc);
- */                                                                             
 							Which[cc] |= Route[dt];										// Active() can check Which Route[]	flags
-							Remap[dt, Unmap[cc]] = SourceCt[3]++;						// no need to check "impossible" Remap[,] values
 						}
 						break;
 						case "Joystic":

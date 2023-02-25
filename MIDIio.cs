@@ -189,7 +189,7 @@ namespace blekenbleu.MIDIspace
 		}
 
 		/// <summary>
-		/// Called Called for each MIDIin CC message;
+		/// Called by OnEventReceived() for each MIDIin ControlChangeEvent
 		/// track active CCs and save values
 		/// </summary>
 		internal bool Active(byte CCnumber, byte value)								// returns true if first time
@@ -197,7 +197,7 @@ namespace blekenbleu.MIDIspace
 			byte which = Properties.Which[CCnumber];
 
 			if (0 < which && Settings.Sent[CCnumber] == value)
-				return false;
+				return false;														// ignore unchanged values
 
 			Settings.Sent[CCnumber] = value;
 /*
@@ -213,13 +213,12 @@ namespace blekenbleu.MIDIspace
 					Outer.Latest = value;											// drop pass to Ping()
 					this.TriggerEvent(Properties.CCname[CCnumber]);
 				}
-/*	near-real-time routing					
-				if (0 < (56 & which))												// call Send()
-					for (byte dt = 0; dt < Properties.Route.Length; dt++)			// at most one Send() to the each dt from each cc
-					if (0 < (Properties.Route[dt] & which))
-						Send((double)value, dt, Properties.CCarray[1, Properties.Remap[dt, Properties.Unmap[cc]]], 3, cc);
-  */
-
+//*	Near-real-time routing					
+				if (0 < (56 & which))												// call Send()?
+					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each dt from each CCnumber
+						if (0 < (Properties.Route[d] & which))
+							Send((double)value, d, CCnumber, 0, 3, Properties.CCname[CCnumber]);
+//*/
 				return false;
 			}
 
@@ -241,16 +240,16 @@ namespace blekenbleu.MIDIspace
  ; 0 <= ShakeIt property <= 100.0
  */
 		/// <summary>
-		/// Called Called for each property change sent;
-		/// d: 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;  i:d address
-		/// t: 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;  p:t address
+		/// Called by DoSend() and Active() for each property change sent;
+		/// d: 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;  i: d address
+		/// t: 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;    p: t address
 		/// prop: source property name for error log
 		/// </summary>
 		internal void Send(double property, byte d, byte i, byte p, byte t, string prop)
 		{
 			int	a = (int)(0.5 + scale[d, t] * property);
 
-			if ( 0 > a || Sent[t][p] == a)
+			if ( 0 > a || (3 > d && Sent[t][p] == a))		// CC duplication is already handled
 				return;										// send only changed values
 
 			Sent[t][p] = a;
@@ -274,30 +273,21 @@ namespace blekenbleu.MIDIspace
 		}
 
 		/// <summary>
-		/// Called by ; calls Send()
-		/// index: 0=game; 1=Joystick+MIDIin Source property types
+		/// Called by DataUpdate(); calls Send()
+		/// index: 0=game; 1=Joystick Source property types
 		/// </summary>
 		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
-		{
-			byte[,] table = {{0, 1}, {1, 4}};	// source indices 0: game, 1: axis, 2: button, 3: CC
-			byte d, i, cc = 0;														// destination type, index
+		{																	// handle 3: CC  in Active()
+			byte[,] table = {{0, 1}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
+			byte d, i;														// destination type, index
 			string send;
 
 			for (byte t = table[index, 0]; t < table[index, 1]; t++)		// source type index
 				for (byte p = 0; p < Properties.SourceCt[t]; p++)			// index properties of a type
 				{
-					if (3 > t)
-					{
-						prop = Properties.SourceName[t][p];					// t: game, axis, button
-						d = Properties.SourceArray[t, 0, p];
-						i = Properties.SourceArray[t, 1, p];
-					}
-					else
-					{
-						prop = My + Properties.CCname[cc = Properties.CCarray[2, p]];	// MIDI CC number to name
-						d = Properties.CCarray[0, p];
-						i = Properties.CCarray[1, p];
-					}
+					prop = Properties.SourceName[t][p];						// t: game, axis, button
+					d = Properties.SourceArray[t, 0, p];
+					i = Properties.SourceArray[t, 1, p];
 
 					if ((0 == t) && !Once[t][p])
 							continue;										// skip null (game) properties
@@ -308,8 +298,8 @@ namespace blekenbleu.MIDIspace
 							continue;
 
 						if (Once[t][p])
-							Info($"DoSend({Properties.DestType[d]}): null {prop} for"
-								+ ((3 > t) ? $"SourceName[{t}][{p}]" : $"CCarray[2, {p}] = {cc}"));
+							Info($"DoSend({Properties.DestType[d]}): null {prop} for SourceName[{t}][{p}]");
+
 						Once[t][p] = false;									// property not configured
 					}
 					else if (0 == send.Length)
