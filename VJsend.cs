@@ -127,6 +127,7 @@ namespace blekenbleu.MIDIspace
 					return MIDIio.Info(s + $"\nVJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
 				else MIDIio.Log(4, s + $"vJoy Device {id} is now acquired.");
 			}
+			else MIDIio.Log(4, s);
 #if FFB
 			StartAndRegisterFFB();
 #endif

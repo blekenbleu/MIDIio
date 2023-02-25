@@ -4,7 +4,7 @@ using System;
 
 namespace blekenbleu.MIDIspace
 {
-	[PluginDescription("MIDI slider I/O")]
+	[PluginDescription("MIDI button, knob, slider; Joystick button and axis I/O routing")]
 	[PluginAuthor("blekenbleu")]
 	[PluginName("MIDIio")]
 	public class MIDIio : IPlugin, IDataPlugin
