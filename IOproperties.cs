@@ -45,19 +45,31 @@ namespace blekenbleu.MIDIspace
         /// <summary>
         /// Called by Init(); adds source property data to CCname[], Which[]
         /// </summary>
-		private int WhichCC(string prop, byte dt)
+		private int WhichCC(string prop, byte dt, byte DevAddr)
 		{
 			byte cc;
 			int L;
-			string prop7 = prop.Substring(7, L = prop.Length - 7);		// lop off 'MIDIio.'
+			string prop7 = prop.Substring(7, L = prop.Length - 7);	// lop off 'MIDIio.'
 
 			for (cc = 0; cc < CCname.Length; cc++)
 				if (L == CCname[cc].Length && CCname[cc] == prop7)
 				{
-					Which[cc] &= (byte)(~Unc);			// no longer unconfigured
-					Which[cc] |= (CC);					// perhaps already configured as a Button
-					if (1 == dt)						// routed to a vJoy button?
-						Which[cc] |= Button;			// make it so
+					Which[cc] &= (byte)(~Unc);						// no longer unconfigured
+					Which[cc] |= (CC);								// perhaps already configured as a Button
+					if (1 == dt)									// routed to a vJoy button?
+						Which[cc] |= Button;						// make it so
+
+					if (0 < (56 & Which[cc]))						// already a CCarray[,] for this cc?
+					{
+						CCarray[dt, Map[cc]] = DevAddr;
+						Which[cc] |= Route[dt];						// Active() checks Which[] Route[]	flags
+					}
+					else if (SourceCt[3] < 3 * size)
+					{
+						Which[cc] |= Route[dt];
+						Map[cc] = SourceCt[3];						// Map to CCarray[dt, SourceCt[3]]
+						CCarray[dt, SourceCt[3]++] = DevAddr;
+					}
 					return cc;
 				}
 
@@ -68,13 +80,13 @@ namespace blekenbleu.MIDIspace
         /// <summary>
         /// Called by Init(); adds source property data to SourceName[], SourceArray[,,]
         /// </summary>
-		private void Source(byte dt, byte st, int index, string dp, string prop)
+		private void Source(byte dt, byte st, byte dev_address, string dp, string prop)
 		{
 			if (size > SourceCt[st])
 			{
 				SourceName[st][SourceCt[st]] = prop;
 				SourceArray[st, 0, SourceCt[st]] = dt;
-				SourceArray[st, 1, SourceCt[st]++] = (byte)index;
+				SourceArray[st, 1, SourceCt[st]++] = dev_address;
 			}
 			else MIDIio.Info($"Source({SourceType[st]}): property limit {size} exceeded; "
 					+ $"ignoring {DestType[dt]} property {dp}:  {prop}");
@@ -83,7 +95,7 @@ namespace blekenbleu.MIDIspace
 
 		// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
         /// <summary>
-        /// Calls Source() and WhichCC() to build MIDI and vJouy routing tables
+        /// Calls Source() and WhichCC() to build MIDI and vJoy routing tables
         /// </summary>
 		internal void Init(MIDIio I)
 		{																	// CC configuration property types
@@ -93,20 +105,19 @@ namespace blekenbleu.MIDIspace
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
 			CCname = new string[128];				   						// Initialized to CC[0-128]
 
-/* DoSend() may send 4 property value SourceType[]s to each of 3 DestType[]s  (MIDIout, vJoy axes, vJoy buttons)
- ; DoSend() needs not distinguish among MIDIin types (slider vs knob vs button), since all have 0-127 range scaling.
- ; DoSend() has 4 property SourceType[]s: JoyStick axis or button, MIDIin, game
- ; DoSend() indexes CCnames[] by Map[] and other SourceName[,,]s based on SourceCt[].
+/* DoSend() may send 3 property value SourceType[]s to each of 3 DestType[]s  (vJoy axes, vJoy buttons, MIDIout)
+ ; DoSend() has 4 property SourceType[]s: game, JoyStick axis or button
+ ; DoSend() indexes SourceName[st,,]s up to SourceCt[st].
  : SourceCt[] and SourceArray[,,] first dimension is SourceType
- ; First SourceName[][] dimension is non-CC SourceType; last diminension is sequential configured indices < SourceCt[,]
+ ; SourceName[st][] dimension is SourceType; last diminension is sequential configured indices < SourceCt[,]
  ; SourceCt[0] counts SourceName[0][] game entries, SourceCt[1] counts JoyStick axis entries,
  ; SourceCt[2] counts JoyStick button entries, SourceCt[3] counts CC entries
  ; DoSend(0) is called to index SourceName[0][] only when games are active.
  */
 			DestType =	new string[] { "vJDaxis", "vJDbutton", "CCsend" };	// destination prefixes to search
 			size = MIDIio.size;
-			SourceName = new string[3][];									// CCname instead of SourceName[3]
-			SourceArray = new byte[3,2,size];
+			SourceName = new string[SourceType.Length][];					// CCname instead of SourceName[3]
+			SourceArray = new byte[SourceType.Length, 2, size];				// non-CC sources
 			CCarray = 	new byte[DestType.Length, 3 * size];
 			Map = new byte[128];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
@@ -127,11 +138,18 @@ namespace blekenbleu.MIDIspace
 				Darray[dt] = ds.Split(',').Select(byte.Parse).ToArray();
 			}
 
+			for (j = 0; j < Darray[0].Length; j++)							// check for vJDbutton address < 1
+				if (I.VJD.Usage.Length <= Darray[0][j])
+					MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]}");
+
+			Ping = new string[MIDIio.Size[2]];
+			for (j = 0; j < Darray[1].Length; j++)							// check for vJDbutton address < 1
+				if (1 > Darray[1][j] || Darray[1][j] > I.VJD.nButtons)
+					MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
+
 			Ping = new string[MIDIio.Size[2]];
 			for (j = 0; j < MIDIio.Size[2]; j++)
 				Ping[j] = "ping" + j;
-
-//			MIDIio.Log(8, "Properties.Dest.Length = " + DestType.Length);
 
 // 1) initialize CC
 
@@ -192,35 +210,16 @@ namespace blekenbleu.MIDIspace
 					else MIDIio.Info($"Init({type + j}) invalid CC value: {cc}");
 				}
 			}	   // ct < CCtype.Length
+   			// all configured MIDIin properties are now in CCname[] and Which[]
 
-   			// all configured MIDIin properties are now in CCname[] and CCmap[,]
-/*
-			if (MIDIio.Log(8, $"Init(CC):"))		// OK 18 Feb 2023
-			{
-				string st = "";
-				for (ct = 1; ct < CCtype.Length; ct++)
-				{
-					string t = CCtype[ct].SubString(0,4);
-					st += CCtype[ct] + ": ";
-					for (j = 0; j < 128; j++)
-						if (0 < (3 & Which[j]) && t == CCname[j].SubString(0,4))
-							st += " " + CCname[j];
-					st += "\n";
-				}
-				MIDIio.Info(st);
-			}
- */
-
-// 3) Good CCname[]s (without MIDIO.My);  now use Darray[] to collect SourceName[][], SourceArray[,,] CCarray[,]
+// 3) Now use Darray[] to collect SourceName[][], SourceArray[,,], CCarray[,], Map[]
 
 			string dp;
-			for (dt = 0; dt < DestType.Length; dt++)									//  vJoy axis, vJoy button, CC
+			for (dt = 0; dt < DestType.Length; dt++)									// vJoy axis, vJoy button, CC
 			{
-				byte b = (byte)((2 == dt) ? 1 : 0);
-				int cc;
-
 				if (null == Darray[dt])
-					continue;
+					continue;															// perhaps no properties for this destination
+
 				for(byte i = 0; i < Darray[dt].Length; i++)
 				{
 					string prop = I.PluginManager.GetPropertyValue(dp = MIDIio.Ini + DestType[dt]
@@ -230,34 +229,20 @@ namespace blekenbleu.MIDIspace
 						MIDIio.Info($"Init(): null Send {DestType[dt]} property {dp}");
 						continue;
 					}
-					string prop7 = prop.Substring(0, 7);
 
-					switch (prop7)
+					switch (prop.Substring(0, 7))
 					{
 						case "MIDIio.":
-						if (0 <= (cc = WhichCC(prop, dt)))								// CC property names are in CCname[]
-						{
-							if (0 < (56 & Which[cc]))									// already a CCarray[,] for this cc?
-							{
-								CCarray[dt, Map[cc]] = Darray[dt][i];
-								Which[cc] |= Route[dt];									// Active() checks Which[] Route[]	flags
-							}
-							else if (SourceCt[3] < 3 * size)
-							{
-								Which[cc] |= Route[dt];
-								Map[cc] = SourceCt[3];									// Map to CCarray[dt, SourceCt[3]]
-								CCarray[dt, SourceCt[3]++] = Darray[dt][i];
-							}
-						}
-						break;
-						case "Joystic":
-							Source(dt, 1, b + i, dp, prop);
+							WhichCC(prop, dt, Darray[dt][i]);								// CC property names are in CCname[]
 							break;
-						case "InputSt":													// JoyStick button properties do not exist until pressed.
-							Source(dt, 2, b + i, dp, prop);
+						case "Joystic":													// axis
+							Source(dt, 1, Darray[dt][i], dp, prop);
 							break;
-						default: // "game"
-							Source(dt, 0, b + i, dp, prop);
+						case "InputSt":													// no JoyStick button property until pressed
+							Source(dt, 2, Darray[dt][i], dp, prop);
+							break;
+						default:														// "game"
+							Source(dt, 0, Darray[dt][i], dp, prop);
 							break;
 					}
 				}
@@ -268,36 +253,7 @@ namespace blekenbleu.MIDIspace
 			if (MIDIio.Log(4, ""))
 			{
 				string s = "";
-/*
-				for (byte st = 0; st < DestType.Length; st++)
-				{
-					if (0 < st)
-						s += "\n\t\t\t	";
-					s += DestType[st] + ":\t" + SourceCt[st, 0].ToString();
-					for (j = 1; j <= MIDIio.Real.Length; j++)
-						s += "," + SourceCt[st, j].ToString();
 
-					MIDIio.Info($"Properties.SourceCt {s}");
-				}
-				s = "";
-				for (byte dt = 0; dt < DestType.Length; dt++)
-				{
-					if (0 < dt && 0 < SourceCt[dt,3])
-						s += "\n";
-					if (0 < SourceCt[dt,3])
-					{
-						s += "CCname[" + DestType[dt] + "]  = ";
-						for (j = 0; j < SourceCt[st,3]; j++)
-						{
-							if (0 < j)
-								s += ", ";
-							s += (128 > Map[j]) ? CCname[Map[j]] : $"invalid Map[{j}]";
-						}
-					}
-				}
-				MIDIio.Info(s);
-				s = "";
- */
 				for (dt = 0; dt < DestType.Length; dt++)
 				{
 					if (0 < dt)
@@ -307,28 +263,30 @@ namespace blekenbleu.MIDIspace
 					for (byte pt = 0; pt < 4; pt++)					// property type: game, Joy axis, Joy button, CC
 					{
 						string[] N = (3 > pt) ? SourceName[pt] : CCname;
-						for (byte k = j = 0; j < SourceCt[pt]; j++)
+
+						// unlike other sources, CC source address is the known at Send() time
+						for (byte k = j = 0; j < ((3 > pt) ? SourceCt[pt] : 128); j++)
 						{
-							if (dt != ((3 > pt) ? SourceArray[pt, 0, j] : CCarray[0, j]))
+							if ((3 > pt) ? (dt != SourceArray[pt, 0, j]) : (0 == (Route[dt] & Which[j])))
 								continue;
-							byte si = (3 > pt) ? j : CCarray[2, j];
+
 							if (0 < k++)
-								s += ",\n\t\t\t\t";
+								s += "\n\t\t\t\t";
 							else if (0 < SourceCt[pt])
 								s += "\n\t\t\t\t";
-							if(null != N[si])
-								s += N[si];
-							else s += $"\nnull == SourceName[{dt}][{pt}][{si}]\n\t\t\t\t\t";
+							if(null != N[j])
+								s += "@ " + ((3 > pt) ? SourceArray[pt, 1, j] : CCarray[dt, Map[j]]) + ": " + N[j];
+							else s += $"\nnull == SourceName[{dt}][{pt}][{j}]\n\t\t\t\t\t";
 						}
 					}
 				}
 				MIDIio.Info(s);
 
-				s = "Properties.Init() configured CC numbers:";
+				s = "Properties.CCname[]:";
 				for (dt = 0; dt < 128; dt++)
 					if (0 < (3 & Which[dt]))
 					{
-						s += $"\n\t{CCname[dt]} @ {dt}";
+						s += $"\n\t{CCname[dt]}\t@ {dt}";
 						if (0 < (Button & Which[dt]))
 							s += " (Button)";
 						for (byte pt = 0; pt < Route.Length; pt++)
@@ -337,7 +295,7 @@ namespace blekenbleu.MIDIspace
 					}
 				if (17 < s.Length)
 					MIDIio.Info(s);
-			}
+			}								// if (MIDIio.Log(4, ""))
 		}									// Init()
 
 
