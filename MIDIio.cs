@@ -216,8 +216,11 @@ namespace blekenbleu.MIDIspace
 //*	Near-real-time routing					
 				if (0 < (56 & which))												// call Send()?
 					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each dt from each CCnumber
-						if (0 < (Properties.Route[d] & which))
-							Send((double)value, d, CCnumber, 0, 3, Properties.CCname[CCnumber]);
+						if (0 < (Properties.Route[d] & which))						// DestType flag
+						{
+							byte i = Properties.CCarray[d, Properties.Map[CCnumber]];
+							Send((double)value, d, i, 0, 3, Properties.CCname[CCnumber]);
+						}
 //*/
 				return false;
 			}

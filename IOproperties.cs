@@ -10,8 +10,8 @@ namespace blekenbleu.MIDIspace
 	{
 		internal string[][] SourceName;				   		// these non-CC SourceType[] Property names may be sent at 60Hz to 3 DestType[]s
 		internal byte[,,] 	SourceArray;					// Destination port,port index for 3 SourceType[]s
-		internal byte[,]	CCarray;						// Destination port,port index for CC source type
-		internal byte[]		SourceCt;						// No skipping around
+		internal byte[,]	CCarray;						// Destination port index for CC source type
+		internal byte[]		SourceCt, Map;					// No skipping around;  Map CCnumber to CCarray[dt,] index
 
 		internal string[]   DestType;				  		// configuration by NCalc script
 
@@ -56,7 +56,7 @@ namespace blekenbleu.MIDIspace
 				{
 					Which[cc] &= (byte)(~Unc);			// no longer unconfigured
 					Which[cc] |= (CC);					// perhaps already configured as a Button
-					if (2 == dt)						// routed to a vJoy button?
+					if (1 == dt)						// routed to a vJoy button?
 						Which[cc] |= Button;			// make it so
 					return cc;
 				}
@@ -107,7 +107,8 @@ namespace blekenbleu.MIDIspace
 			size = MIDIio.size;
 			SourceName = new string[3][];									// CCname instead of SourceName[3]
 			SourceArray = new byte[3,2,size];
-			CCarray = 	new byte[3, 3 * size];
+			CCarray = 	new byte[DestType.Length, 3 * size];
+			Map = new byte[128];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
 			byte[][] Darray = new byte[DestType.Length][];					// configured destination indices
 			byte dt, ct, j;
@@ -234,12 +235,19 @@ namespace blekenbleu.MIDIspace
 					switch (prop7)
 					{
 						case "MIDIio.":
-						if (0 <= (cc = WhichCC(prop, dt)) && SourceCt[3] < 3 * size)	// CC property names are in CCname[]
+						if (0 <= (cc = WhichCC(prop, dt)))								// CC property names are in CCname[]
 						{
-							CCarray[0,SourceCt[3]] = dt;
-							CCarray[1, SourceCt[3]] = (byte)(b + i);
-							CCarray[2,SourceCt[3]] = (byte)cc;
-							Which[cc] |= Route[dt];										// Active() can check Which Route[]	flags
+							if (0 < (56 & Which[cc]))									// already a CCarray[,] for this cc?
+							{
+								CCarray[dt, Map[cc]] = Darray[dt][i];
+								Which[cc] |= Route[dt];									// Active() checks Which[] Route[]	flags
+							}
+							else if (SourceCt[3] < 3 * size)
+							{
+								Which[cc] |= Route[dt];
+								Map[cc] = SourceCt[3];									// Map to CCarray[dt, SourceCt[3]]
+								CCarray[dt, SourceCt[3]++] = Darray[dt][i];
+							}
 						}
 						break;
 						case "Joystic":
@@ -315,6 +323,20 @@ namespace blekenbleu.MIDIspace
 					}
 				}
 				MIDIio.Info(s);
+
+				s = "Properties.Init() configured CC numbers:";
+				for (dt = 0; dt < 128; dt++)
+					if (0 < (3 & Which[dt]))
+					{
+						s += $"\n\t{CCname[dt]} @ {dt}";
+						if (0 < (Button & Which[dt]))
+							s += " (Button)";
+						for (byte pt = 0; pt < Route.Length; pt++)
+							if (0 < (Route[pt] & Which[dt]))
+								s += $"  {DestType[pt]}{CCarray[pt, Map[dt]]}";
+					}
+				if (17 < s.Length)
+					MIDIio.Info(s);
 			}
 		}									// Init()
 
