@@ -18,47 +18,51 @@ Search for `midi` in **SimHub Available properties**:
    `MIDIio.knob[0-n]`, `slider[0-n]`, `button[0-n]`,  *whether or not configured CC numbers are sequential*.  
    These properties track values received from those `MIDIin` CC numbers.  
    Each configured `button[0-n]` also generates a [**Source** (`Event`) for
-   **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).
+   **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
+   MIDIio handles each `MIDIin` message as received and routes properties configured for output in near-real-time.  
 
 -  `ExternalScript.MIDIecho`:  
    `> 0`:&nbsp; forwards unconfigured `MIDIin` CC messages to `MIDIout` with no corresponding properties generated  
    `== 0`:&nbsp; dynamically generates properties `MIDIio.CC[0-127]` for unconfigured CC messages received.  
    These can be used to identify CC numbers for configuring [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini).  
 
--  `ExternalScript.MIDIsend[0-7]` identify up to `size` properties that become `MIDIout` CC messages.  
+-  `ExternalScript.MIDIsendCC` identify up to `MIDIsize` properties that become `MIDIout` messages to address CC.  
    If first 7 characters of those property names are 'MIDIio.', then those are among `MIDIin` CC properties  
    `MIDIio.knob[0-n]`, `slider[0-n]`, `button[0-n]`, or `CC[0-127]`, with matching `MIDIin` CC changes sent.  
 	One may in theory assign `slider`, `button` or `knob` names for all 128 CC numbers.  
-	Other source and destinations are constrained by the `MIDIsize` parameter.  
+	Other source and destination properties are constrained by the `MIDIsize` parameter.  
 
-- Somewhat like Source property arrays, destination property names will be sequenced,  
-  but integers in destination arrays are *device addresses* in *any* order, so long as addresses are valid.
+- Unlike `MIDIini` property names, destination property names are suffixed by device-specific address numbers  
+  in *any* order, so long as addresses are valid.
 
 - Unlike all other source and destination property names,  
-  the first vJoy button is `button1` and should be integer `1`;&nbsp; all other device type firsts are `0`.
+  the lowest vJoy button is `button1` for device address `1`;&nbsp; other device type names may be suffixed `0`.
 
 -  `MIDIio.ping[0-7]` are **SimHub Actions**
    to be associated with Triggers/Sources in
    [SimHub Event mapping](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
-   They share CC numbers with configured `MIDIsend` properties that are NOT 'MIDIio.*',  
+   They share destination CC numbers with configured `MIDIsend` properties
    and are generated to help identify those SimHUb property CC numbers to a `MIDIout` target.  
    For example, if *both and only* `MIDIsend0` and `MIDIsend1` are configured for `MIDIio.*`,  
- then e.g.  configured `MIDIsend2` will cause `ping2` SimHub Action **Target** to be generated, and  
- mapping e.g. `CCn` with `ping2` in **Mapping Picker** enables arbitrary messages using `MIDIsend2`'s CC number.
+   then `ping0` and `ping1` SimHub Action **Target**s are generated, and mapping e.g. `CCn` with `ping1`  
+   in **Mapping Picker** enables arbitrary messages to the second configured destination CC number by `MIDIin CCn`.
 
--  `ExternalScript.VJDbutton[0-7]` configure up to `size` **[vJoy](https://github.com/blekenbleu/vJoySDK) button** changes from specified properties.  
+-  `ExternalScript.VJDbutton[0-7]` configure up to `MIDIsize` **[vJoy](https://github.com/blekenbleu/vJoySDK) button** changes from specified properties.  
    If configured names' first 7 characters are 'MIDIio.', then those properties should be among `MIDIio.button[0-n]`.  
 
--  `ExternalScript.VJDaxis[0-7]` specify up to `size` properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp; selecting among  
-   ShakeIt game properties, `MIDIio.slider[0-n]`, `MIDIio.knob[0-n]`, or `MIDIio.CC[0-127]` sends their rescaled property changes as vJoy axes values.  
+-  `ExternalScript.VJDaxis[0-7]` specify up to `MIDIsize` properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp;  
+    selecting among ShakeIt game properties, `MIDIio.slider[0-n]`, `MIDIio.knob[0-n]`, or `MIDIio.CC[0-127]`  
+	sends their rescaled property changes as vJoy axes values.  
 
--  Each source property may get multiple send assignments, but only one destination assignment on each output device for any single MIDIin property.  
+-  Each source property may get multiple send assignments,  
+   but only one destination assignment on each output device for any single MIDIin property.  
 
 **MIDI supports only 128 CC message numbers per channel;&nbsp; MIDIio supports only one device channel.**  
 For example, configured `ExternalScript.MIDIsend[0-7]` CC messages  
-may be mixed with *unconfigured* `MIDIin` messages with matching CC numbers when `MIDIecho` is configured to `'0'`.  
+may be mixed with *unconfigured* `MIDIin` messages with matching CC numbers  
+when `MIDIecho` is configured to `'1'`.  
 
-Configured `MIDIio.*` properties are NEVER forwarded *by default*.  
+`MIDIio.*` properties are NEVER forwarded *by default* (`MIDIecho '0'`) or unless specifically configured.  
 
 **When restarted, MIDIio in DoEcho `'1'` mode *resends* saved values for *unconfigured* `MIDIin.CC*` properties.**  
 - Configured MIDIout CC messages from before restart are supposed inappropriate for a possibly different game.
@@ -82,20 +86,21 @@ To minimize runtime overhead, output (from `DoSend()`) is table driven:
    for configured game, `JoyStick axis`, and `JoyStick button` source properties.  
 -  `CCarray[,]` entries index source properties destined to `MIDIout`.
 
-`SourceArray[,]` and `CCarray[,]` entries respectively index into `SendName[,]` and `CCname[]` array for source properties, where:  
-`CCname[]` is 128 entries for each possible MIDIin property, whether or not configured  
-`SourceArray[,]` is a `SourceType - 1` by configured `size` array for configured game, `JoyStick axis`, `JoyStick button` properties.  
+`SourceArray[,]` and `CCarray[,]` respectively correspond to `SendName[,]` and `CCname[]` source names, where:  
+`CCname[]` has 128 entries for each possible `MIDIin` property, whether or not configured  
+`SourceArray[,]` is a `SourceType - 1` by configured `MIDIsize` array  
+for configured game, `JoyStick axis`, `JoyStick button` properties.  
 
-SourceCt[4] is a count array for each SourceType of configured properties.  
-- each non-CC SendCt[0-2] value is limited to configured `size`.  
+`SourceCt[]` has counts for all 4 configured source property types.  
+- each non-CC (`SendCt[0-2]`) value is limited to configured `MIDIsize`.  
 - SendCt[0] counts game property names in SourceName[0] array  
 - SendCt[1-2] counts JoyStick axis, button property names in SourceName[1-2]  
 - SendCt[3] counts MIDIin sliders, knobs, buttons configured in CCname[SourceArray[3,1,]]  
-- Up to configured `3 * size` entries may be configured for MIDIin sliders, knobs, buttons.  
+- Up to a total of `3 * MIDIsize` properties may be configured from `MIDIin`.  
 
-Property counts configured for any source to any destination are variable, only *total* counts are constrained by `size`.  
+Property counts configured for any source to any destination are variable, only *total* counts are constrained by `MIDIsize`.  
 These table indirections support sending from none up to configured maximum property counts  
  &nbsp; from any source to any destination.&nbsp; The `table[,]` array has fixed dimensions:   
-- table[0] indexes game properties;&nbsp; table[1] indexes non-game properties
+- table[0] indexes game properties;&nbsp; table[1] indexes Joystick input properties.
 
-This arrangement should also allow for *relatively* low pain extension to additional sources and destinations. 
+This arrangement should also allow for *relatively* low pain addition of sources and destinations. 
