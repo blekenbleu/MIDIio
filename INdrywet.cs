@@ -12,7 +12,7 @@ namespace blekenbleu.MIDIspace
 	/// </summary>
 	internal class INdrywet
 	{
-		private MIDIio M;					// needed for e.g. CCProperties()
+		private MIDIio M;								// for M.Active()
 		private static IInputDevice _inputDevice;
 		private static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
@@ -28,7 +28,8 @@ namespace blekenbleu.MIDIspace
 			
 			catch (Exception)
 			{
-				string s = $"INdrywet.Init() Failed to find {MIDIin};\nKnown devices:";
+				string s = $"Reader.Init() Failed to find {MIDIin};\nKnown devices:";
+
 				foreach (var inputDevice in Melanchall.DryWetMidi.Devices.InputDevice.GetAll())
 					s += "\n\t" + inputDevice.Name;
 				MIDIio.Info(s);
@@ -42,10 +43,10 @@ namespace blekenbleu.MIDIspace
 		void OnEventReceived(object sender, MidiEventReceivedEventArgs e)
 		{
 			var midiDevice = (MidiDevice)sender;
-			// this cute syntax is called pattern matching
-			if (e.Event is ControlChangeEvent CC)
-				M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);		// add unconfigured CC properties, perhaps Echo
-			else MIDIio.Info($"INdrywet() ignoring {e.Event} received from {midiDevice.Name}");
+
+			if (e.Event is ControlChangeEvent CC)	// this cute syntax is called pattern matching
+				M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);
+			else MIDIio.Info($"Reader() ignoring {e.Event} received from {midiDevice.Name}");
 		}
 
 		internal void End()

@@ -166,46 +166,36 @@ namespace blekenbleu.MIDIspace
 				pluginManager.AddProperty("in", this.GetType(), prop);
 				Reader = new INdrywet();
 				if(Reader.Init(prop, this))
-					Properties.Attach(this);		// AttachDelegate buttons, sliders and knobs
+					Properties.Attach(this);										// AttachDelegate buttons, sliders and knobs
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
 
-			Once = new bool[Properties.SourceCt.Length][];		// null game properties
+			Once = new bool[Properties.SourceCt.Length][];							// null game properties
 			Sent = new int[Properties.SourceCt.Length][];
 			for (s = 0; s < Properties.SourceCt.Length; s++)
 			{
 				Once[s] = new bool[Properties.SourceCt[s]];
 				Sent[s] = new int[Properties.SourceCt[s]];
-			}
-			for (s = 0; s < Properties.SourceCt.Length; s++)
 				for (byte p = 0; p < Properties.SourceCt[s]; p++)
 				{
 					Once[s][p] = true;
 					Sent[s][p] = 222;
 				}
-
-//			data = pluginManager.GetPropertyValue("DataCorePlugin.CustomExpression.MIDIsliders");
-//			pluginManager.AddProperty("sliders", this.GetType(), (null == data) ? "unassigned" : data.ToString());
-		}
+			}
+		}																			// Init()
 
 		/// <summary>
-		/// Called by OnEventReceived() for each MIDIin ControlChangeEvent
+		/// Called by Reader.OnEventReceived() for each MIDIin ControlChangeEvent
 		/// track active CCs and save values
 		/// </summary>
 		internal bool Active(byte CCnumber, byte value)								// returns true if first time
 		{
 			byte which = Properties.Which[CCnumber];
 
-			if (0 < which && Settings.Sent[CCnumber] == value)
+			if (0 < which && Settings.CCvalue[CCnumber] == value)
 				return false;														// ignore unchanged values
 
-			Settings.Sent[CCnumber] = value;
-/*
-			if (5 == CCnumber)
-				Log(8, "Active(): " + Properties.CCname[CCnumber]);					// just a debugging breakpoint
-
-			Log(8, $"Active(): ControlNumber = {CCnumber}; ControlValue = {value}");
- */
+			Settings.CCvalue[CCnumber] = value;
 			if (0 < which)															// Known and changed?
 			{
 				if (0 < (Properties.Button & which))
@@ -213,7 +203,6 @@ namespace blekenbleu.MIDIspace
 					Outer.Latest = value;											// drop pass to Ping()
 					this.TriggerEvent(Properties.CCname[CCnumber]);
 				}
-//*	Near-real-time routing					
 				if (0 < (56 & which))												// call Send()?
 					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each dt from each CCnumber
 						if (0 < (Properties.Route[d] & which))						// DestType flag
@@ -221,14 +210,14 @@ namespace blekenbleu.MIDIspace
 							byte i = Properties.CCarray[d, Properties.Map[CCnumber]];
 							Send((double)value, d, i, 0, 3, Properties.CCname[CCnumber]);
 						}
-//*/
+
 				return false;
 			}
 
 			if (DoEcho)
-				return Outer.SendCCval(CCnumber, Settings.Sent[CCnumber] = value);	// do not CCprop()
+				return Outer.SendCCval(CCnumber, value);							// do not CCprop()
 
-			// First time CC number seen
+																					// First time CC number seen
 			Properties.Which[CCnumber] = Properties.Unc;							// dynamic CC configuration
 			return Properties.CCprop(this, CCnumber);
 		}																			// Active()
@@ -252,7 +241,7 @@ namespace blekenbleu.MIDIspace
 		{
 			int	a = (int)(0.5 + scale[d, t] * property);
 
-			if ( 0 > a || (3 > d && Sent[t][p] == a))		// CC duplication is already handled
+			if ( 0 > a || (3 > d && Sent[t][p] == a))		// Active() discards CC repeats
 				return;										// send only changed values
 
 			Sent[t][p] = a;
@@ -267,13 +256,13 @@ namespace blekenbleu.MIDIspace
 					VJD.Button(i, 0 < a);					// 1-based buttons
 					break;
 				case 2:
-					Outer.SendCCval(i, Settings.Sent[i] = (byte)(0x7F & a));
+					Outer.SendCCval(i, (byte)(0x7F & a));
 					break;
 				default:									// should be impossible
 					Info($"Send(): mystery property {prop} send type {d}, source type {t}, index{p}");
 					break;
 			}
-		}
+		}													// Send()
 
 		/// <summary>
 		/// Called by DataUpdate(); calls Send()
