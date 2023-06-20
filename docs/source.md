@@ -1,6 +1,9 @@
 ### blekenbleu.MIDIio SimHub plugin source code files (C# classes)
 - [MIDIio.cs](../MIDIio.cs) class is the SimHub plugin equivalent of main().   
   It interfaces other classes to SimHub, handling properties, events, actions, initializations and cleanups.  
+  - `Active()` updates **MIDIio** properties based on `INdrywet` ControlChangeEvents  
+  - `DataUpdate()` invokes `DoSend()`.
+  - `DoSend()` invokes `Send()` for writing changed properties to `VJsend` or `OUTdrywet`.   
 - [MIDIioSettings.cs](../MIDIioSettings.cs) is *only* data to be saved and restored between plugin launches.  
 - [CCProperties.cs](../CCProperties.cs) initializes properties for MIDIio.cs.  
 - [INdrywet.cs](../INdrywet.cs) handles MIDI messages from `MIDIin`
@@ -53,3 +56,4 @@ Here is some evidence of operational success (*26 Jan 2023*):
 - which was prior to vJoy implementation.  
 
  *updated 23 Feb 2023 for vJoy*  
+ *updated 29 Jun 2023 for SimHub-provoked revisions*  

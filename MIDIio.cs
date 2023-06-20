@@ -64,11 +64,9 @@ namespace blekenbleu.MIDIspace
 		/// <param name="data">Current game data, including current and previous data frame.</param>
 		public void DataUpdate(PluginManager pluginManager, ref GameData data)
 		{
-			if (data.GameRunning && data.OldData != null && data.NewData != null)
-				DoSend(pluginManager, 0);
+			byte start = (data.GameRunning && data.OldData != null && data.NewData != null) ? 0 : 1;
 
-			// Send my property messages anytime (echo)
-			DoSend(pluginManager, 1);
+			DoSend(pluginManager, start);				// Send non-game property changes anytime (echo)
 //			VJD.Loop();									// for testing: loops thru configured axes and buttons
 		}
 
@@ -136,9 +134,9 @@ namespace blekenbleu.MIDIspace
 			}
 			double vMax = (double)VJDmaxval;
 								   // game			Joystick axis	button	MIDIin
-			scale = new double[,] {	{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127},	// vJoy axis
-						 			{ 0.02,			2.0/65535.0,	1,		2.0/127 },	// vJoy button
-									{ 1.27,			127.0/65535.0,  127,	1.0		}};	// MIDIout
+			scale = new double[,] {	{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127.0 },	// vJoy axis
+						 			{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127.0 },	// vJoy button
+									{ 1.27,			127.0/65535.0,  127,	1.0		   }};	// MIDIout
 
 			// Launch Outer before Reader and Properties
 			prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
@@ -233,18 +231,18 @@ namespace blekenbleu.MIDIspace
  */
 		/// <summary>
 		/// Called by DoSend() and Active() for each property change sent;
-		/// d: 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;  i: d address
-		/// t: 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;    p: t address
+		/// d (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;	i: destination address
+		/// s (source): 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;			p: source address
 		/// prop: source property name for error log
 		/// </summary>
-		internal void Send(double property, byte d, byte i, byte p, byte t, string prop)
+		internal void Send(double property, byte d, byte i, byte p, byte s, string prop)
 		{
-			int	a = (int)(0.5 + scale[d, t] * property);
+			int	a = (int)(0.5 + scale[d, s] * property);
 
-			if ( 0 > a || (3 > d && Sent[t][p] == a))		// Active() discards CC repeats
+			if ( 0 > a || (3 > d && Sent[s][p] == a))		// Active() discards CC repeats
 				return;										// send only changed values
 
-			Sent[t][p] = a;
+			Sent[s][p] = a;
 			switch (d)
 			{
 				case 0:
@@ -253,13 +251,13 @@ namespace blekenbleu.MIDIspace
 					else Info($"Send({Properties.DestType[d]}): invalid axis {i} from {prop}");
 					break;
 				case 1:
-					VJD.Button(i, 0 < a);					// 1-based buttons
+					VJD.Button(i, VJDmaxval < (2*a));		// VJDmaxval-based threshold
 					break;
 				case 2:
 					Outer.SendCCval(i, (byte)(0x7F & a));
 					break;
 				default:									// should be impossible
-					Info($"Send(): mystery property {prop} send type {d}, source type {t}, index{p}");
+					Info($"Send(): property {prop} for mystery destination {d} with source {s}, address {p}");
 					break;
 			}
 		}													// Send()
@@ -270,34 +268,34 @@ namespace blekenbleu.MIDIspace
 		/// </summary>
 		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
 		{																	// handle 3: CC  in Active()
-			byte[,] table = {{0, 1}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
+			byte[,] table = {{0, 3}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
 			byte d, i;														// destination type, index
 			string send;
 
-			for (byte t = table[index, 0]; t < table[index, 1]; t++)		// source type index
-				for (byte p = 0; p < Properties.SourceCt[t]; p++)			// index properties of a type
+			for (byte s = table[index, 0]; s < table[index, 1]; s++)		// source type index
+				for (byte p = 0; p < Properties.SourceCt[s]; p++)			// index properties of a type
 				{
-					prop = Properties.SourceName[t][p];						// t: game, axis, button
-					d = Properties.SourceArray[t, 0, p];
-					i = Properties.SourceArray[t, 1, p];
+					prop = Properties.SourceName[s][p];						// s: game, axis, button
+					d = Properties.SourceArray[s, 0, p];
+					i = Properties.SourceArray[s, 1, p];
 
-					if ((0 == t) && !Once[t][p])
-							continue;										// skip null (game) properties
+					if (!Once[s][p])
+						continue;										// skip unavailable properties
 
 					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
 					{
-						if (2 == t)											// null Joystick button properties until pressed
+						if (2 == s || 1 == index)							// null Joystick button properties until pressed
 							continue;
 
-						if (Once[t][p])
-							Info($"DoSend({Properties.DestType[d]}): null {prop} for SourceName[{t}][{p}]");
-
-						Once[t][p] = false;									// property not configured
+						if (Once[s][p]) {									// 0 == index:  game running
+							Once[s][p] = false;								// configured property not available
+							Info($"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
+						}
 					}
 					else if (0 == send.Length)
 						Info($"DoSend({Properties.DestType[d]}): 0 length {prop}");
-					else Send(Convert.ToDouble(send), d, i, p, t, prop);
+					else Send(Convert.ToDouble(send), d, i, p, s, prop);
 				}
 		}			// DoSend()
-	}
+	}				// class MIDIio
 }

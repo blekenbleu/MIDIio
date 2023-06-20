@@ -15,6 +15,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
 [principles of operation](docs/principles.md)  
+[June 2023 revisions provoked by SimHub updates](docs/provoked.md)
 
 #### Notes:
 - This plugin **is compatible with SimHub 8.2.2's `Controllers input` and `Control mapper` plugins**  
