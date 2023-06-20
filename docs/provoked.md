@@ -1,7 +1,7 @@
 ### blekenbleu.MIDIio June 2023 changes provoked by SimHub updates.
 
 In February, SimHub `Controllers input` plugin created **JoystickPlugin** properties before `MIDIio` plugin launch.  
-By June, that was no longer true.&nbsp; [Further issues were noted](../#simhub-v843-breakage)  
+By June, that was no longer true.&nbsp; [Further issues were noted](../../../#simhub-v843-breakage)  
 - `null JoystickPlugin` axis property issues could be addressed by changes to MIDIio.cs,  
   but code inspection revealed
 - calling `DoSend()` twice when data.GameRunning is wasteful  
