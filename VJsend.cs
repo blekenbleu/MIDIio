@@ -124,10 +124,10 @@ namespace blekenbleu.MIDIspace
 			if (acquire)		// Acquire the target?
 			{
 				if ((status == VjdStat.VJD_STAT_OWN) || ((status == VjdStat.VJD_STAT_FREE) && (!joystick.AcquireVJD(id))))
-					return MIDIio.Info(s + $"\nVJsend.Init(): Failed to acquire vJoy device number {id}.") ? 0 : 0;
-				else MIDIio.Log(4, s + $"vJoy Device {id} is now acquired.");
+					return MIDIio.Info(s + $"\nVJsend.Init(): Failed to acquire vJoy device number {id}.\n") ? 0 : 0;
+				else MIDIio.Log(4, s + $"vJoy Device {id} is now acquired.\n");
 			}
-			else MIDIio.Log(4, s);
+			else MIDIio.Log(4, s + "\n");
 #if FFB
 			StartAndRegisterFFB();
 #endif

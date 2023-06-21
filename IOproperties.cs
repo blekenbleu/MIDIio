@@ -280,7 +280,7 @@ namespace blekenbleu.MIDIspace
 						}
 					}
 				}
-				MIDIio.Info(s);
+				MIDIio.Info(s + "\n");
 
 				s = "Properties.CCname[]:";
 				for (dt = 0; dt < 128; dt++)
@@ -294,7 +294,7 @@ namespace blekenbleu.MIDIspace
 								s += $"  {DestType[pt]}{CCarray[pt, Map[dt]]}";
 					}
 				if (17 < s.Length)
-					MIDIio.Info(s);
+					MIDIio.Info(s + "\n");
 			}								// if (MIDIio.Log(4, ""))
 		}									// Init()
 

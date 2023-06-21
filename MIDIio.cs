@@ -64,7 +64,7 @@ namespace blekenbleu.MIDIspace
 		/// <param name="data">Current game data, including current and previous data frame.</param>
 		public void DataUpdate(PluginManager pluginManager, ref GameData data)
 		{
-			byte start = (data.GameRunning && data.OldData != null && data.NewData != null) ? 0 : 1;
+			byte start = (byte)((data.GameRunning && data.OldData != null && data.NewData != null) ? 0 : 1);
 
 			DoSend(pluginManager, start);				// Send non-game property changes anytime (echo)
 //			VJD.Loop();									// for testing: loops thru configured axes and buttons
