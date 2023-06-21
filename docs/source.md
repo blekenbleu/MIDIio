@@ -28,13 +28,13 @@
   - `MIDIecho`:      if `0` or not defined, all received CC values `n` not otherwised configured  
                      (in `MIDIsliders`, `MIDIknobs` or `MIDIbuttons`) are automatically created as `CCn` properties,  
                      else (`MIDIecho > 0`) unconfigured MIDI messages are forwarded from `MIDIin` to `MIDIout`.
-  - `MIDIlog`        Controls MIDIio's **System Log** verbosity;&nbsp; 0 is mostly only errors and 15 is maximally verbose.  
+  - `MIDIlog`        Controls MIDIio's **[System Log](SimHub.txt)** verbosity;&nbsp; 0 is mostly only errors and 15 is maximally verbose.  
   - `MIDIsize`	     Limits routing table size between game, vJoy and MIDI
   - `MIDICCsends`    Index array of configured `MIDICCsendn`, where 0 <= n < 128
-  - `MIDIvJDbuttons` Index array of configured `MIDIvJDbuttonb`, where 1 <= v <= (16) Buttons
-                     as reported by `MIDIio.VJsend.Init() in the ** System Log**
-  - `MIDIvJDaxiss`   Index array of configured `MIDIvJDaxiss`, where 0 <= s < (8) Axes
-                     as reported by `MIDIio.VJsend.Init()` in the ** System Log**  
+  - `MIDIvJoybuttons` Index array of configured `MIDIvJoyB0x`, where 01 <= x < 16 Buttons
+                     as reported by `MIDIio.VJsend.Init() in the **[System Log](SimHub.txt)**
+  - `MIDIvJoyaxiss`   Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes
+                     as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**  
 
 `MIDIecho 1` forwards unconfigured `MIDIin` CC changed messages to `MIDIout`.  
 Un-echoed CC messages most recently sent to `MIDIout` are saved,  

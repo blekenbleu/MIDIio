@@ -105,8 +105,8 @@ namespace blekenbleu.MIDIspace
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
 			CCname = new string[128];				   						// Initialized to CC[0-128]
 
-/* DoSend() may send 3 property value SourceType[]s to each of 3 DestType[]s  (vJoy axes, vJoy buttons, MIDIout)
- ; DoSend() has 4 property SourceType[]s: game, JoyStick axis or button
+/* DoSend() may send 4 property value source types to each of 3 DestType[]s  (vJoy axes, vJoy buttons, MIDIout)
+ ; DoSend() has 3 property SourceType[]s: (game, JoyStick axis or button) and CCtype
  ; DoSend() indexes SourceName[st,,]s up to SourceCt[st].
  : SourceCt[] and SourceArray[,,] first dimension is SourceType
  ; SourceName[st][] dimension is SourceType; last diminension is sequential configured indices < SourceCt[,]
@@ -114,7 +114,7 @@ namespace blekenbleu.MIDIspace
  ; SourceCt[2] counts JoyStick button entries, SourceCt[3] counts CC entries
  ; DoSend(0) is called to index SourceName[0][] only when games are active.
  */
-			DestType =	new string[] { "vJDaxis", "vJDbutton", "CCsend" };	// destination prefixes to search
+			DestType =	new string[] { "vJoyaxis", "vJoybutton", "CCsend" };	// destination prefixes to search
 			size = MIDIio.size;
 			SourceName = new string[SourceType.Length][];					// CCname instead of SourceName[3]
 			SourceArray = new byte[SourceType.Length, 2, size];				// non-CC sources
@@ -134,16 +134,16 @@ namespace blekenbleu.MIDIspace
 				if (null == ds && MIDIio.Info($"Init(): {DestType[dt]} property '{pts}' not found"))
 					continue;
 
-				// bless the Internet
+				// bless the Internet: split comma separated integers
 				Darray[dt] = ds.Split(',').Select(byte.Parse).ToArray();
 			}
 
-			for (j = 0; j < Darray[0].Length; j++)							// check for vJDbutton address < 1
+			for (j = 0; j < Darray[0].Length; j++)							// valid vJoy axes address?
 				if (I.VJD.Usage.Length <= Darray[0][j])
-					MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]}");
+					MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
 
 			Ping = new string[MIDIio.Size[2]];
-			for (j = 0; j < Darray[1].Length; j++)							// check for vJDbutton address < 1
+			for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
 				if (1 > Darray[1][j] || Darray[1][j] > I.VJD.nButtons)
 					MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
@@ -222,8 +222,19 @@ namespace blekenbleu.MIDIspace
 
 				for(byte i = 0; i < Darray[dt].Length; i++)
 				{
-					string prop = I.PluginManager.GetPropertyValue(dp = MIDIio.Ini + DestType[dt]
-									+ (Darray[dt][i]).ToString() )?.ToString();
+					dp = MIDIio.Ini;
+
+					if (1 == i)
+					{
+						dp += "vJoyB";
+						if (10 > Darray[dt][i])											// match JoyStick button naming style
+							dp += "0";
+					}
+					else dp += DestType[dt];
+					dp += (Darray[dt][i]).ToString();
+
+					string prop = I.PluginManager.GetPropertyValue(dp)?.ToString();
+
 			 		if (null == prop) 													// Configured properties should not be null
 					{
 						MIDIio.Info($"Init(): null Send {DestType[dt]} property {dp}");
@@ -233,12 +244,12 @@ namespace blekenbleu.MIDIspace
 					switch (prop.Substring(0, 7))
 					{
 						case "MIDIio.":
-							WhichCC(prop, dt, Darray[dt][i]);								// CC property names are in CCname[]
+							WhichCC(prop, dt, Darray[dt][i]);							// CC property names are in CCname[]
 							break;
-						case "Joystic":													// axis
+						case "Joystic":													// JoyStick axis
 							Source(dt, 1, Darray[dt][i], dp, prop);
 							break;
-						case "InputSt":													// no JoyStick button property until pressed
+						case "InputSt":													// JoyStick button
 							Source(dt, 2, Darray[dt][i], dp, prop);
 							break;
 						default:														// "game"

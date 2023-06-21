@@ -30,7 +30,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 - SimHub bundles vJoy DLL v2.1.8, while [vJoy is v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
 - This plugin is configured using SimHub properties;&nbsp; it has NO interactive interface window.
     - configure this plugin by editing [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
-    - **check System log for MIDI-related messages:**  
+    - **check [System log](docs/SimHub.txt) for MIDI and/or vJoy related messages:**  
       ![log messages](docs/log.png)  
 
     - **check Available properties for MIDI-related values**:
@@ -41,18 +41,18 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
     - this is *not* (nor can it become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).
 
-For testing, [this ShakeIt profile has a custom effect](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile) with ShakeITBSV3Plugin properties from MIDI sliders.
+For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile)
+ has a custom effect with ShakeITBSV3Plugin properties from MIDI sliders.
 
 *18 Jun 2023*  
 #### SimHub v8.4.3 breakage  
-- JoystickPlugin properties are unavailable before MIDIio plugin Init() exits:
+- JoystickPlugin properties are unavailable before MIDIio plugin Init() completes:
 ```
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJDaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_X for SourceName[1][0]^M
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJDaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Y for SourceName[1][1]^M
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJDaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0 for SourceName[1][2]^M
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_X for SourceName[1][0]^M
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Y for SourceName[1][1]^M
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0 for SourceName[1][2]^M
 [2023-06-18 09:52:41,551] INFO - Game successfully loaded^M
 [2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift^M 
 ```
-- MIDIio.ini 'MIDIvJDbutton3' generates property named `InputStatus.JoystickPlugin.vJoy_Device_B02`
 - add blanks between `INFO`s
 - [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin
