@@ -88,7 +88,7 @@ namespace blekenbleu.MIDIspace
 				SourceArray[st, 0, SourceCt[st]] = dt;
 				SourceArray[st, 1, SourceCt[st]++] = dev_address;
 			}
-			else MIDIio.Info($"Source({SourceType[st]}): property limit {size} exceeded; "
+			else MIDIio.Info($"Properties.Source({SourceType[st]}): property size {size} exceeded;\n\t\t"
 					+ $"ignoring {DestType[dt]} property {dp}:  {prop}");
 			return;
 		}
@@ -144,7 +144,7 @@ namespace blekenbleu.MIDIspace
 
 			Ping = new string[MIDIio.Size[2]];
 			for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
-				if (1 > Darray[1][j] || Darray[1][j] > I.VJD.nButtons)
+				if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
 					MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
 			Ping = new string[MIDIio.Size[2]];
@@ -224,7 +224,7 @@ namespace blekenbleu.MIDIspace
 				{
 					dp = MIDIio.Ini;
 
-					if (1 == i)
+					if (1 == dt)
 					{
 						dp += "vJoyB";
 						if (10 > Darray[dt][i])											// match JoyStick button naming style
@@ -237,7 +237,7 @@ namespace blekenbleu.MIDIspace
 
 			 		if (null == prop) 													// Configured properties should not be null
 					{
-						MIDIio.Info($"Init(): null Send {DestType[dt]} property {dp}");
+						MIDIio.Info($"IOproperties.Init(): null Send {DestType[dt]} property {dp}");
 						continue;
 					}
 
@@ -302,7 +302,18 @@ namespace blekenbleu.MIDIspace
 							s += " (Button)";
 						for (byte pt = 0; pt < Route.Length; pt++)
 							if (0 < (Route[pt] & Which[dt]))
-								s += $"  {DestType[pt]}{CCarray[pt, Map[dt]]}";
+							{
+								byte b = CCarray[pt, Map[dt]];
+
+								if (1 == pt)	// replace vJoybutton with vJoyB0
+								{
+									s += $"  vJoyB";
+									if (10 > b)
+										s += "0";
+								}
+								else s += $"  {DestType[pt]}";
+								s += $"{b}";
+							}
 					}
 				if (17 < s.Length)
 					MIDIio.Info(s + "\n");

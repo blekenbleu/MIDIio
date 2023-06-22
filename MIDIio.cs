@@ -78,7 +78,7 @@ namespace blekenbleu.MIDIspace
 		public void End(PluginManager pluginManager)
 		{
 			if (null != Reader)
-			Reader.End();
+				Reader.End();
 			if (null != Outer)
 				Outer.End();
 			if (null != VJD)
@@ -112,8 +112,10 @@ namespace blekenbleu.MIDIspace
 
 			int s = size;
 			prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
-			if (null != prop && 0 < prop.Length && (0 >= (s = Int32.Parse(prop)) || 128 < s))
-				Info($"Init(): invalid {Ini + "size"} {prop}; defaulting to {size}");
+			if (null == prop || 1 > prop.Length)
+				Info($"Init(): missing {Ini + "size"}; defaulting to {size}");
+			else if (0 >= (s = Int32.Parse(prop)) || 128 < s)
+				Info($"Init(): invalid {Ini + "size"} {prop} = {s}; defaulting to {size}");
 			else size = (byte)s;
 
 			Size = new byte[] { size, size, size };
@@ -250,8 +252,8 @@ namespace blekenbleu.MIDIspace
 						VJD.Axis(i, a);						// 0-based axes
 					else Info($"Send({Properties.DestType[d]}): invalid axis {i} from {prop}");
 					break;
-				case 1:
-					VJD.Button(i, VJDmaxval < (2*a));		// VJDmaxval-based threshold
+				case 1:										// SimHub lists 0-based buttons; vJoy wants 1-based...
+					VJD.Button(++i, VJDmaxval < (2*a));	// VJDmaxval-based threshold
 					break;
 				case 2:
 					Outer.SendCCval(i, (byte)(0x7F & a));

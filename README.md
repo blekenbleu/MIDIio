@@ -18,7 +18,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 [June 2023 revisions provoked by SimHub updates](docs/provoked.md)
 
 #### Notes:
-- This plugin **is compatible with SimHub 8.2.2's `Controllers input` and `Control mapper` plugins**  
+- This plugin **is compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
   - This allows e.g. forwarding *real* `Controllers input` properties to MIDIout or vJoy;  
     **Do NOT** configure *vJoy* properties from `Controllers input`;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's Midi Controllers Input plugin**  
@@ -39,7 +39,12 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
     - **Configure button `CCn` Source events:**  
       ![button event names and actions](docs/events.png)  
     - this is *not* (nor can it become) a "plug and play" solution;  
-      configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).
+      configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).  
+- **vJoy button numbering**  
+    - Windows' `joy.cpl` and vJoy API consider the first button to be 1,  
+      but SimHub reports that first button as `JoystickPlugin.vJoy_Device_B00`:  
+      ![vJoy](docs/vJoyB.png)  
+    - For consistency within SimHub, it is configured as `MIDIvJoyB00` in [NCalcScripts/MIDIio.ini](NCalcScripts/MIDIio.ini).  
 
 For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile)
  has a custom effect with ShakeITBSV3Plugin properties from MIDI sliders.
@@ -54,5 +59,5 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 [2023-06-18 09:52:41,551] INFO - Game successfully loaded^M
 [2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift^M 
 ```
-- add blanks between `INFO`s
+- changes described [here](docs/provoked.md)  
 - [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin

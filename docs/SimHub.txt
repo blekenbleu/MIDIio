@@ -1,34 +1,31 @@
-[2023-06-21 08:59:51,841] INFO - Starting SimHub v8.4.3 (build time : 17/06/2023 01:05:08)
-[2023-06-21 08:59:51,842] INFO - Administrator privileges : False 
-[2023-06-21 08:59:51,842] INFO - OS version : Microsoft Windows NT 10.0.19045.0, Windows 10.0.19045
-[2023-06-21 08:59:51,842] INFO - License status : Licensed
-[2023-06-21 08:59:51,842] INFO - Process priority : Normal
-[2023-06-21 08:59:53,241] INFO - 78 game readers loaded
-[2023-06-21 08:59:53,702] INFO - (Re)Starting Automobilista Game Manager and plugin manager
-[2023-06-21 08:59:53,703] INFO - Creating Automobilista game manager (RfactorReader.AutomobilistaManager)
-[2023-06-21 08:59:53,716] INFO - Automobilista game manager created
-[2023-06-21 08:59:53,722] INFO - Checking configuration status for Automobilista
-[2023-06-21 08:59:53,723] INFO - Detected install path : E:\my\SteamLibrary\SteamApps\common\Automobilista
-[2023-06-21 08:59:53,725] INFO - Configuration status for Automobilista: GameConfigured
-[2023-06-21 08:59:53,726] INFO - Creating plugin manager with plugins : ControlMapperPlugin, JoystickPlugin, CustomSerialPlugin, KeyboardEmulatorPlugin, MIDIio, ShakeITBSV3Plugin
-[2023-06-21 08:59:53,743] INFO - Creating SimHub.Plugins.AudioControl.AudioPlayPlugin plugin
-[2023-06-21 08:59:53,746] INFO - Creating SimHub.Plugins.DataPlugins.SystemInfosProvider plugin
-[2023-06-21 08:59:53,747] INFO - Creating SimHub.Plugins.DataPlugins.Shell.ShellPlugin plugin
-[2023-06-21 08:59:53,748] INFO - Creating SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
-[2023-06-21 08:59:53,749] INFO - Creating SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
-[2023-06-21 08:59:53,749] INFO - Creating SimHub.Plugins.Web.WebPlugin plugin
-[2023-06-21 08:59:53,750] INFO - Creating blekenbleu.MIDIspace.MIDIio plugin
-[2023-06-21 08:59:53,751] INFO - Creating SimHub.Plugins.InputPlugins.JoystickPlugin plugin
-[2023-06-21 08:59:53,751] INFO - Creating SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin plugin
-[2023-06-21 08:59:53,751] INFO - Creating SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin
-[2023-06-21 08:59:53,752] INFO - Creating SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin plugin
-[2023-06-21 08:59:53,752] INFO - Creating SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin plugin
-[2023-06-21 08:59:53,753] INFO - Initialising SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
-[2023-06-21 08:59:53,982] INFO - Initialising SimHub.Plugins.DataPlugins.SystemInfosProvider plugin
-[2023-06-21 08:59:53,999] INFO - Initialising SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
-[2023-06-21 08:59:54,000] INFO - Initialising blekenbleu.MIDIspace.MIDIio plugin
-[2023-06-21 08:59:54,003] INFO - MIDIio.Init(): unconfigured MIDIin CCs will not be forwarded to MIDIout
-[2023-06-21 08:59:54,083] INFO - MIDIio.VJsend.Init(): Found vJoy - Virtual Joystick
+[2023-06-22 12:40:18,469] INFO - Starting SimHub v8.4.3 (build time : 17/06/2023 01:05:08)
+[2023-06-22 12:40:18,470] INFO - Administrator privileges : False 
+[2023-06-22 12:40:18,470] INFO - OS version : Microsoft Windows NT 10.0.19045.0, Windows 10.0.19045
+[2023-06-22 12:40:18,470] INFO - License status : Licensed
+[2023-06-22 12:40:18,470] INFO - Process priority : Normal
+[2023-06-22 12:40:19,925] INFO - 78 game readers loaded
+[2023-06-22 12:40:20,391] INFO - (Re)Starting Automobilista2 Game Manager and plugin manager
+[2023-06-22 12:40:20,392] INFO - Creating Automobilista 2 game manager (PCarsSharedMemory.AMS2.Automobilista2Manager)
+[2023-06-22 12:40:20,400] INFO - Automobilista2 game manager created
+[2023-06-22 12:40:20,401] INFO - Creating plugin manager with plugins : ControlMapperPlugin, JoystickPlugin, CustomSerialPlugin, KeyboardEmulatorPlugin, MIDIio, ShakeITBSV3Plugin
+[2023-06-22 12:40:20,420] INFO - Creating SimHub.Plugins.AudioControl.AudioPlayPlugin plugin
+[2023-06-22 12:40:20,423] INFO - Creating SimHub.Plugins.DataPlugins.SystemInfosProvider plugin
+[2023-06-22 12:40:20,426] INFO - Creating SimHub.Plugins.DataPlugins.Shell.ShellPlugin plugin
+[2023-06-22 12:40:20,426] INFO - Creating SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
+[2023-06-22 12:40:20,427] INFO - Creating SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
+[2023-06-22 12:40:20,428] INFO - Creating SimHub.Plugins.Web.WebPlugin plugin
+[2023-06-22 12:40:20,428] INFO - Creating blekenbleu.MIDIspace.MIDIio plugin
+[2023-06-22 12:40:20,429] INFO - Creating SimHub.Plugins.InputPlugins.JoystickPlugin plugin
+[2023-06-22 12:40:20,429] INFO - Creating SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin plugin
+[2023-06-22 12:40:20,430] INFO - Creating SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin
+[2023-06-22 12:40:20,430] INFO - Creating SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin plugin
+[2023-06-22 12:40:20,430] INFO - Creating SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin plugin
+[2023-06-22 12:40:20,431] INFO - Initialising SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
+[2023-06-22 12:40:20,650] INFO - Initialising SimHub.Plugins.DataPlugins.SystemInfosProvider plugin
+[2023-06-22 12:40:20,666] INFO - Initialising SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
+[2023-06-22 12:40:20,667] INFO - Initialising blekenbleu.MIDIspace.MIDIio plugin
+[2023-06-22 12:40:20,670] INFO - MIDIio.Init(): unconfigured MIDIin CCs will not be forwarded to MIDIout
+[2023-06-22 12:40:20,717] INFO - MIDIio.VJsend.Init(): Found vJoy - Virtual Joystick
 vJoy.Version: 2.1.6
 Developer: Shaul Eizikovich
 Driver version 216 does NOT match DLL version (218)
@@ -36,15 +33,26 @@ vJoy Device 1 is available with capabilities:
   16 Buttons; 8 Axes available: X, Y, Z, RX, RY, RZ, SL0, SL1; axis maxval=32767.
 vJoy Device 1 is now acquired.
 
-[2023-06-21 08:59:54,164] INFO - MIDIio.OUTwetdry(): Found MidiView
-[2023-06-21 08:59:54,167] INFO - MIDIio.Properties.SourceName[vJoyaxis]:  
+[2023-06-22 12:40:20,818] INFO - MIDIio.OUTdrywet.Init():  Failed to find MidiView;  found devices:
+	Microsoft GS Wavetable Synth
+	MIDIHub Port 1
+	MIDIHub Port 2
+	MIDIHub Port 3
+	MIDIHub Port 4
+	2- AudioBox USB MIDI Out
+	nanoKONTROL2
+
+[2023-06-22 12:40:20,822] INFO - MIDIio.Properties.SourceName[vJoyaxis]:  
+				@ 3: ShakeITBSV3Plugin.Export.proxyLS.FrontLeft
 				@ 0: JoystickPlugin.SideWinder_Precision_2_Joystick_X
 				@ 1: JoystickPlugin.SideWinder_Precision_2_Joystick_Y
 				@ 2: JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0
 				@ 4: knob4
 	Properties.SourceName[vJoybutton]:  
+				@ 13: ShakeITBSV3Plugin.Export.proxyLS.FrontRight
+				@ 2: JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0
 				@ 3: InputStatus.JoystickPlugin.SideWinder_Precision_2_Joystick_B05
-				@ 5: CC43
+				@ 0: CC43
 				@ 1: button0
 	Properties.SourceName[CCsend]:  
 				@ 2: ShakeITBSV3Plugin.Export.proxyLS.FrontLeft
@@ -55,7 +63,7 @@ vJoy Device 1 is now acquired.
 				@ 1: knob0
 				@ 65: button7
 
-[2023-06-21 08:59:54,167] INFO - MIDIio.Properties.CCname[]:
+[2023-06-22 12:40:20,822] INFO - MIDIio.Properties.CCname[]:
 	slider0	@ 0
 	slider1	@ 1  CCsend0
 	slider2	@ 2
@@ -66,7 +74,7 @@ vJoy Device 1 is now acquired.
 	knob2	@ 18
 	knob3	@ 19
 	knob4	@ 20  vJoyaxis4
-	CC43	@ 43 (Button)  vJoyB05
+	CC43	@ 43 (Button)  vJoyB00
 	button0	@ 58 (Button)  vJoyB01
 	button1	@ 59 (Button)
 	button2	@ 60 (Button)
@@ -76,81 +84,21 @@ vJoy Device 1 is now acquired.
 	button6	@ 64 (Button)
 	button7	@ 65 (Button)  CCsend65
 
-[2023-06-21 08:59:54,169] INFO - MIDIio.INdrywet() is listening for nanoKONTROL2 messages.
-[2023-06-21 08:59:54,169] INFO - MIDIio.Attach() non-MIDI source properties:
-		ShakeITBSV3Plugin.Export.proxyLS.FrontRight
-		ShakeITBSV3Plugin.Export.proxyLS.RearLeft
-		ShakeITBSV3Plugin.Export.proxyLS.RearRight
-		JoystickPlugin.SideWinder_Precision_2_Joystick_Y
-		JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0
-
-[2023-06-21 08:59:54,176] INFO - MIDIio.Attach():  1 previous CC properties restored
-[2023-06-21 08:59:54,176] INFO - Initialising SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin
-[2023-06-21 08:59:54,343] INFO - Initialising SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin plugin
-[2023-06-21 08:59:55,002] INFO - Initialising SimHub.Plugins.AudioControl.AudioPlayPlugin plugin
-[2023-06-21 08:59:55,004] INFO - Initialising SimHub.Plugins.DataPlugins.Shell.ShellPlugin plugin
-[2023-06-21 08:59:55,005] INFO - Initialising SimHub.Plugins.InputPlugins.JoystickPlugin plugin
-[2023-06-21 08:59:55,022] INFO - Initialising SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin plugin
-[2023-06-21 08:59:55,028] INFO - Initialising SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin plugin
-[2023-06-21 08:59:55,071] INFO - Initialising SimHub.Plugins.Web.WebPlugin plugin
-[2023-06-21 08:59:55,159] INFO - Web plugin suggested IP :192.168.1.146
-[2023-06-21 08:59:55,170] INFO - Web plugin listening to 8888 (User friendly port)
-[2023-06-21 08:59:55,283] INFO - Plugin manager correctly initialised
-[2023-06-21 08:59:55,288] INFO - Loading plugins controls
-[2023-06-21 08:59:55,585] INFO - Game successfully loaded
-[2023-06-21 08:59:55,598] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift
-[2023-06-21 09:29:25,347] INFO - Closing simhub.
-[2023-06-21 09:29:25,347] INFO - Application exit
-[2023-06-21 09:29:25,376] INFO - Stopping game manager
-[2023-06-21 09:29:25,377] INFO - Stopping plugin manager
-[2023-06-21 09:29:25,381] INFO - Saving plugin settings SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin
-[2023-06-21 09:29:25,381] INFO - SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin settings saved
-[2023-06-21 09:29:25,381] INFO - Saving plugin settings SimHub.Plugins.DataPlugins.SystemInfosProvider
-[2023-06-21 09:29:25,382] INFO - SimHub.Plugins.DataPlugins.SystemInfosProvider plugin settings saved
-[2023-06-21 09:29:25,382] INFO - Saving plugin settings SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin
-[2023-06-21 09:29:25,384] INFO - SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin settings saved
-[2023-06-21 09:29:25,384] INFO - Saving plugin settings SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin
-[2023-06-21 09:29:25,437] INFO - SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin plugin settings saved
-[2023-06-21 09:29:25,437] INFO - Saving plugin settings SimHub.Plugins.InputPlugins.JoystickPlugin
-[2023-06-21 09:29:25,440] INFO - SimHub.Plugins.InputPlugins.JoystickPlugin plugin settings saved
-[2023-06-21 09:29:25,441] INFO - Stopping plugin SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin
-[2023-06-21 09:29:25,441] INFO - Plugin end SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin took 0.000s
-[2023-06-21 09:29:25,441] INFO - Stopping plugin SimHub.Plugins.DataPlugins.SystemInfosProvider
-[2023-06-21 09:29:25,448] INFO - Plugin end SimHub.Plugins.DataPlugins.SystemInfosProvider took 0.007s
-[2023-06-21 09:29:25,448] INFO - Stopping plugin SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin
-[2023-06-21 09:29:25,448] INFO - Plugin end SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin took 0.000s
-[2023-06-21 09:29:25,448] INFO - Stopping plugin blekenbleu.MIDIspace.MIDIio
-[2023-06-21 09:29:25,450] INFO - MIDIio.Properties.End():  1 unconfigured CCs
-[2023-06-21 09:29:25,450] INFO - Plugin end blekenbleu.MIDIspace.MIDIio took 0.002s
-[2023-06-21 09:29:25,450] INFO - Stopping plugin SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin
-[2023-06-21 09:29:25,450] INFO - Finalizing plugin SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin
-[2023-06-21 09:29:25,450] INFO - Plugin end SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin took 0.000s
-[2023-06-21 09:29:25,450] INFO - Stopping plugin SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin
-[2023-06-21 09:29:25,450] INFO - Finalizing plugin SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin
-[2023-06-21 09:29:25,450] INFO - Plugin end SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin took 0.000s
-[2023-06-21 09:29:25,450] INFO - Stopping plugin SimHub.Plugins.AudioControl.AudioPlayPlugin
-[2023-06-21 09:29:25,450] INFO - Plugin end SimHub.Plugins.AudioControl.AudioPlayPlugin took 0.000s
-[2023-06-21 09:29:25,450] INFO - Stopping plugin SimHub.Plugins.DataPlugins.Shell.ShellPlugin
-[2023-06-21 09:29:25,450] INFO - Finalizing plugin SimHub.Plugins.DataPlugins.Shell.ShellPlugin
-[2023-06-21 09:29:25,450] INFO - Plugin end SimHub.Plugins.DataPlugins.Shell.ShellPlugin took 0.000s
-[2023-06-21 09:29:25,450] INFO - Stopping plugin SimHub.Plugins.InputPlugins.JoystickPlugin
-[2023-06-21 09:29:25,471] INFO - Plugin end SimHub.Plugins.InputPlugins.JoystickPlugin took 0.021s
-[2023-06-21 09:29:25,471] INFO - Stopping plugin SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin
-[2023-06-21 09:29:25,471] INFO - Plugin end SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin took 0.000s
-[2023-06-21 09:29:25,471] INFO - Stopping plugin SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin
-[2023-06-21 09:29:25,474] INFO - Finalizing plugin SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin
-[2023-06-21 09:29:25,478] INFO - Plugin end SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin took 0.007s
-[2023-06-21 09:29:25,478] INFO - Stopping plugin SimHub.Plugins.Web.WebPlugin
-[2023-06-21 09:29:25,478] INFO - Finalizing plugin SimHub.Plugins.Web.WebPlugin
-[2023-06-21 09:29:25,478] INFO - Plugin end SimHub.Plugins.Web.WebPlugin took 0.000s
-[2023-06-21 09:29:25,478] INFO - Stopped all plugins
-[2023-06-21 09:29:25,478] INFO - Performance dump
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin::DataUpdate	106165calls	367.526ms	106165calls	0.003ms/call
-[2023-06-21 09:29:25,478] INFO - blekenbleu.MIDIspace.MIDIio::DataUpdate	106165calls	728.066ms	106165calls	0.007ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin::DataUpdate	106165calls	2519.584ms	106165calls	0.024ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.Web.WebPlugin::DataUpdate	106165calls	34.371ms	106165calls	0.000ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin::DataUpdate	106165calls	25.003ms	106165calls	0.000ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin::DataUpdate	106165calls	1753.935ms	106165calls	0.017ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.DataPlugins.SystemInfosProvider::DataUpdate	106165calls	61.357ms	106165calls	0.001ms/call
-[2023-06-21 09:29:25,478] INFO - SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin::DataUpdate	106165calls	6579.052ms	106165calls	0.062ms/call
-[2023-06-21 09:29:25,492] INFO - Final Exit (took 0.13s)
+[2023-06-22 12:40:20,823] INFO - MIDIio.INdrywet() is listening for nanoKONTROL2 messages.
+[2023-06-22 12:40:20,828] INFO - MIDIio.Attach():  9 previous CC properties restored
+[2023-06-22 12:40:20,828] INFO - Initialising SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin
+[2023-06-22 12:40:21,017] INFO - Initialising SimHub.Plugins.DataPlugins.ShakeItV3.ShakeITBSV3Plugin plugin
+[2023-06-22 12:40:21,665] INFO - Initialising SimHub.Plugins.AudioControl.AudioPlayPlugin plugin
+[2023-06-22 12:40:21,667] INFO - Initialising SimHub.Plugins.DataPlugins.Shell.ShellPlugin plugin
+[2023-06-22 12:40:21,667] INFO - Initialising SimHub.Plugins.InputPlugins.JoystickPlugin plugin
+[2023-06-22 12:40:21,689] INFO - Initialising SimHub.Plugins.KeyboardEmulator.KeyboardEmulatorPlugin plugin
+[2023-06-22 12:40:21,694] INFO - Initialising SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin plugin
+[2023-06-22 12:40:21,736] INFO - Initialising SimHub.Plugins.Web.WebPlugin plugin
+[2023-06-22 12:40:21,820] INFO - Web plugin suggested IP :192.168.1.146
+[2023-06-22 12:40:21,831] INFO - Web plugin listening to 8888 (User friendly port)
+[2023-06-22 12:40:21,944] INFO - Plugin manager correctly initialised
+[2023-06-22 12:40:21,952] INFO - Loading plugins controls
+[2023-06-22 12:40:22,205] INFO - Game successfully loaded
+[2023-06-22 12:40:22,213] INFO - Allocating FMOD output for VoiceMeeter Input (VB-Audio VoiceMeeter VAIO)
+[2023-06-22 12:40:22,250] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift
+[2023-06-22 12:40:52,546] INFO - Disposing FMOD output for VoiceMeeter Input (VB-Audio VoiceMeeter VAIO)
