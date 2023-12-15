@@ -5,7 +5,7 @@ using Melanchall.DryWetMidi.Devices;
 //using Melanchall.DryWetMidi.Multimedia;
 using SimHub.Plugins;
 
-namespace blekenbleu.MIDIspace
+namespace blekenbleu
 {
 	/// <summary>
 	/// from Output device https://melanchall.github.io/drywetmidi/articles/devices/Output-device.html

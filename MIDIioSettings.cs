@@ -1,4 +1,4 @@
-﻿namespace blekenbleu.MIDIspace
+﻿namespace blekenbleu
 {
 	// these must be public
 	public class MIDIioSettings // saved while plugin restarts

@@ -2,7 +2,7 @@
 using SimHub.Plugins;
 using System;
 
-namespace blekenbleu.MIDIspace
+namespace blekenbleu
 {
 	[PluginDescription("MIDI button, knob, slider; Joystick button and axis I/O routing")]
 	[PluginAuthor("blekenbleu")]

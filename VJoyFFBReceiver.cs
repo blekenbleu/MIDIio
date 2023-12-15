@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using vJoyInterfaceWrap;				// Don't forget to add this
 
 //namespace FeederDemoCS
-namespace blekenbleu.MIDIspace
+namespace blekenbleu
 {
 	public class VJoyFFBReceiver
 	{

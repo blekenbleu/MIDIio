@@ -14,7 +14,7 @@
 [2023-06-22 12:40:20,426] INFO - Creating SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
 [2023-06-22 12:40:20,427] INFO - Creating SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
 [2023-06-22 12:40:20,428] INFO - Creating SimHub.Plugins.Web.WebPlugin plugin
-[2023-06-22 12:40:20,428] INFO - Creating blekenbleu.MIDIspace.MIDIio plugin
+[2023-06-22 12:40:20,428] INFO - Creating blekenbleu.MIDIio plugin
 [2023-06-22 12:40:20,429] INFO - Creating SimHub.Plugins.InputPlugins.JoystickPlugin plugin
 [2023-06-22 12:40:20,429] INFO - Creating SimHub.Plugins.OutputPlugins.SerialComm.CustomSerialPlugin plugin
 [2023-06-22 12:40:20,430] INFO - Creating SimHub.Plugins.OutputPlugins.ControlRemapper.ControlMapperPlugin plugin
@@ -23,7 +23,7 @@
 [2023-06-22 12:40:20,431] INFO - Initialising SimHub.Plugins.DataPlugins.DataCore.DataCorePlugin plugin
 [2023-06-22 12:40:20,650] INFO - Initialising SimHub.Plugins.DataPlugins.SystemInfosProvider plugin
 [2023-06-22 12:40:20,666] INFO - Initialising SimHub.Plugins.DataPlugins.PersistantTracker.PersistantTrackerPlugin plugin
-[2023-06-22 12:40:20,667] INFO - Initialising blekenbleu.MIDIspace.MIDIio plugin
+[2023-06-22 12:40:20,667] INFO - Initialising blekenbleu.MIDIio plugin
 [2023-06-22 12:40:20,670] INFO - MIDIio.Init(): unconfigured MIDIin CCs will not be forwarded to MIDIout
 [2023-06-22 12:40:20,717] INFO - MIDIio.VJsend.Init(): Found vJoy - Virtual Joystick
 vJoy.Version: 2.1.6

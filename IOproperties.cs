@@ -2,7 +2,7 @@
 using System.Linq;
 using SimHub.Plugins;
 
-namespace blekenbleu.MIDIspace
+namespace blekenbleu
 {
 	// Dynamically add events and properties for CC buttons as pressed
 	// Working around the SimHub limitation that AttachDelegate() fails for variables.

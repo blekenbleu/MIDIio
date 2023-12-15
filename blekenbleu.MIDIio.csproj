@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{833040C9-FE5E-4CCF-B21D-71979E049B6B}</ProjectGuid>
-    <RootNamespace>blekenbleu.MIDIspace</RootNamespace>
+    <RootNamespace>blekenbleu</RootNamespace>
     <TargetFramework>net48</TargetFramework>
     <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>

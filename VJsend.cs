@@ -17,7 +17,7 @@ using System;
 using vJoyInterfaceWrap;				// Don't forget to add this
 
 //namespace FeederDemoCS
-namespace blekenbleu.MIDIspace
+namespace blekenbleu
 {
 	class VJsend
 	{
