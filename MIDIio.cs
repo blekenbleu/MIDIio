@@ -24,7 +24,7 @@ namespace blekenbleu
 		private static byte Level;
 		private bool[][] Once;
 		private int[][] Sent;														// remember and don't repeat
-		private string prop;
+		private string prop, MIDIin, MIDIout;
 		private  double[,] scale;
 
 		/// <summary>
@@ -106,7 +106,21 @@ namespace blekenbleu
 
 			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
 			DoEcho = (null != prop && 0 < Int32.Parse(prop));
-			Info("Init(): unconfigured MIDIin CCs will" + (DoEcho ? "" : " not") + " be forwarded to MIDIout");
+			MIDIout = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
+			if (null == MIDIout || 0 == MIDIout.Length)
+			{
+				MIDIout = "";
+				Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
+				Size[2] = 0;
+			}
+			MIDIin = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
+			if (null == MIDIin || 0 == MIDIin.Length)
+			{
+				Info("Init(): missing " + Ini + "in entry!");
+				MIDIin = "";
+			}
+			if (0 < MIDIin.Length && 0 < MIDIout.Length)
+				Info("Init(): unconfigured " + MIDIin + " CCs will" + (DoEcho ? "" : " not") + " be forwarded to " + MIDIout);
 			count += 1;		// increments for each restart, provoked e.g. by game change or restart
 			pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 
@@ -141,31 +155,22 @@ namespace blekenbleu
 									{ 1.27,			127.0/65535.0,  127,	1.0		   }};	// MIDIout
 
 			// Launch Outer before Reader and Properties
-			prop = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
-			if (null == prop || 0 == prop.Length)
+			if (0 < MIDIout.Length)
 			{
-				Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
-				Size[2] = 0;
-			}
-			else
-			{
-				pluginManager.AddProperty("out", this.GetType(), prop);
+				pluginManager.AddProperty("out", this.GetType(), MIDIout);
 				Outer = new OUTdrywet();
-				Outer.Init(prop);	// may zero Size[2]
+				Outer.Init(MIDIout);	// may zero Size[2]
 			}
 
 			Properties = new IOproperties();		// MIDI and vJoy property configuration
 			Dest = new byte[2 , size];				// for vJoy
 			Properties.Init(this);					// send unconfigured DoEchoes, set Dest[,] SendCt[,], sort Send[, ]
 
-			prop = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
-			if (null == prop)
-				Info("Init(): missing " + Ini + "in entry!");
-			else if (0 < prop.Length)
+			if (0 < MIDIin.Length)
 			{
-				pluginManager.AddProperty("in", this.GetType(), prop);
+				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
-				if(Reader.Init(prop, this))
+				if(Reader.Init(MIDIin, this))
 					Properties.Attach(this);										// AttachDelegate buttons, sliders and knobs
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
@@ -259,7 +264,7 @@ namespace blekenbleu
 					Outer.SendCCval(i, (byte)(0x7F & a));
 					break;
 				default:									// should be impossible
-					Info($"Send(): property {prop} for mystery destination {d} with source {s}, address {p}");
+					Log(1, $"Send(): property {prop} for mystery destination {d} with source {s}, address {p}");
 					break;
 			}
 		}													// Send()
@@ -291,11 +296,11 @@ namespace blekenbleu
 
 						if (Once[s][p]) {									// 0 == index:  game running
 							Once[s][p] = false;								// configured property not available
-							Info($"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
+							Log(1, $"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
 						}
 					}
 					else if (0 == send.Length)
-						Info($"DoSend({Properties.DestType[d]}): 0 length {prop}");
+						Log(1, $"DoSend({Properties.DestType[d]}): 0 length {prop}");
 					else Send(Convert.ToDouble(send), d, i, p, s, prop);
 				}
 		}			// DoSend()

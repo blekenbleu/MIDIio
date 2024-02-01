@@ -46,7 +46,7 @@ namespace blekenbleu
 
 			if (e.Event is ControlChangeEvent CC)	// this cute syntax is called pattern matching
 				M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);
-			else MIDIio.Info($"Reader() ignoring {e.Event} received from {midiDevice.Name}");
+			else MIDIio.Log(1, $"Reader() ignoring {e.Event} received from {midiDevice.Name}");
 		}
 
 		internal void End()

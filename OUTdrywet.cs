@@ -28,7 +28,7 @@ namespace blekenbleu
 			catch (Exception e)
 			{
 				string oops = e?.ToString();
-				MIDIio.Info("SendCC() Failed: " + oops);
+				MIDIio.Log(1, "SendCC() Failed: " + oops);
 				return Connected = false;
 			}
 			return true;
@@ -39,10 +39,10 @@ namespace blekenbleu
 		internal bool Ping(SevenBitNumber num)					// gets called (indirectly, event->action) by INdrywet()
 		{
 			if (SendCCval(num, Latest)) {						// Ping(): drop pass from Active()
-				MIDIio.Info($"Ping(): {CCout} CC{num} {Latest}");
+				MIDIio.Log(8, $"Ping(): {CCout} CC{num} {Latest}");
 				return true;
 			}
-			else MIDIio.Info(CCout + " disabled");
+			else MIDIio.Log(1, CCout + " disabled");
 			return false;
 		}
 
@@ -56,7 +56,7 @@ namespace blekenbleu
 				OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
 				OutputDevice.EventSent += OnEventSent;
 				OutputDevice.PrepareForEventsSending();
-				MIDIio.Info("OUTwetdry(): Found " + MIDIout);
+				MIDIio.Log(8, "OUTwetdry(): Found " + MIDIout);
 			}
 			catch (Exception)
 			{
@@ -86,11 +86,11 @@ namespace blekenbleu
 				MIDIio.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
 				if ((0 == MIDIio.Properties.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
 				{
-					MIDIio.Info("OnEventSent(): Mystery CC{CC.ControlNumber}" + MIDIio.Properties.CCname[CC.ControlNumber]);
+					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber}" + MIDIio.Properties.CCname[CC.ControlNumber]);
 					mystery++;
 				}
 			}
-			else MIDIio.Info($"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+			else MIDIio.Log(2, $"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
 		}
 	}
 }

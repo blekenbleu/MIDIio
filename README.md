@@ -1,13 +1,13 @@
 ### blekenbleu.MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick support
  For one MIDI input and one MIDI destination device, this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
- to e.g. on-the-fly tweak suitably customized **ShakeIt Bass Shaker** effects.  
+ for e.g. on-the-fly tweaking suitably customized **ShakeIt Bass Shaker** effects.  
 Similarly, SimHub properties can be configured for buttons and axes from one Joystick input device.  
-Unconfigured CC messages received dynamically generate new properties or are forwarded to a target Device.  
+Unconfigured CC messages received either dynamically generate new properties or are forwarded to a target Device.  
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio also generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
+MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
 reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
 MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled values from configured SimHub properties,
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
@@ -25,7 +25,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
     - Enabling both causes SimHub to crash!!!   
 - Like SimHub's `Midi Controllers Input` plugin,  
   **MIDIio** can automatically set CCn properties  for received CCn messages not already configured,  
-  but (unlike SimHub's) from only the single configured MIDI device.  
+  but (unlike SimHub's) from **only the single configured MIDI device**.  
   This is expected to be used mostly for identifying CC numbers to configure.
 - SimHub bundles vJoy DLL v2.1.8, while [vJoy is v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
 - This plugin is configured using SimHub properties;&nbsp; it has NO interactive interface window.
@@ -60,4 +60,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 [2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift^M 
 ```
 - changes described [here](docs/provoked.md)  
-- [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin
+- [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin  
+
+*1 Feb 2024*  
+- [reduced log verbosity](docs/source.md#midiioini)
