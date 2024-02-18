@@ -38,8 +38,8 @@
     <FileVersion>0.0.1.0</FileVersion>
     <Version>0.0.1</Version>
     <PackageReleaseNotes>Beta release; no known bugs, but not extenstively tested.</PackageReleaseNotes>
-    <RepositoryUrl>https://github.com/blekenbleu/blekenbleu.MIDIio/releases</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/blekenbleu/blekenbleu.MIDIio</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/blekenbleu/MIDIio/releases</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/blekenbleu/MIDIio</PackageProjectUrl>
     <Copyright>sure</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>Beta</PackageTags>

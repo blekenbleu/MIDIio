@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "blekenbleu.MIDIio", "blekenbleu.MIDIio.csproj", "{833040C9-FE5E-4CCF-B21D-71979E049B6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MIDIio", "MIDIio.csproj", "{833040C9-FE5E-4CCF-B21D-71979E049B6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-### blekenbleu.MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick support
+### MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick support
  For one MIDI input and one MIDI destination device, this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
  for e.g. on-the-fly tweaking suitably customized **ShakeIt Bass Shaker** effects.  
