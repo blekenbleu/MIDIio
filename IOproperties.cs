@@ -138,12 +138,14 @@ namespace blekenbleu
 				Darray[dt] = ds.Split(',').Select(byte.Parse).ToArray();
 			}
 
-			for (j = 0; j < Darray[0].Length; j++)							// valid vJoy axes address?
-				if (I.VJD.Usage.Length <= Darray[0][j])
-					MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
+			if (null != Darray && null != I.VJD)
+				for (j = 0; j < Darray[0].Length; j++)							// valid vJoy axes address?
+					if (I.VJD.Usage.Length <= Darray[0][j])
+						MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
 
 			Ping = new string[MIDIio.Size[2]];
-			for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
+            if (null != Darray && null != Darray[1])
+                for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
 				if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
 					MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
