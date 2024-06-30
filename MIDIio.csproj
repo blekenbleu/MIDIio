@@ -7,21 +7,21 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
-    <OutDir>..\..\</OutDir>
+    <OutDir>$(SIMHUB_INSTALL_PATH)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <DebugType>full</DebugType>
-    <OutDir>..\..\</OutDir>
+    <OutDir>$(SIMHUB_INSTALL_PATH)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <OutDir>..\..\</OutDir>
+    <OutDir>$(SIMHUB_INSTALL_PATH)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <DebugType>pdbonly</DebugType>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <OutDir>..\..\</OutDir>
+    <OutDir>$(SIMHUB_INSTALL_PATH)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>
@@ -35,7 +35,7 @@
     <ProjectView>ShowAllFiles</ProjectView>
     <Description>SimHub plugin to read and sent MIDI CC messages</Description>
     <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
+    <FileVersion>0.0.1.1</FileVersion>
     <Version>0.0.1</Version>
     <PackageReleaseNotes>Beta release; no known bugs, but not extenstively tested.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/blekenbleu/MIDIio/releases</RepositoryUrl>
@@ -51,39 +51,39 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="GameReaderCommon">
-      <HintPath>..\..\GameReaderCommon.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\GameReaderCommon.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="InputManagerCS, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\InputManagerCS.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\InputManagerCS.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\..\log4net.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\log4net.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="MahApps.Metro, Version=1.5.0.23, Culture=neutral, PublicKeyToken=f4fb5a3c4d1e5b4f, processorArchitecture=MSIL">
-      <HintPath>..\..\MahApps.Metro.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\MahApps.Metro.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Melanchall.DryWetMidi">
-      <HintPath>..\..\Melanchall.DryWetMidi.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\Melanchall.DryWetMidi.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="SimHub.Logging, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\SimHub.Logging.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\SimHub.Logging.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="SimHub.Plugins">
-      <HintPath>..\..\SimHub.Plugins.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\SimHub.Plugins.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="vJoyInterfaceWrap">
-      <HintPath>..\..\vJoyInterfaceWrap.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)\vJoyInterfaceWrap.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Windows.Forms" />
@@ -100,6 +100,6 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
   </Target>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy NCalcScripts\MIDIio.ini ..\..\NCalcScripts\" />
+    <Exec Command="copy NCalcScripts\MIDIio.ini $(SIMHUB_INSTALL_PATH)\NCalcScripts\" />
   </Target>
 </Project>

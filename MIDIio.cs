@@ -1,6 +1,8 @@
 ﻿using GameReaderCommon;
 using SimHub.Plugins;
 using System;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace blekenbleu
 {
@@ -77,12 +79,9 @@ namespace blekenbleu
 		/// <param name="pluginManager"></param>
 		public void End(PluginManager pluginManager)
 		{
-			if (null != Reader)
-				Reader.End();
-			if (null != Outer)
-				Outer.End();
-			if (null != VJD)
-				VJD.End();
+			Reader?.End();
+			Outer?.End();
+			VJD?.End();
 			Properties.End(this);
 			this.SaveCommonSettings("GeneralSettings", Settings);
 		}
@@ -119,8 +118,11 @@ namespace blekenbleu
 				Info("Init(): missing " + Ini + "in entry!");
 				MIDIin = "";
 			}
+			string version = "version "
+				+ FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion.ToString();
 			if (0 < MIDIin.Length && 0 < MIDIout.Length)
-				Info("Init(): unconfigured " + MIDIin + " CCs will" + (DoEcho ? "" : " not") + " be forwarded to " + MIDIout);
+				Info(version + (DoEcho ? ": " : ":  not") + " forwarding unconfigured " + MIDIin + " CCs to " + MIDIout);
+			else Info(version);
 			count += 1;		// increments for each restart, provoked e.g. by game change or restart
 			pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 
