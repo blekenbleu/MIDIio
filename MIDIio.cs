@@ -110,7 +110,6 @@ namespace blekenbleu
 			{
 				MIDIout = "";
 				Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
-				Size[2] = 0;
 			}
 			MIDIin = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 			if (null == MIDIin || 0 == MIDIin.Length)
@@ -135,6 +134,8 @@ namespace blekenbleu
 			else size = (byte)s;
 
 			Size = new byte[] { size, size, size };
+			if (null == MIDIout || 0 == MIDIout.Length)
+				Size[2] = 0;
 			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
 			if (null != prop && 1 == prop.Length && ("0" != prop))
 			{
