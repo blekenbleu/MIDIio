@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "MIDIio": {
-      "commandName": "Executable",
-      "executablePath": "$(SIMHUB_INSTALL_PATH)\\SimHubWPF.exe",
-      "workingDirectory": "$(SIMHUB_INSTALL_PATH)\\"
-    }
-  }
-}
