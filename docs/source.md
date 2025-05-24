@@ -33,6 +33,7 @@
   - [`MIDIlog`](#midilog)        Controls MIDIio's **[System Log](SimHub.txt)** [verbosity](#midilog);&nbsp; 0 is mostly only errors and 15 is maximally verbose.  
   - `MIDIsize`	     Limits routing table size between game, vJoy and MIDI
   - `MIDICCsends`    Index array of configured `MIDICCsendn`, where 0 <= n < 128
+  - `MIDIvJoy`       Non-zero enables vJoy button and axes outputs		
   - `MIDIvJoybuttons` Index array of configured `MIDIvJoyB0x`, where 01 <= x < 16 Buttons
                      as reported by `MIDIio.VJsend.Init() in the **[System Log](SimHub.txt)**
   - `MIDIvJoyaxiss`   Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes
