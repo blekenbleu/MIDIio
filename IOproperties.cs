@@ -122,7 +122,7 @@ namespace blekenbleu
 			Map = new byte[128];
 			SourceCt = 	new byte[] { 0, 0, 0, 0 };
 			byte[][] Darray = new byte[DestType.Length][];					// configured destination indices
-			byte dt, ct, j;
+			byte dt, ct, j, first = (byte)((null == I.VJD) ? 2 : 0);
 
 			for (dt = 0; dt < DestType.Length; dt++)
 			{
@@ -131,23 +131,22 @@ namespace blekenbleu
 
 				// configured destination indices
 				string ds = I.PluginManager.GetPropertyValue(pts = MIDIio.Ini + DestType[dt] + 's')?.ToString();
-				if (null == ds && MIDIio.Info($"Init(): {DestType[dt]} property '{pts}' not found"))
+				if (null == ds && (dt < first || MIDIio.Info($"Properties.Init(): {DestType[dt]} property '{pts}' not found")))
 					continue;
 
 				// bless the Internet: split comma separated integers
 				Darray[dt] = ds.Split(',').Select(byte.Parse).ToArray();
 			}
 
-			if (null != Darray && null != I.VJD)
+			if (null != Darray[0] && null != I.VJD)
 				for (j = 0; j < Darray[0].Length; j++)							// valid vJoy axes address?
 					if (I.VJD.Usage.Length <= Darray[0][j])
 						MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
 
-			Ping = new string[MIDIio.Size[2]];
-            if (null != Darray && null != Darray[1])
+            if (null != Darray[1])
                 for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
-				if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
-					MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
+					if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
+						MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
 			Ping = new string[MIDIio.Size[2]];
 			for (j = 0; j < MIDIio.Size[2]; j++)

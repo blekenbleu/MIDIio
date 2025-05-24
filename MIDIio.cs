@@ -133,9 +133,10 @@ namespace blekenbleu
 				Info($"Init(): invalid {Ini + "size"} {prop} = {s}; defaulting to {size}");
 			else size = (byte)s;
 
-			Size = new byte[] { size, size, size };
+			Size = new byte[] { size, size, size };	// vJoy axes, vJoy buttons, CC sends
 			if (null == MIDIout || 0 == MIDIout.Length)
 				Size[2] = 0;
+
 			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
 			if (null != prop && 1 == prop.Length && ("0" != prop))
 			{

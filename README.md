@@ -2,11 +2,15 @@
 
 **Note**: &nbsp;  *requires a recent (9.X) version* of [SimHub](https://www.simhubdash.com/download-2/)  
 
- For one MIDI input and one MIDI destination device, this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob  
+For one MIDI source device and one MIDI destination device,  
+ this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob  
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
  for e.g. on-the-fly tweaking suitably customized **ShakeIt Bass Shaker** effects.  
-Similarly, SimHub properties can be configured for buttons and axes from one Joystick input device.  
-Unconfigured CC messages received either dynamically generate new properties or are forwarded to a target Device.  
+Similarly, SimHub properties can be configured for buttons and axes from one Joystick device.  
+Unconfigured CC messages received either
+- dynamically generate new properties
+- or are forwarded to a target Device.  
+
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
@@ -21,15 +25,16 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 [June 2023 revisions provoked by SimHub updates](docs/provoked.md)
 
 #### Notes:
-- This plugin **is compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
+- This plugin **was compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
+  - It has not been comprehensively tested for SimHub changes since then
   - This allows e.g. forwarding *real* `Controllers input` properties to MIDIout or vJoy;  
     **Do NOT** configure *vJoy* properties from `Controllers input`;&nbsp; that would provoke feedback loops!  
-- This plugin is **incompatible with SimHub's Midi Controllers Input plugin**  
+- This plugin is **incompatible with SimHub's `Midi Controllers Input` plugin**  
     - Enabling both causes SimHub to crash!!!   
-- Like SimHub's `Midi Controllers Input` plugin,  
+- Like SimHub's **`Midi Controllers Input`** plugin,  
   **MIDIio** can automatically set CCn properties  for received CCn messages not already configured,  
   but (unlike SimHub's) from **only the single configured MIDI device**.  
-  This is expected to be used mostly for identifying CC numbers to configure.
+  Unconfigured CCs are expected to be used mostly for identifying CC numbers to configure.
 - SimHub bundles vJoy DLL v2.1.8, while [vJoy is v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
 - This plugin is configured using SimHub properties;&nbsp; it has NO interactive interface window.
     - configure this plugin by editing [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
@@ -67,3 +72,9 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *1 Feb 2024*  
 - [reduced log verbosity](docs/source.md#midiioini)
+
+*24 May 2025* `version 0.0.1.3`
+- tested vJoy axis with JSONio property;&nbsp; 0 to 100 range expected  
+- changed example MIDIio.ini to use VKB instead of SideWinder HOTAS  
+- test for non-zero `MIDIvJoy` setting (non-NULL VJD`) before logging missing `MIDIvJoybuttons` or `MIDIvJoyaxiss`  
+- bug fix:  test for null Darray[0-1] instead of (never) null Darray
