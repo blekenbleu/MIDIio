@@ -27,7 +27,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 #### Notes:
 - This plugin **was compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
   - It has not been comprehensively tested for SimHub changes since then
-  - This allows e.g. forwarding *real* `Controllers input` properties to MIDIout or vJoy;  
+  - This allows e.g. forwarding *real* DirectInput properties to MIDIout or vJoy;  
     **Do NOT** configure *vJoy* properties from `Controllers input`;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's `Midi Controllers Input` plugin**  
     - Enabling both causes SimHub to crash!!!   
@@ -46,7 +46,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 
     - **Configure button `CCn` Source events:**  
       ![button event names and actions](docs/events.png)  
-    - this is *not* (nor can it become) a "plug and play" solution;  
+    - this is *not* (nor will become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).  
 - **vJoy button numbering**  
     - Windows' `joy.cpl` and vJoy API consider the first button to be 1,  
@@ -78,3 +78,6 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - changed example MIDIio.ini to use VKB instead of SideWinder HOTAS  
 - test for non-zero `MIDIvJoy` setting (non-NULL VJD`) before logging missing `MIDIvJoybuttons` or `MIDIvJoyaxiss`  
 - bug fix:  test for null Darray[0-1] instead of (never) null Darray
+
+*24 May 2025* `version 0.0.1.4`
+- Release builds generate `MIDIio.zip`
