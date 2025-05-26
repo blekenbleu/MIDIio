@@ -23,6 +23,8 @@ namespace blekenbleu
 		internal static byte[] Size;
 		internal static byte[,] Dest;												// which VJD axis or button
 		internal static bool DoEcho;
+		internal static string SendCC = "watch this space", SentEvent = "watch this space",
+								CCin = "watch this space", Ping = "watch this space";
 		private static byte Level;
 		private bool[][] Once;
 		private int[][] Sent;														// remember and don't repeat
@@ -86,6 +88,85 @@ namespace blekenbleu
 			this.SaveCommonSettings("GeneralSettings", Settings);
 		}
 
+/*
+ ; Properties.SourceName[][] is an array of property names for other than MIDI
+ ; My + CCname[cc] MIDI properties correspond to Settings.Sent[cc]
+ ;
+ ; Accomodate device value range differences:
+ ; 0 <= MIDI cc and value < 128
+ ; 0 <= JoyStick property <= VJDmaxval
+ ; 0 <= ShakeIt property <= 100.0
+ */
+		/// <summary>
+		/// Called by DoSend() and Active() for each property change sent;
+		/// d (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;	i: destination address
+		/// s (source): 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;			p: source address
+		/// prop: source property name for error log
+		/// </summary>
+		internal void Send(double property, byte d, byte i, byte p, byte s, string prop)
+		{
+			int	a = (int)(0.5 + scale[d, s] * property);
+
+			if ( 0 > a || (3 > d && Sent[s][p] == a))		// Active() discards CC repeats
+				return;										// send only changed values
+
+			Sent[s][p] = a;
+			switch (d)
+			{
+				case 0:
+					if (VJD.Usage.Length > i)
+						VJD.Axis(i, a);						// 0-based axes
+					else Info($"Send({Properties.DestType[d]}): invalid axis {i} from {prop}");
+					break;
+				case 1:										// SimHub lists 0-based buttons; vJoy wants 1-based...
+					VJD.Button(++i, VJDmaxval < (2*a));	// VJDmaxval-based threshold
+					break;
+				case 2:
+					Outer.SendCCval(i, (byte)(0x7F & a));
+					break;
+				default:									// should be impossible
+					Log(1, $"Send(): property {prop} for mystery destination {d} with source {s}, address {p}");
+					break;
+			}
+		}													// Send()
+
+		/// <summary>
+		/// Called by DataUpdate(); calls Send()
+		/// index: 0=game; 1=Joystick Source property types
+		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
+		/// </summary>
+		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
+		{																	// handle 3: CC in Active()
+			byte[,] table = {{0, 3}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
+			byte d, i;														// destination type, index
+			string send;
+
+			for (byte s = table[index, 0]; s < table[index, 1]; s++)		// source type index
+				for (byte p = 0; p < Properties.SourceCt[s]; p++)			// index properties of a type
+				{
+					prop = Properties.SourceName[s][p];						// s: game, axis, button
+					d = Properties.SourceArray[s, 0, p];
+					i = Properties.SourceArray[s, 1, p];
+
+					if (!Once[s][p])
+						continue;										// skip unavailable properties
+
+					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
+					{
+						if (2 == s || 1 == index)							// null Joystick button properties until pressed
+							continue;
+
+						if (Once[s][p]) {									// 0 == index:  game running
+							Once[s][p] = false;								// configured property not available
+							Log(1, $"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
+						}
+					}
+					else if (0 == send.Length)
+						Log(1, $"DoSend({Properties.DestType[d]}): 0 length {prop}");
+					else Send(Convert.ToDouble(send), d, i, p, s, prop);
+				}
+		}			// DoSend()
+
 		private static int count = 0;
 		private static long VJDmaxval;
 		/// <summary>
@@ -97,7 +178,7 @@ namespace blekenbleu
 			// Log() level configuration
 			prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
 			Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
-			Log(8, $"log Level {Level}");
+			Log(4, $"log Level {Level}");
 
 // Load settings
 
@@ -169,6 +250,10 @@ namespace blekenbleu
 			Properties = new IOproperties();		// MIDI and vJoy property configuration
 			Dest = new byte[2 , size];				// for vJoy
 			Properties.Init(this);					// send unconfigured DoEchoes, set Dest[,] SendCt[,], sort Send[, ]
+			this.AttachDelegate("CCin", () => CCin);
+			this.AttachDelegate("Ping", () => Ping);
+			this.AttachDelegate("SendCC", () => SendCC);
+			this.AttachDelegate("SentEvent", () => SentEvent);
 
 			if (0 < MIDIin.Length)
 			{
@@ -194,15 +279,17 @@ namespace blekenbleu
 		}																			// Init()
 
 		/// <summary>
-		/// Called by Reader.OnEventReceived() for each MIDIin ControlChangeEvent
+		/// Called by INdrywet OnEventReceived() for each MIDIin ControlChangeEvent
 		/// track active CCs and save values
+		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
 		internal bool Active(byte CCnumber, byte value)								// returns true if first time
 		{
 			byte which = Properties.Which[CCnumber];
 
+			CCin = $"Active({CCnumber}, {value})";
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
-				return false;														// ignore unchanged values
+				return false;														// ignore known unchanged values
 
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < which)															// Known and changed?
@@ -213,7 +300,7 @@ namespace blekenbleu
 					this.TriggerEvent(Properties.CCname[CCnumber]);
 				}
 				if (0 < (56 & which))												// call Send()?
-					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each dt from each CCnumber
+					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each Route from each CCnumber
 						if (0 < (Properties.Route[d] & which))						// DestType flag
 						{
 							byte i = Properties.CCarray[d, Properties.Map[CCnumber]];
@@ -229,84 +316,6 @@ namespace blekenbleu
 																					// First time CC number seen
 			Properties.Which[CCnumber] = Properties.Unc;							// dynamic CC configuration
 			return Properties.CCprop(this, CCnumber);
-		}																			// Active()
-
-/*
- ; Properties.SourceName[][] is an array of property names for other than MIDI
- ; My + CCname[cc] MIDI properties correspond to Settings.Sent[cc]
- ;
- ; Accomodate device value range differences:
- ; 0 <= MIDI cc and value < 128
- ; 0 <= JoyStick property <= VJDmaxval
- ; 0 <= ShakeIt property <= 100.0
- */
-		/// <summary>
-		/// Called by DoSend() and Active() for each property change sent;
-		/// d (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;	i: destination address
-		/// s (source): 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;			p: source address
-		/// prop: source property name for error log
-		/// </summary>
-		internal void Send(double property, byte d, byte i, byte p, byte s, string prop)
-		{
-			int	a = (int)(0.5 + scale[d, s] * property);
-
-			if ( 0 > a || (3 > d && Sent[s][p] == a))		// Active() discards CC repeats
-				return;										// send only changed values
-
-			Sent[s][p] = a;
-			switch (d)
-			{
-				case 0:
-					if (VJD.Usage.Length > i)
-						VJD.Axis(i, a);						// 0-based axes
-					else Info($"Send({Properties.DestType[d]}): invalid axis {i} from {prop}");
-					break;
-				case 1:										// SimHub lists 0-based buttons; vJoy wants 1-based...
-					VJD.Button(++i, VJDmaxval < (2*a));	// VJDmaxval-based threshold
-					break;
-				case 2:
-					Outer.SendCCval(i, (byte)(0x7F & a));
-					break;
-				default:									// should be impossible
-					Log(1, $"Send(): property {prop} for mystery destination {d} with source {s}, address {p}");
-					break;
-			}
-		}													// Send()
-
-		/// <summary>
-		/// Called by DataUpdate(); calls Send()
-		/// index: 0=game; 1=Joystick Source property types
-		/// </summary>
-		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
-		{																	// handle 3: CC  in Active()
-			byte[,] table = {{0, 3}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
-			byte d, i;														// destination type, index
-			string send;
-
-			for (byte s = table[index, 0]; s < table[index, 1]; s++)		// source type index
-				for (byte p = 0; p < Properties.SourceCt[s]; p++)			// index properties of a type
-				{
-					prop = Properties.SourceName[s][p];						// s: game, axis, button
-					d = Properties.SourceArray[s, 0, p];
-					i = Properties.SourceArray[s, 1, p];
-
-					if (!Once[s][p])
-						continue;										// skip unavailable properties
-
-					if (null == (send = pluginManager.GetPropertyValue(prop)?.ToString()))
-					{
-						if (2 == s || 1 == index)							// null Joystick button properties until pressed
-							continue;
-
-						if (Once[s][p]) {									// 0 == index:  game running
-							Once[s][p] = false;								// configured property not available
-							Log(1, $"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
-						}
-					}
-					else if (0 == send.Length)
-						Log(1, $"DoSend({Properties.DestType[d]}): 0 length {prop}");
-					else Send(Convert.ToDouble(send), d, i, p, s, prop);
-				}
-		}			// DoSend()
+		}	// Active()
 	}				// class MIDIio
 }

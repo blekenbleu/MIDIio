@@ -21,7 +21,7 @@ namespace blekenbleu
 		{   // wasted a day not finding this documented
 			try
 			{
-				MIDIio.Log(8, $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)");
+				MIDIio.SendCC = $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)";
 				OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control,
 									   (SevenBitNumber)value) {Channel = (FourBitNumber)0});
 			}
@@ -39,7 +39,7 @@ namespace blekenbleu
 		internal bool Ping(SevenBitNumber num)					// gets called (indirectly, event->action) by INdrywet()
 		{
 			if (SendCCval(num, Latest)) {						// Ping(): drop pass from Active()
-				MIDIio.Log(8, $"Ping(): {CCout} CC{num} {Latest}");
+				MIDIio.Ping = $"Ping(): {CCout} CC{num} {Latest}";
 				return true;
 			}
 			else MIDIio.Log(1, CCout + " disabled");
@@ -56,7 +56,7 @@ namespace blekenbleu
 				OutputDevice = Melanchall.DryWetMidi.Devices.OutputDevice.GetByName(MIDIout);
 				OutputDevice.EventSent += OnEventSent;
 				OutputDevice.PrepareForEventsSending();
-				MIDIio.Log(8, "OUTwetdry(): Found " + MIDIout);
+				MIDIio.Log(4, "OUTwetdry(): Found " + MIDIout);
 			}
 			catch (Exception)
 			{
@@ -83,7 +83,7 @@ namespace blekenbleu
 			// this cute syntax is called pattern matching
 			if (Connected && e.Event is ControlChangeEvent CC)
 			{
-				MIDIio.Log(8, $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}");
+				MIDIio.SentEvent = $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}";
 				if ((0 == MIDIio.Properties.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
 				{
 					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber}" + MIDIio.Properties.CCname[CC.ControlNumber]);

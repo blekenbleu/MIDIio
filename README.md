@@ -6,7 +6,7 @@ For one MIDI source device and one MIDI destination device,
  this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
  converted to SimHub property values,
- for e.g. on-the-fly tweaking **ShakeIt Bass Shaker** effects.  
+ e.g. for tweaking **ShakeIt Bass Shaker** effects and controlling [JSONio](https://github.com/blekenbleu/JSONio).  
 Similarly, SimHub events and properties can be configured for buttons and axes from one Joystick device.  
 *Unconfigured* CC messages received either
 - dynamically generate new properties
@@ -35,10 +35,10 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
 - Like SimHub's **`Midi Controllers Input`** plugin,  
   **MIDIio** can automatically set CCn properties  for received CCn messages not already configured,  
   but (unlike SimHub's) from **only the single configured MIDI device**.  
-  Unconfigured CCs are expected to be used mostly for identifying CC numbers to configure.
-- SimHub bundles vJoy DLL v2.1.8, while [vJoy is v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
-- This plugin is configured using SimHub properties;&nbsp; it has NO interactive interface window.
-    - configure this plugin by editing [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
+- Unconfigured CCs for this device can be sorted by monitoring `CCin` in SimHub **Available properties**.
+- SimHub bundles vJoy DLL v2.2.2.0, while [vJoy driver v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
+- This plugin NO interactive interface window.
+    - to configure this plugin, edit [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
     - **check [System log](docs/SimHub.txt) for MIDI and/or vJoy related messages:**  
       ![log messages](docs/log.png)  
 

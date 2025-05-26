@@ -1,9 +1,11 @@
 ﻿namespace blekenbleu
 {
+	// saved between plugin runs
 	// these must be public
-	public class MIDIioSettings // saved while plugin restarts
+	public class MIDIioSettings
 	{
-		public byte[] CCvalue { get; set; } = 		// track values from MIDIio.DoSend()
+ 		// track values from MIDIio.DoSend()
+		public byte[] CCvalue { get; set; } =
 		{
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 			0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

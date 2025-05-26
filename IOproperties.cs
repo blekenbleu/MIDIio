@@ -8,13 +8,11 @@ namespace blekenbleu
 	// Working around the SimHub limitation that AttachDelegate() fails for variables.
 	internal class IOproperties
 	{
-		internal string[][] SourceName;				   		// these non-CC SourceType[] Property names may be sent at 60Hz to 3 DestType[]s
+		internal readonly string[] DestType = { "vJoyaxis", "vJoybutton", "CCsend" };	// destination prefixes to search
+		internal string[][] SourceName;				   		// these non-CC SourceType[] Property names may be sent at 60Hz to DestType[]s
 		internal byte[,,] 	SourceArray;					// Destination port,port index for 3 SourceType[]s
 		internal byte[,]	CCarray;						// Destination port index for CC source type
 		internal byte[]		SourceCt, Map;					// No skipping around;  Map CCnumber to CCarray[dt,] index
-
-		internal string[]   DestType;				  		// configuration by NCalc script
-
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
 		internal byte[]	 	Which, Wflag;					// CCtype
 		internal readonly byte Unc = 4, CC = 1, Button = 2;	// Wflag[] input type bits for Which[]
@@ -22,25 +20,6 @@ namespace blekenbleu
 		private  string[]	Ping;					  		// ping[0-7]
 		private  byte		size;
 		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};	// for SourceName[][], SourceArray[,,]
-/*
-		private string Join_strings(string s, string[] vector, byte length)
-		{
-			string sout = vector[0];
-
-			for (byte i = 1; i < length; i++)
-			sout += s + vector[i];
-			return sout;
-		}
-
-		private string Join_bytes(string s, byte[] vector, byte length)
-		{
-			string sout = vector[0].ToString();
-
-			for (byte i = 1; i < length; i++)
-			sout += s + vector[i].ToString();
-			return sout;
-		}
- */
 
         /// <summary>
         /// Called by Init(); adds source property data to CCname[], Which[]
@@ -114,7 +93,6 @@ namespace blekenbleu
  ; SourceCt[2] counts JoyStick button entries, SourceCt[3] counts CC entries
  ; DoSend(0) is called to index SourceName[0][] only when games are active.
  */
-			DestType =	new string[] { "vJoyaxis", "vJoybutton", "CCsend" };	// destination prefixes to search
 			size = MIDIio.size;
 			SourceName = new string[SourceType.Length][];					// CCname instead of SourceName[3]
 			SourceArray = new byte[SourceType.Length, 2, size];				// non-CC sources

@@ -147,7 +147,7 @@ namespace blekenbleu
 			count++;
 			if (0 < (31 & count))
 				return;
-			MIDIio.Log(8, $"VJd.Loop(): count = {count}");
+			MIDIio.Log(4, $"VJd.Loop(): count = {count}");
 
 			// Feed the device in endless loop
 			// Set axes positions
@@ -161,7 +161,7 @@ namespace blekenbleu
 
 			// Press/Release Buttons
 			uint set = 1 + (count >> 5) % nButtons, unset = 1 + (1 + (count >> 5)) % nButtons;
-			MIDIio.Log(8, $"VJd.Loop(): set {set};  unset {unset}");
+			MIDIio.Log(4, $"VJd.Loop(): set {set};  unset {unset}");
 			joystick.SetBtn(true, id, set);						// 1 <= nButtons <= 32
 			joystick.SetBtn(false, id, unset);
 		} 														// Loop()

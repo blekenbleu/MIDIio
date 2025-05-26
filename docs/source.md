@@ -14,54 +14,60 @@
 
 ### MIDIio.ini
 - [MIDIio.ini](../NCalcScripts/MIDIio.ini) contains NCalc properties for configuring **MIDIio**.  
-  It goes in `SimHub/NCalcScripts/`;&nbsp;  contents include:
-  - `MIDIin`:        name of source MIDI device
-  - `MIDIout`:       name of destination MIDI device
-  - `MIDIsliders`:   MIDI CC numbers `n` whose values are to be set as `slidern` properties.  
-  - `MIDIknobs`:     MIDI CC numbers `n` whose values are to be set as `knobn` properties,  
-                     handled identically to `MIDIsliders`  
-  - `MIDIbuttons`:   MIDI CC numbers `n` to be set as `CCn` properties and, when (values > 0), also raise events.  
-  - `MIDIsendn`:     name of e.g. a ShakeIt property whose value *changes* are sent to `MIDIout`  
-                      as `CCn` messages for `0 <= n < 8`.  
-                     A `pingn` action will be enabled for each configured `MIDIsendn`.  
-                     By mapping a `CC` **Source** to a `pingn` **Target** in SimHub's **Controls and events**,  
-                     the corresponding `MIDIin` device button can be used
-                     to help identify that `CCn` to a `MIDIout` application.  
-  - [`MIDIecho`](#midiecho):      if `0` or not defined, all received CC values `n` not otherwised configured  
-                     (in `MIDIsliders`, `MIDIknobs` or `MIDIbuttons`) are automatically created as `CCn` properties,  
-                     else (`MIDIecho > 0`) unconfigured MIDI messages are forwarded from `MIDIin` to `MIDIout`.
-  - [`MIDIlog`](#midilog)        Controls MIDIio's **[System Log](SimHub.txt)** [verbosity](#midilog);&nbsp; 0 is mostly only errors and 15 is maximally verbose.  
-  - `MIDIsize`	     Limits routing table size between game, vJoy and MIDI
-  - `MIDICCsends`    Index array of configured `MIDICCsendn`, where 0 <= n < 128
-  - `MIDIvJoy`       Non-zero enables vJoy button and axes outputs		
-  - `MIDIvJoybuttons` Index array of configured `MIDIvJoyB0x`, where 01 <= x < 16 Buttons
-                     as reported by `MIDIio.VJsend.Init() in the **[System Log](SimHub.txt)**
-  - `MIDIvJoyaxiss`   Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes
+  It goes in `SimHub/NCalcScripts/`;&nbsp; contents include:
+  - `MIDIin`:&nbsp; MIDI source device name
+  - `MIDIout`:&nbsp; MIDI destination device name
+  - `MIDIknobs`:&nbsp; MIDI CC numbers `n` whose values get set as `knobn` properties,  
+  - `MIDIsliders`:&nbsp; MIDI CC numbers `n` whose values get set as `slidern` properties.  
+                     handled identically to `MIDIknobs`  
+  - [`MIDIbuttons`](#midibuttons):&nbsp; MIDI CC numbers `n` to be set as `CCn` properties and also raise events.  
+  - [`MIDICCsendn`](#midiccsendn) `(0 <=n < 8)`:&nbsp; SimHub property name whose value *changes* are sent to `MIDIout`  
+  - `MIDICCsends`:&nbsp; Index array of configured `MIDICCsendn`, where 0 <= n < 128
+  - [`MIDIecho`](#midiecho):&nbsp; `MIDIin` CC message handling
+  - [`MIDIlog`](#midilog):&nbsp; Controls MIDIio's **[System Log](SimHub.txt)** [verbosity](#midilog);&nbsp; 0 is mostly only errors and 7 is maximally verbose.  
+  - `MIDIsize`:&nbsp; Limits routing table size between game, vJoy and MIDI
+  - `MIDIvJoy`:&nbsp; Non-zero enables vJoy button and axes outputs  
+  - `MIDIvJoyaxiss`:&nbsp; Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes  
+                     as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**
+  - `MIDIvJoybuttons`:&nbsp; Index array of configured `MIDIvJoyB0x`, where 01 <= x < 16 Buttons  
                      as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**  
 
+### MIDIbuttons
+- `MIDIbuttons` **Source** events can be mapped to **Target** actions in SimHub's **Controls and events**.  
+**SimHub limitation:**&nbsp; event and action handling works only during games or replays
+
+### MIDICCsendn
+- A `MIDIio.sendn` **Target** action is enabled for each configured `MIDICCsendn`.  
+**SimHub limitation:**&nbsp; event and action handling works only during games or replays
+
 ### MIDIecho
-`MIDIecho 1` forwards unconfigured `MIDIin` CC changed messages to `MIDIout`.  
-Un-echoed CC messages most recently sent to `MIDIout` are saved,  
-then resent when SimHub next launches the MIDIio plugin.  
-This is intended to enable resuming a MIDI configuration from time to time.  
-Duplicated send CC messages are NOT sent, to minimize traffic and CPU overhead.  
-In `MIDIecho 1` mode, only previously configured input and output properties may be used.  
-In `MIDIecho 0` mode, SimHub properties are dynamically generated for unconfigured input CC numbers, but not forwarded.  
-This allows learning MIDI controller CC numbers (by checking SimHUb's **Property** window),  
-for adding to `SimHub/NCalcScripts/MIDIio.ini`.  
+- most recent messages sent to  `MIDIout` for configured CCs  
+  get resent when SimHub next launches the MIDIio plugin.  
+  This is intended to restore MIDI device state (e.g. fader levels).
+  
+`MIDIecho 0`
+- dynamically generate SimHub properties for all unconfigured input CC numbers received
+
+`MIDIecho 1`
+- forward unconfigured `MIDIin` CC changed messages to `MIDIout`.  
 
 ### MIDIlog
-- 4 bit flags; valid values: 0 (exceptions and other errors), 1, 3, 7, 15 (trace many actions)
-- 0: exceptions not handled by code, things not working, e.g. misconfigured
-- 1: also I/O failures
-- 3: also unexpected events
-- 7: also initialization and configuration feedback
-- 15: also information, normal event tracing
+3 bit flags;&nbsp; valid values:  
+- 0:&nbsp; exceptions not handled by code, things not working, e.g. misconfigured
+- 1:&nbsp; also I/O failures
+- 3:&nbsp; also unexpected events
+- 7:&nbsp; also information, initialization and configuration feedback
 
 ### Evidence
-Here is some evidence of operational success (*26 Jan 2023*):  
-- **[MidiView](https://hautetechnique.com/midi/midiview/) trace screen**:  
+Here is some evidence of operational success (*26 May 2025*):  
+- `MIDIio.Unconfigured` property:&nbsp; the most recent unconfigured CC received  
+   This allows learning MIDI controller CC numbers (by checking SimHUb's **Property** window)
+- `MIDIio.SendCC` property:&nbsp; most recently sent
+- `MIDIio.OnEventSent` property:&nbsp; most recent `MIDIio.OnEventSent()`
+- **[MidiView](https://hautetechnique.com/midi/midiview/) trace screen** (*26 Jan 2023*):  
 ![](MidiView.png)  
+- SimHub vjoy properties, Game Controllers control panel vJoy device properties:  
+![](vJoyB.png)  
 
 - ... for this game replay:  
 ![](replay.png)  
@@ -70,4 +76,5 @@ Here is some evidence of operational success (*26 Jan 2023*):
 
  *updated 23 Feb 2023 for vJoy*  
  *updated 29 Jun 2023 for SimHub-provoked revisions*  
- *updated 1 Feb 2024 for MIDIlog explanations*
+ *updated 1 Feb 2024 for `MIDIlog` explanations*  
+ *updated 26 May 2025 for `MIDIlog`, `MIDIbuttons` and `MIDIsend` changes*
