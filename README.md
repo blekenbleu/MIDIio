@@ -3,18 +3,19 @@
 **Note**: &nbsp;  *requires a recent (9.X) version* of [SimHub](https://www.simhubdash.com/download-2/)  
 
 For one MIDI source device and one MIDI destination device,  
- this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob  
- [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,
- for e.g. on-the-fly tweaking suitably customized **ShakeIt Bass Shaker** effects.  
-Similarly, SimHub properties can be configured for buttons and axes from one Joystick device.  
-Unconfigured CC messages received either
+ this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob
+ [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
+ converted to SimHub property values,
+ for e.g. on-the-fly tweaking **ShakeIt Bass Shaker** effects.  
+Similarly, SimHub events and properties can be configured for buttons and axes from one Joystick device.  
+*Unconfigured* CC messages received either
 - dynamically generate new properties
 - or are forwarded to a target Device.  
 
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
+MIDIio can *also* generate [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
 reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
 MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled values from configured SimHub properties,
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
@@ -61,11 +62,11 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 #### SimHub v8.4.3 breakage  
 - JoystickPlugin properties are unavailable before MIDIio plugin Init() completes:
 ```
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_X for SourceName[1][0]^M
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Y for SourceName[1][1]^M
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0 for SourceName[1][2]^M
-[2023-06-18 09:52:41,551] INFO - Game successfully loaded^M
-[2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift^M 
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_X for SourceName[1][0]
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Y for SourceName[1][1]
+[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0 for SourceName[1][2]
+[2023-06-18 09:52:41,551] INFO - Game successfully loaded
+[2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift
 ```
 - changes described [here](docs/provoked.md)  
 - [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin  
@@ -75,8 +76,8 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *24 May 2025* `version 0.0.1.3`
 - tested vJoy axis with JSONio property;&nbsp; 0 to 100 range expected  
-- changed example MIDIio.ini to use VKB instead of SideWinder HOTAS  
-- test for non-zero `MIDIvJoy` setting (non-NULL VJD`) before logging missing `MIDIvJoybuttons` or `MIDIvJoyaxiss`  
+- changed example `MIDIio.ini` to use VKB instead of SideWinder HOTAS  
+- test for non-zero `MIDIvJoy` setting (non-NULL `VJD`) before logging missing `MIDIvJoybuttons` or `MIDIvJoyaxiss`  
 - bug fix:  test for null Darray[0-1] instead of (never) null Darray
 
 *24 May 2025* `version 0.0.1.4`
