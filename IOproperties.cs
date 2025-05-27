@@ -84,14 +84,14 @@ namespace blekenbleu
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
 			CCname = new string[128];				   						// Initialized to CC[0-128]
 
-/* DoSend() may send 4 property value source types to each of 3 DestType[]s  (vJoy axes, vJoy buttons, MIDIout)
- ; DoSend() has 3 property SourceType[]s: (game, JoyStick axis or button) and CCtype
- ; DoSend() indexes SourceName[st,,]s up to SourceCt[st].
+/* SendDo() may send 4 property value source types to each of 3 DestType[]s  (vJoy axes, vJoy buttons, MIDIout)
+ ; SendDo() has 3 property SourceType[]s: (game, JoyStick axis or button) and CCtype
+ ; SendDo() indexes SourceName[st,,]s up to SourceCt[st].
  : SourceCt[] and SourceArray[,,] first dimension is SourceType
  ; SourceName[st][] dimension is SourceType; last diminension is sequential configured indices < SourceCt[,]
  ; SourceCt[0] counts SourceName[0][] game entries, SourceCt[1] counts JoyStick axis entries,
  ; SourceCt[2] counts JoyStick button entries, SourceCt[3] counts CC entries
- ; DoSend(0) is called to index SourceName[0][] only when games are active.
+ ; SendDo(0) is called to index SourceName[0][] only when games are active.
  */
 			size = MIDIio.size;
 			SourceName = new string[SourceType.Length][];					// CCname instead of SourceName[3]

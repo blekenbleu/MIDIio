@@ -69,7 +69,7 @@ namespace blekenbleu
 		{
 			byte start = (byte)((data.GameRunning && data.OldData != null && data.NewData != null) ? 0 : 1);
 
-			DoSend(pluginManager, start);				// Send non-game property changes anytime (echo)
+			SendDo(pluginManager, start);				// Send non-game property changes anytime (echo)
 //			VJD.Loop();									// for testing: loops thru configured axes and buttons
 		}
 
@@ -97,7 +97,7 @@ namespace blekenbleu
  ; 0 <= ShakeIt property <= 100.0
  */
 		/// <summary>
-		/// Called by DoSend() and Active() for each property change sent;
+		/// Called by SendDo() and Active() for each property change sent;
 		/// d (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval;	i: destination address
 		/// s (source): 0=game; 1=Joy axis, 2=Joy button 3=MIDIin;			p: source address
 		/// prop: source property name for error log
@@ -134,13 +134,12 @@ namespace blekenbleu
 		/// index: 0=game; 1=Joystick Source property types
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
-		private void DoSend(PluginManager pluginManager, byte index)		// 0: game;	1: always
+		private void SendDo(PluginManager pluginManager, byte index)		// 0: game;	1: always
 		{																	// handle 3: CC in Active()
-			byte[,] table = {{0, 3}, {1, 3}};                               // source indices 0: game, 1: axis, 2: button
 			byte d, i;														// destination type, index
 			string send;
 
-			for (byte s = table[index, 0]; s < table[index, 1]; s++)		// source type index
+			for (byte s = index; s < 3; s++)		// source type index
 				for (byte p = 0; p < Properties.SourceCt[s]; p++)			// index properties of a type
 				{
 					prop = Properties.SourceName[s][p];						// s: game, axis, button
@@ -157,14 +156,14 @@ namespace blekenbleu
 
 						if (Once[s][p]) {									// 0 == index:  game running
 							Once[s][p] = false;								// configured property not available
-							Log(1, $"DoSend({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
+							Log(1, $"SendDo({Properties.DestType[d]}): null {prop} from SourceName[{s}][{p}]");
 						}
 					}
 					else if (0 == send.Length)
-						Log(1, $"DoSend({Properties.DestType[d]}): 0 length {prop}");
+						Log(1, $"SendDo({Properties.DestType[d]}): 0 length {prop}");
 					else Send(Convert.ToDouble(send), d, i, p, s, prop);
 				}
-		}			// DoSend()
+		}			// SendDo()
 
 		private static int count = 0;
 		private static long VJDmaxval;
