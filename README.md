@@ -97,3 +97,8 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *25 May 2025* `version 0.0.1.6`  
 - fix unconfigured source CC logic
+
+*25 May 2025* `version 0.0.1.7`
+- `MIDIio.ini` comment strings
+- updated .png's
+- rename `ping` Actions to `send`
