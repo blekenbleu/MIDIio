@@ -2,7 +2,7 @@
 
 **Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
 
-For one MIDI source device, one MIDI destination device, and optionally one vJoy destincation device,  
+For one each MIDI source, destination, and optionally vJoy destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
  SimHub properties and Joystick buttons and axes.&nbsp;  Configured sources are also available  
@@ -11,18 +11,18 @@ For one MIDI source device, one MIDI destination device, and optionally one vJoy
 
 Similarly, SimHub property values can be rescaled and sent as CCs and vJoy buttons and axes.  
 *Unconfigured* CC messages received are optionally forwarded to destination MIDI,  
-enabling some source MIDI CCs to directly control the destination MIDI.
+enabling those source MIDI CCs to directly control the destination MIDI.
 
-MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
+MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,  
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis vJoy inputs for games,
+MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis vJoy inputs for games,  
 reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
-MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) sends are rescaled values from configured SimHub properties,
+MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can include rescaled SimHub properties,  
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
 
-MIDI CC *value changes* can optionally be configured as SimHub *Events*,  
-and MIDI CC *values* can be sent as SimHub *Actions*.  
+MIDI CC *value changes* can optionally be configured (by 'MIDICCsends') as SimHub *Events*,  
+with *values* sent as SimHub *Actions*.  
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
