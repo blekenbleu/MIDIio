@@ -2,23 +2,24 @@
 
 **Note**: &nbsp;  *requires a recent (9.X) version* of [SimHub](https://www.simhubdash.com/download-2/)  
 
-For one MIDI source device and one MIDI destination device,  
- this [SimHub](https://github.com/SHWotever/SimHub) plugin routes configured Button, Slider and Knob
+For one MIDI source device, one MIDI destination device, and one vJoy destincation device,  
+ this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
- converted to SimHub property values,
+ properties and Joystick buttons and axes.&nbsp  Configured sources are also available as properties  
  e.g. for tweaking **ShakeIt Bass Shaker** effects and controlling [JSONio](https://github.com/blekenbleu/JSONio).  
-Similarly, SimHub events and properties can be configured for buttons and axes from one Joystick device.  
-*Unconfigured* CC messages received either
-- dynamically generate new properties
-- or are forwarded to a target Device.  
+Similarly, SimHub properties can be sent as CCs and vJoy buttons and axes.  
+*Unconfigured* CC messages received are optionally forwarded to destination MIDI.
 
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio can *also* generate [DirectInput](https://blekenbleu.github.io/Windows/HID.md) Button and Axis joystick inputs for games,
+MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis vJoy inputs for games,
 reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
-MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled values from configured SimHub properties,
+MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) sends are rescaled values from configured SimHub properties,
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
+
+In addition to being sent immediately, MIDI source CC value changes can be configured as SimHub events,  
+and MIDI source CC values can be sent as SimHub Actions.  
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
@@ -37,7 +38,7 @@ MIDI CCs and [vJoy](https://blekenbleu.github.io/Windows/HID) sends are rescaled
   but (unlike SimHub's) from **only the single configured MIDI device**.  
 - Unconfigured CCs for this device can be sorted by monitoring `CCin` in SimHub **Available properties**.
 - SimHub bundles vJoy DLL v2.2.2.0, while [vJoy driver v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
-- This plugin NO interactive interface window.
+- This plugin has NO interactive user interface.
     - to configure this plugin, edit [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
     - **check [System log](docs/SimHub.txt) for MIDI and/or vJoy related messages:**  
       ![log messages](docs/log.png)  
@@ -69,7 +70,6 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 [2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift
 ```
 - changes described [here](docs/provoked.md)  
-- [`Poller.cs` thread class used by `ThrustmasterLEDControllerPlugin.cs`](https://gitlab.com/prodigal.knight/simhub-thrustmaster-wheel-led-controller) plugin  
 
 *1 Feb 2024*  
 - [reduced log verbosity](docs/source.md#midiioini)
@@ -82,3 +82,9 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *24 May 2025* `version 0.0.1.4`
 - Release builds generate `MIDIio.zip`
+
+*25 May 2025* `version 0.0.1.5`  
+- CCin, Ping and SentEvent trace properties
+
+*25 May 2025* `version 0.0.1.6`  
+- fix unconfigured source CC logic

@@ -21,7 +21,6 @@ namespace blekenbleu
 		{   // wasted a day not finding this documented
 			try
 			{
-				MIDIio.SendCC = $"SendCC(): OutputDevice.SendEvent({control}, {value}, 0)";
 				OutputDevice.SendEvent(new ControlChangeEvent((SevenBitNumber)control,
 									   (SevenBitNumber)value) {Channel = (FourBitNumber)0});
 			}

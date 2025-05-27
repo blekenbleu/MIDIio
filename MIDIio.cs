@@ -23,8 +23,7 @@ namespace blekenbleu
 		internal static byte[] Size;
 		internal static byte[,] Dest;												// which VJD axis or button
 		internal static bool DoEcho;
-		internal static string SendCC = "watch this space", SentEvent = "watch this space",
-								CCin = "watch this space", Ping = "watch this space";
+		internal static string SentEvent = "watch this space", CCin = "watch this space", Ping = "watch this space";
 		private static byte Level;
 		private bool[][] Once;
 		private int[][] Sent;														// remember and don't repeat
@@ -252,7 +251,6 @@ namespace blekenbleu
 			Properties.Init(this);					// send unconfigured DoEchoes, set Dest[,] SendCt[,], sort Send[, ]
 			this.AttachDelegate("CCin", () => CCin);
 			this.AttachDelegate("Ping", () => Ping);
-			this.AttachDelegate("SendCC", () => SendCC);
 			this.AttachDelegate("SentEvent", () => SentEvent);
 
 			if (0 < MIDIin.Length)
@@ -260,11 +258,11 @@ namespace blekenbleu
 				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
 				if(Reader.Init(MIDIin, this))
-					Properties.Attach(this);										// AttachDelegate buttons, sliders and knobs
+					Properties.Attach(this);									// AttachDelegate buttons, sliders and knobs
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
 
-			Once = new bool[Properties.SourceCt.Length][];							// null game properties
+			Once = new bool[Properties.SourceCt.Length][];						// null game properties
 			Sent = new int[Properties.SourceCt.Length][];
 			for (s = 0; s < Properties.SourceCt.Length; s++)
 			{
@@ -276,46 +274,47 @@ namespace blekenbleu
 					Sent[s][p] = 222;
 				}
 			}
-		}																			// Init()
+		}																		// Init()
 
 		/// <summary>
 		/// Called by INdrywet OnEventReceived() for each MIDIin ControlChangeEvent
 		/// track active CCs and save values
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
-		internal bool Active(byte CCnumber, byte value)								// returns true if first time
+		internal bool Active(byte CCnumber, byte value)							// returns true if first time
 		{
 			byte which = Properties.Which[CCnumber];
 
 			CCin = $"Active({CCnumber}, {value})";
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
-				return false;														// ignore known unchanged values
+				return false;													// ignore known unchanged values
 
 			Settings.CCvalue[CCnumber] = value;
-			if (0 < which)															// Known and changed?
+			if (0 < (Properties.Button & which))
 			{
-				if (0 < (Properties.Button & which))
-				{
-					Outer.Latest = value;											// drop pass to Ping()
-					this.TriggerEvent(Properties.CCname[CCnumber]);
-				}
-				if (0 < (56 & which))												// call Send()?
-					for (byte d = 0; d < Properties.Route.Length; d++)				// at most one Send() to each Route from each CCnumber
-						if (0 < (Properties.Route[d] & which))						// DestType flag
-						{
-							byte i = Properties.CCarray[d, Properties.Map[CCnumber]];
-							Send((double)value, d, i, 0, 3, Properties.CCname[CCnumber]);
-						}
+				Outer.Latest = value;										// drop pass to Ping()
+				this.TriggerEvent(Properties.CCname[CCnumber]);
+			}
+			if (0 < (56 & which))                                           // call Send()?
+			{
+				for (byte dt = 0; dt < Properties.Route.Length; dt++)		// at most one Send() per DestType from each CCnumber
+					if (0 < (Properties.Route[dt] & which))					// DestType flag
+					{
+						byte address = Properties.CCarray[dt, Properties.Map[CCnumber]];
+						Send((double)value, dt, address, 0, 3, Properties.CCname[CCnumber]);
+					}
 
 				return false;
 			}
 
 			if (DoEcho)
-				return Outer.SendCCval(CCnumber, value);							// do not CCprop()
+				Outer.SendCCval(CCnumber, value);
 
-																					// First time CC number seen
-			Properties.Which[CCnumber] = Properties.Unc;							// dynamic CC configuration
-			return Properties.CCprop(this, CCnumber);
+			if (0 < which)
+				return false;
+
+			Properties.Which[CCnumber] = Properties.Unc;					// First time CC number seen
+			return Properties.CCprop(this, CCnumber);						// dynamic CC configuration
 		}	// Active()
 	}				// class MIDIio
 }
