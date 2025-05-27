@@ -12,12 +12,12 @@ namespace blekenbleu
 		internal string[][] SourceName;				   		// these non-CC SourceType[] Property names may be sent at 60Hz to DestType[]s
 		internal byte[,,] 	SourceArray;					// Destination port,port index for 3 SourceType[]s
 		internal byte[,]	CCarray;						// Destination port index for CC source type
-		internal byte[]		SourceCt, Map;					// No skipping around;  Map CCnumber to CCarray[dt,] index
+		internal byte[]		SourceCt, Map;					// Map CCnumber to CCarray[dt,] index
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate();  CCn names get replaced by configured CCtype's
 		internal byte[]	 	Which, Wflag;					// CCtype
 		internal readonly byte Unc = 4, CC = 1, Button = 2;	// Wflag[] input type bits for Which[]
 		internal readonly byte[] Route = {8, 16, 32};		// Which[] flags for near-real-time MIDIin forwarding
-		private  string[]	Ping;					  		// ping[0-7]
+		private  string[]	Send;					  		// send[0-7]
 		private  byte		size;
 		private readonly string[] SourceType = {"game", "Joystick axis", "Joystick button"};	// for SourceName[][], SourceArray[,,]
 
@@ -126,9 +126,9 @@ namespace blekenbleu
 					if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
 						MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
-			Ping = new string[MIDIio.Size[2]];
+			Send = new string[MIDIio.Size[2]];
 			for (j = 0; j < MIDIio.Size[2]; j++)
-				Ping[j] = "ping" + j;
+				Send[j] = "send" + j;
 
 // 1) initialize CC
 
@@ -162,7 +162,7 @@ namespace blekenbleu
 // 2) Collect configured MIDIin Which[] and CCname[] properties
 
 			// Collect MIDIin properties from MIDIio.ini
-			for (ct = 1; ct < CCtype.Length; ct++)				// skipping CCtype[0]: Unconfigured
+			for (ct = 1; ct < CCtype.Length; ct++)				// skip CCtype[0]: Unconfigured
 			{
 				string type = MIDIio.Ini + CCtype[ct];			// "slider", "knob", "button"
 				string property = I.PluginManager.GetPropertyValue(type + 's')?.ToString();
@@ -319,35 +319,35 @@ namespace blekenbleu
 		private void Action(MIDIio I, byte bn, byte CCnumber)
 		{
 			I.AddEvent(CCname[CCnumber]);
-			if (bn < Ping.Length)
+			if (bn < Send.Length)
 				switch (bn)				// configure button property and event
 				{
 					case 0:
-						I.AddAction(Ping[0],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)0));
+						I.AddAction(Send[0],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)0));
 						break;
 					case 1:
-						I.AddAction(Ping[1],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)1));
+						I.AddAction(Send[1],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)1));
 						break;
 					case 2:
-						I.AddAction(Ping[2],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)2));
+						I.AddAction(Send[2],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)2));
 						break;
 					case 3:
-						I.AddAction(Ping[3],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)3));
+						I.AddAction(Send[3],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)3));
 						break;
 					case 4:
-						I.AddAction(Ping[4],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)4));
+						I.AddAction(Send[4],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)4));
 						break;
 					case 5:
-						I.AddAction(Ping[5],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)5));
+						I.AddAction(Send[5],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)5));
 						break;
 					case 6:
-						I.AddAction(Ping[6],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)6));
+						I.AddAction(Send[6],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)6));
 						break;
 					case 7:
-						I.AddAction(Ping[7],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)7));
+						I.AddAction(Send[7],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)7));
 						break;
 					default:
-						MIDIio.Info($"Action(): invalid Ping[{bn}] for {CCnumber}");
+						MIDIio.Info($"Action(): invalid Send[{bn}] for {CCnumber}");
 						break;
 				}
 		}
