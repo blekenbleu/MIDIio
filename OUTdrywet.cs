@@ -45,7 +45,7 @@ namespace blekenbleu
 			return false;
 		}
 
-		internal void Init(String MIDIout)
+		internal bool Init(String MIDIout)
 		{
 			CCout = MIDIout;
 			Connected = true;	   								// assume the best
@@ -60,12 +60,13 @@ namespace blekenbleu
 			catch (Exception)
 			{
 				Connected = false;
-				MIDIio.Size[2] = 0;
 				string s = $"OUTdrywet.Init():  Failed to find {MIDIout};  found devices:";
 				foreach (var outputDevice in Melanchall.DryWetMidi.Devices.OutputDevice.GetAll())
 					s += "\n\t" + outputDevice.Name;
 				MIDIio.Info(s + "\n");
+				return false;
 			}
+			return true;
 		}
 
 		internal void End()

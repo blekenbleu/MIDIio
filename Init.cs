@@ -7,10 +7,19 @@ namespace blekenbleu
 {
 	public partial class MIDIio
 	{
-		private static int count = 0;
-		private static long VJDmaxval;
+		internal static byte CCSize = 8;												// hard-coded CC send Action count
+		internal static byte size = 8;												// default configurable array size
+		internal static bool DoEcho;
+		private  string prop, MIDIin, MIDIout;
+		private  static long VJDmaxval = 65535;
+		private  bool[][] Once;
+		private  int[][] Sent;														// remember and don't repeat
+		private  double[,] scale;
+		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
+		internal static string SentEvent = "watch this space", CCin = "watch this space", Ping = "watch this space";
+
 		/// <summary>
-		/// Called at SimHub start then after game changes
+		/// Called at SimHub start and restarts
 		/// </summary>
 		/// <param name="pluginManager"></param>
 		public void Init(PluginManager pluginManager)
@@ -21,11 +30,10 @@ namespace blekenbleu
 			Log(4, $"log Level {Level}");
 
 // Load settings
-
-			Settings = this.ReadCommonSettings<MIDIioSettings>("GeneralSettings", () => new MIDIioSettings());
+			Settings = this.ReadCommonSettings("GeneralSettings", () => new MIDIioSettings());
 
 			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
-			DoEcho = (null != prop && 0 < Int32.Parse(prop));
+			DoEcho = null != prop && 0 < int.Parse(prop);
 			MIDIout = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
 			if (null == MIDIout || 0 == MIDIout.Length)
 			{
@@ -43,8 +51,6 @@ namespace blekenbleu
 			if (0 < MIDIin.Length && 0 < MIDIout.Length)
 				Info(version + (DoEcho ? ": " : ":  not") + " forwarding unconfigured " + MIDIin + " CCs to " + MIDIout);
 			else Info(version);
-			count += 1;		// increments for each restart, provoked e.g. by game change or restart
-			pluginManager.AddProperty(My + "Init().count", this.GetType(), count);
 
 			int s = size;
 			prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
@@ -54,42 +60,31 @@ namespace blekenbleu
 				Info($"Init(): invalid {Ini + "size"} {prop} = {s}; defaulting to {size}");
 			else size = (byte)s;
 
-			Size = new byte[] { size, size, size };	// vJoy axes, vJoy buttons, CC sends
-			if (null == MIDIout || 0 == MIDIout.Length)
-				Size[2] = 0;
-
+			// vJoy axes, vJoy buttons, CC sends
 			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
 			if (null != prop && 1 == prop.Length && ("0" != prop))
 			{
 				VJD = new VJsend();				// vJoy
 				VJDmaxval = VJD.Init(1);		// obtain vJoy parameters
-				if (size > VJD.nAxes)
-					Size[0] = VJD.nAxes;
-				if (size > VJD.nButtons)
-					Size[1] = VJD.nButtons;
 			}
-			else
-			{
-				VJDmaxval = 65535;
-				Size[0] = Size[1] = 0;
-			}
-			double vMax = (double)VJDmaxval;
-								   // game			Joystick axis	button	MIDIin
-			scale = new double[,] {	{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127.0 },	// vJoy axis
-						 			{ vMax/100.0,	vMax/65535.0,	vMax,	vMax/127.0 },	// vJoy button
-									{ 1.27,			127.0/65535.0,  127,	1.0		   }};	// MIDIout
+
+			double vMax100 = VJDmaxval/100, vMaxJa = VJDmaxval / 65535, vMaxCC = VJDmaxval / 127;
+								   // game		Joystick axis	button		MIDIin
+			scale = new double[,] {	{ vMax100,	vMaxJa,			VJDmaxval,	vMaxCC },	// vJoy axis
+						 			{ vMax100,	vMaxJa,			VJDmaxval,	vMaxCC },	// vJoy button
+									{ 1.27,		127.0/65535,	127.0,		1.0	   }};	// MIDIout
 
 			// Launch Outer before Reader and Properties
-			if (0 < MIDIout.Length)
+			if (null != MIDIout && 0 < MIDIout.Length)
 			{
-				pluginManager.AddProperty("out", this.GetType(), MIDIout);
 				Outer = new OUTdrywet();
-				Outer.Init(MIDIout);	// may zero Size[2]
-			}
+				if (Outer.Init(MIDIout))
+					pluginManager.AddProperty("out", this.GetType(), MIDIout);
+				else CCSize = 0;
+			}	else CCSize = 0;
 
 			Properties = new IOproperties();		// MIDI and vJoy property configuration
-			Dest = new byte[2 , size];				// for vJoy
-			Properties.Init(this);					// send unconfigured DoEchoes, set Dest[,] SendCt[,], sort Send[, ]
+			Properties.Init(this, CCSize);			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			this.AttachDelegate("CCin", () => CCin);
 			this.AttachDelegate("Ping", () => Ping);
 			this.AttachDelegate("SentEvent", () => SentEvent);

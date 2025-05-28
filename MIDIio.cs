@@ -8,24 +8,14 @@ namespace blekenbleu
 	[PluginName("MIDIio")]
 	public partial class MIDIio : IPlugin, IDataPlugin
 	{
+		private static byte Level;
+		internal static readonly string My = "MIDIio.";								// SimHub Plugin Name + '.'
 		internal MIDIioSettings Settings;
 		internal static IOproperties Properties;
 		internal VJsend VJD;
 		internal INdrywet Reader;
 		internal OUTdrywet Outer;
-		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-		internal static readonly string My = "MIDIio.";								// SimHub Plugin Name + '.'
-		internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
-		internal static byte size = 8;												// default configurable output count
-		internal static byte[] Size;
-		internal static byte[,] Dest;												// which VJD axis or button
-		internal static bool DoEcho;
-		internal static string SentEvent = "watch this space", CCin = "watch this space", Ping = "watch this space";
-		private static byte Level;
-		private bool[][] Once;
-		private int[][] Sent;														// remember and don't repeat
-		private string prop, MIDIin, MIDIout;
-		private  double[,] scale;
+//		internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
 
 		/// <summary>
 		/// wraps SimHub.Logging.Current.Info(); prefixes MIDIio.My

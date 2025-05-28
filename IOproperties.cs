@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using SimHub.Plugins;
 
 namespace blekenbleu
@@ -65,7 +64,8 @@ namespace blekenbleu
 			{
 				SourceName[st][SourceCt[st]] = prop;
 				SourceArray[st, 0, SourceCt[st]] = dt;
-				SourceArray[st, 1, SourceCt[st]++] = dev_address;
+				SourceArray[st, 1, SourceCt[st]] = dev_address;
+				SourceCt[st]++;
 			}
 			else MIDIio.Info($"Properties.Source({SourceType[st]}): property size {size} exceeded;\n\t\t"
 					+ $"ignoring {DestType[dt]} property {dp}:  {prop}");
@@ -76,7 +76,7 @@ namespace blekenbleu
         /// <summary>
         /// Calls Source() and WhichCC() to build MIDI and vJoy routing tables
         /// </summary>
-		internal void Init(MIDIio I)
+		internal void Init(MIDIio I, byte CCSize)
 		{																	// CC configuration property types
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
 			Wflag = new byte[] { Unc, CC, CC, Button };						// Which type flag bits
@@ -126,12 +126,11 @@ namespace blekenbleu
 					if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
 						MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
-			Send = new string[MIDIio.Size[2]];
-			for (j = 0; j < MIDIio.Size[2]; j++)
+			Send = new string[CCSize];
+			for (j = 0; j < CCSize; j++)
 				Send[j] = "send" + j;
 
 // 1) initialize CC
-
 			for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
 			{
 				CCname[j] = "CC" + j;
@@ -160,7 +159,6 @@ namespace blekenbleu
 			}
 
 // 2) Collect configured MIDIin Which[] and CCname[] properties
-
 			// Collect MIDIin properties from MIDIio.ini
 			for (ct = 1; ct < CCtype.Length; ct++)				// skip CCtype[0]: Unconfigured
 			{
@@ -192,7 +190,6 @@ namespace blekenbleu
    			// all configured MIDIin properties are now in CCname[] and Which[]
 
 // 3) Now use Darray[] to collect SourceName[][], SourceArray[,,], CCarray[,], Map[]
-
 			string dp;
 			for (dt = 0; dt < DestType.Length; dt++)									// vJoy axis, vJoy button, CC
 			{
@@ -239,7 +236,6 @@ namespace blekenbleu
 			}
 
 // 4) optionally log
-
 			if (MIDIio.Log(4, ""))
 			{
 				string s = "";
@@ -301,7 +297,6 @@ namespace blekenbleu
 
 
 // End of Init();  beginning of End()
-
 		internal void End(MIDIio I)
 		{
 			byte ct; 
@@ -749,12 +744,11 @@ namespace blekenbleu
 		}	// CCprop()
 
 // call CCprop to AttachDelegate() configured MIDIin properties
-
 		internal void Attach(MIDIio I)
 		{
 			byte j, cc, pt;
 
-			if (0 < MIDIio.Size[2] && MIDIio.Log(4, ""))
+			if (0 < MIDIio.CCSize && MIDIio.Log(4, ""))
 			{
 				string s = "Attach() non-MIDI source properties:\n";
 
@@ -779,7 +773,7 @@ namespace blekenbleu
 
 			// MIDIin property configuration is now complete
 
-			if (!MIDIio.DoEcho)
+			if (MIDIio.DoEcho)
 			{
 				for (j = cc = 0; cc < 128; cc++)
 					if (0 < (Unc & Which[cc]))

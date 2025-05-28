@@ -75,7 +75,7 @@ namespace blekenbleu
 
 						if (Once[source][p]) {								// 0 == always:  game running
 							Once[source][p] = false;						// configured property not available
-							Log(1, $"SendIf({Properties.DestType[dt]}): null {prop} from SourceName[{s}][{p}]");
+							Log(1, $"SendIf({Properties.DestType[dt]}): null {prop} from SourceName[{source}][{p}]");
 						}
 					}
 					else if (0 == value.Length)
