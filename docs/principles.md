@@ -80,8 +80,7 @@ Any *destination* property may be configured from one of 6 *source* property typ
 **MIDIio** refreshes destinations for all but the first (i.e. non-game) source types even when a game is not running;  
 game property changes are forwarded *only while games run*.  
 
-To [minimize runtime overhead](Which.md), output (from `DoSend()`) is table driven:  
--  2 `table[][]` entries index ranges of `SourceType` indices to send with games running [0] or anytime [1]  
+To [minimize runtime overhead](Which.md), output (from `SendIf()`) is table driven:  
 -  `SourceArray[,]` entries index ranges of `vJoy axis` and `vJoy button` destinations  
    for configured game, `JoyStick axis`, and `JoyStick button` source properties.  
 -  `CCarray[,]` entries index source properties destined to `MIDIout`.

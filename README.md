@@ -5,8 +5,9 @@
 For one each MIDI source, destination, and optionally vJoy destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
- SimHub properties and Joystick buttons and axes.&nbsp;  Configured sources are also available  
- as **SimHub properties** e.g. for tweaking **ShakeIt Bass Shaker** effects and controlling [**JSONio**](https://github.com/blekenbleu/JSONio):  
+ SimHub properties and Joystick buttons and axes.  
+MIDIio source values are made available as **SimHub properties**, e.g.  
+for tweaking **ShakeIt Bass Shaker** effects and controlling [**JSONio**](https://github.com/blekenbleu/JSONio):  
 ![](docs/properties.png)  
 
 Similarly, SimHub property values can be rescaled and sent as CCs and vJoy buttons and axes.  
