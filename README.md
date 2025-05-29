@@ -103,3 +103,9 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - `MIDIio.ini` comment strings
 - updated .png's
 - rename `ping` Actions to `send`
+
+*25 May 2025* `version 0.0.2.3`
+- debug properties: oops, prop, Ping, VJsent, CCin, CCsent, in, out
+- replace fixed size SourceName array by SourceList
+- relocated and debugged Sent[][] anti-duplication
+- simplified Send();  move rescale to Active() and SendIf()

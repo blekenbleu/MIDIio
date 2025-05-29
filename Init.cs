@@ -10,13 +10,14 @@ namespace blekenbleu
 		internal static byte CCSize = 8;											// hard-coded CC send Action count
 		internal static byte size = 8;												// default configurable array size
 		internal static bool DoEcho;
-		private  string prop, MIDIin, MIDIout;
+		private  string MIDIin, MIDIout;
 		private  static long VJDmaxval = 65535;
 		private  bool[][] Once;
-		private  int[][] Sent;														// remember and don't repeat
+		private  ushort[][] Sent;														// remember and don't repeat
 		private  double[,] scale;
 		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
 		internal static string CCsent = "watch this space", CCin = "watch this space", Ping = "watch this space";
+		internal static string VJsent = "watch this space", oops = "watch this space", prop = "watch this space";
 
 		/// <summary>
 		/// Called at SimHub start and restarts
@@ -68,7 +69,7 @@ namespace blekenbleu
 				VJDmaxval = VJD.Init(1);		// obtain vJoy parameters
 			}
 
-			double vMax100 = VJDmaxval/100, vMaxJa = VJDmaxval / 65535, vMaxCC = VJDmaxval / 127;
+			double vMax100 = VJDmaxval/100.0, vMaxJa = VJDmaxval / 65535.0, vMaxCC = VJDmaxval / 127.0;
 								   // game		Joystick axis	button		MIDIin
 			scale = new double[,] {	{ vMax100,	vMaxJa,			VJDmaxval,	vMaxCC },	// vJoy axis
 						 			{ vMax100,	vMaxJa,			VJDmaxval,	vMaxCC },	// vJoy button
@@ -88,6 +89,9 @@ namespace blekenbleu
 			this.AttachDelegate("CCin", () => CCin);
 			this.AttachDelegate("Ping", () => Ping);
 			this.AttachDelegate("CCsent", () => CCsent);
+			this.AttachDelegate("VJsent", () => VJsent);
+			this.AttachDelegate("oops", () => oops);
+			this.AttachDelegate("prop", () => prop);
 
 			if (0 < MIDIin.Length)
 			{
@@ -98,12 +102,12 @@ namespace blekenbleu
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
 
-			Once = new bool[Properties.SourceCt.Length][];						// null game properties
-			Sent = new int[Properties.SourceCt.Length][];
+			Once = new bool[Properties.SourceCt.Length][];			// null game properties
+			Sent = new ushort[Properties.SourceCt.Length][];		// duplicated send values
 			for (s = 0; s < Properties.SourceCt.Length; s++)
 			{
 				Once[s] = new bool[Properties.SourceCt[s]];
-				Sent[s] = new int[Properties.SourceCt[s]];
+				Sent[s] = new ushort[Properties.SourceCt[s]];
 				for (byte p = 0; p < Properties.SourceCt[s]; p++)
 				{
 					Once[s][p] = true;
