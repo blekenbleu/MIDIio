@@ -7,7 +7,7 @@ namespace blekenbleu
 {
 	public partial class MIDIio
 	{
-		internal static byte CCSize = 8;												// hard-coded CC send Action count
+		internal static byte CCSize = 8;											// hard-coded CC send Action count
 		internal static byte size = 8;												// default configurable array size
 		internal static bool DoEcho;
 		private  string prop, MIDIin, MIDIout;
@@ -34,6 +34,9 @@ namespace blekenbleu
 
 			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
 			DoEcho = null != prop && 0 < int.Parse(prop);
+			if (!DoEcho)
+				for (byte i = 0; i < Settings.CCvalue.Length; i++)
+					Settings.CCvalue[i] = 0;
 			MIDIout = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
 			if (null == MIDIout || 0 == MIDIout.Length)
 			{

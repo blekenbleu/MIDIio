@@ -7,7 +7,7 @@ namespace blekenbleu
 	{
 /*
  ; Properties.SourceName[][] is an array of property names for other than MIDI
- ; My + CCname[cc] MIDI properties correspond to Settings.Sent[cc]
+ ; My + CCname[cc] MIDI properties correspond to Settings.CCvalue[cc]
  ;
  ; Accomodate device value range differences:
  ; 0 <= MIDI cc and value < 128
