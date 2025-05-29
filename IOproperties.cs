@@ -67,7 +67,7 @@ namespace blekenbleu
 				SourceArray[st, 1, SourceCt[st]] = dev_address;
 				SourceCt[st]++;
 			}
-			else MIDIio.Info($"Properties.Source({SourceType[st]}): property size {size} exceeded;\n\t\t"
+			else MIDIio.Info($"IOProperties.Source({SourceType[st]}): property size {size} exceeded;\n\t\t"
 					+ $"ignoring {DestType[dt]} property {dp}:  {prop}");
 			return;
 		}
@@ -109,7 +109,7 @@ namespace blekenbleu
 
 				// configured destination indices
 				string ds = I.PluginManager.GetPropertyValue(pts = MIDIio.Ini + DestType[dt] + 's')?.ToString();
-				if (null == ds && (dt < first || MIDIio.Info($"Properties.Init(): {DestType[dt]} property '{pts}' not found")))
+				if (null == ds && (dt < first || MIDIio.Info($"IOProperties.Init(): {DestType[dt]} property '{pts}' not found")))
 					continue;
 
 				// bless the Internet: split comma separated integers
@@ -117,48 +117,41 @@ namespace blekenbleu
 			}
 
 			if (null != Darray[0] && null != I.VJD)
-				for (j = 0; j < Darray[0].Length; j++)							// valid vJoy axes address?
+				for (j = 0; j < Darray[0].Length; j++)						// valid vJoy axes address?
 					if (I.VJD.Usage.Length <= Darray[0][j])
-						MIDIio.Info($"Properties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
+						MIDIio.Info($"IOProperties.Init(): Invalid {DestType[0]} address {Darray[0][j]} > {I.VJD.Usage.Length}");
 
             if (null != Darray[1])
-                for (j = 0; j < Darray[1].Length; j++)							// valid vJoy button address?
+                for (j = 0; j < Darray[1].Length; j++)						// valid vJoy button address?
 					if (0 > Darray[1][j] || Darray[1][j] >= I.VJD.nButtons)
-						MIDIio.Info($"Properties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
+						MIDIio.Info($"IOProperties.Init(): Invalid {DestType[1]} address {Darray[1][j]}");
 
 			Send = new string[CCSize];
 			for (j = 0; j < CCSize; j++)
 				Send[j] = "send" + j;
 
 // 1) initialize CC
-			for (j = ct = 0; j < 128; j++)					// extract unconfigured CC flags
-			{
+			for (ct = j = 0; j < 128; j++)									// extract unconfigured CC flags
 				CCname[j] = "CC" + j;
 
-				if (0 < (0x80 & I.Settings.CCvalue[j]))
-				{
-					ct++;
-					I.Settings.CCvalue[j] &= 0x7F;
-					Which[j] = Unc;
-				}
-				else Which[j] = 0;
-			}
-
 			if (MIDIio.DoEcho)
-			{
-				for (byte i = j = 0; j < ct && i < 128; i++)			// resend saved CCs
+				for (j = 0; j < 128; j++)									// extract unconfigured CC flags
 				{
-					if (0 < (Unc & Which[i]))  // unconfigured CC number?
+					if (0 < (0x80 & I.Settings.CCvalue[j]))
 					{
-						I.Outer.SendCCval(i, I.Settings.CCvalue[i]);	// much time may have passed;  reinitialize MIDIout device
-						j++;
+						Which[j] = Unc;
+						ct++;
+						I.Settings.CCvalue[j] &= 0x7F;
+						I.Outer.SendCCval(j, I.Settings.CCvalue[j]); 		// reinitialize MIDIout device
 					}
+					else Which[j] = 0;
 				}
-				if (0 < j)
-					MIDIio.Log(4, $"CCProperties.Init(): {j} CCs resent after restart");
-			}
+			else for (j = 0; j < I.Settings.CCvalue.Length; j++)
+				I.Settings.CCvalue[j] = 0;
+			if (0 < ct)
+				MIDIio.Log(4, $"IOProperties.Init(): {ct} CCs resent after restart");
 
-// 2) Collect configured MIDIin Which[] and CCname[] properties
+// 2) Collect configured CCname[] and other Which[] properties
 			// Collect MIDIin properties from MIDIio.ini
 			for (ct = 1; ct < CCtype.Length; ct++)				// skip CCtype[0]: Unconfigured
 			{
@@ -180,7 +173,7 @@ namespace blekenbleu
 						{
 							Which[cc] = Wflag[ct];
 							CCname[cc] = CCtype[ct] + j++;	  // replacing "CCcc"
-//							MIDIio.Log(4, $"CCProperties.Init(): CCname[{cc}] = " + CCname[cc]);
+//							MIDIio.Log(4, $"IOProperties.Init(): CCname[{cc}] = " + CCname[cc]);
 						}
 						else MIDIio.Info($"Init({type + j}):  {cc} already configured as {CCname[cc]}");
 					}
@@ -244,7 +237,7 @@ namespace blekenbleu
 				{
 					if (0 < dt)
 						s += "\n\t";
-					s +=  $"Properties.SourceName[{DestType[dt]}]:  ";
+					s +=  $"IOProperties.SourceName[{DestType[dt]}]:  ";
 
 					for (byte pt = 0; pt < 4; pt++)					// property type: game, Joy axis, Joy button, CC
 					{
@@ -308,7 +301,7 @@ namespace blekenbleu
 					ct++;
 				}
 
-			MIDIio.Log(4, $"Properties.End():  {ct} unconfigured CCs");
+			MIDIio.Log(4, $"IOProperties.End():  {ct} unconfigured CCs");
 		}
 
 		private void Action(MIDIio I, byte bn, byte CCnumber)
@@ -347,6 +340,7 @@ namespace blekenbleu
 				}
 		}
 
+		// Unc 0x80 bit is stripped from I.Settings.CCvalue[]s in Init()
 		internal bool CCprop(MIDIio I, int CCnumber)
 		{
 			switch (CCnumber)		// configure CC property and event

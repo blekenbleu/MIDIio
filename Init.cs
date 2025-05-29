@@ -16,7 +16,7 @@ namespace blekenbleu
 		private  int[][] Sent;														// remember and don't repeat
 		private  double[,] scale;
 		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-		internal static string SentEvent = "watch this space", CCin = "watch this space", Ping = "watch this space";
+		internal static string CCsent = "watch this space", CCin = "watch this space", Ping = "watch this space";
 
 		/// <summary>
 		/// Called at SimHub start and restarts
@@ -34,9 +34,6 @@ namespace blekenbleu
 
 			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
 			DoEcho = null != prop && 0 < int.Parse(prop);
-			if (!DoEcho)
-				for (byte i = 0; i < Settings.CCvalue.Length; i++)
-					Settings.CCvalue[i] = 0;
 			MIDIout = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
 			if (null == MIDIout || 0 == MIDIout.Length)
 			{
@@ -90,7 +87,7 @@ namespace blekenbleu
 			Properties.Init(this, CCSize);			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			this.AttachDelegate("CCin", () => CCin);
 			this.AttachDelegate("Ping", () => Ping);
-			this.AttachDelegate("SentEvent", () => SentEvent);
+			this.AttachDelegate("CCsent", () => CCsent);
 
 			if (0 < MIDIin.Length)
 			{

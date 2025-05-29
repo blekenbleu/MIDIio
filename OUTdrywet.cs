@@ -83,7 +83,7 @@ namespace blekenbleu
 			// this cute syntax is called pattern matching
 			if (Connected && e.Event is ControlChangeEvent CC)
 			{
-				MIDIio.SentEvent = $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}";
+				MIDIio.CCsent = $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}";
 				if ((0 == MIDIio.Properties.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
 				{
 					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber}" + MIDIio.Properties.CCname[CC.ControlNumber]);
