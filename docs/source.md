@@ -31,7 +31,6 @@
   - `MIDICCsends`:&nbsp; Index array of configured `MIDICCsendn`, where 0 <= n < 128
   - [`MIDIecho`](#midiecho):&nbsp; `MIDIin` CC message handling
   - [`MIDIlog`](#midilog):&nbsp; Controls MIDIio's **[System Log](SimHub.txt)** [verbosity](#midilog);&nbsp; 0 is mostly only errors and 7 is maximally verbose.  
-  - `MIDIsize`:&nbsp; Limits routing table size between game, vJoy and MIDI
   - `MIDIvJoy`:&nbsp; Non-zero enables vJoy button and axes outputs  
   - `MIDIvJoyaxiss`:&nbsp; Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes  
                      as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**

@@ -37,7 +37,7 @@ namespace blekenbleu
 		internal byte Latest = 0;								// needs to get set by INdrywet()
 		internal bool Ping(SevenBitNumber num)					// gets called (indirectly, event->action) by INdrywet()
 		{
-			if (SendCCval(num, Latest)) {						// Ping(): drop pass from Active()
+			if (SendCCval(num, Latest)) {						// Ping(): drop pass from ActionCC()
 				MIDIio.Ping = $"Ping(): {CCout} CC{num} {Latest}";
 				return true;
 			}

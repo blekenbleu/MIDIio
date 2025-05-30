@@ -8,12 +8,11 @@ namespace blekenbleu
 	public partial class MIDIio
 	{
 		internal static byte CCSize = 8;											// hard-coded CC send Action count
-		internal static byte size = 8;												// default configurable array size
 		internal static bool DoEcho;
 		private  string MIDIin, MIDIout;
 		private  static long VJDmaxval = 65535;
 		private  bool[][] Once;
-		private  ushort[][] Sent;														// remember and don't repeat
+		private  ushort[][] Sent;													// remember and don't repeat
 		private  double[,] scale;
 		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
 		internal static string CCsent = "watch this space", CCin = "watch this space", Ping = "watch this space";
@@ -30,7 +29,7 @@ namespace blekenbleu
 			Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
 			Log(4, $"log Level {Level}");
 
-// Load settings
+			// Load settings
 			Settings = this.ReadCommonSettings("GeneralSettings", () => new MIDIioSettings());
 
 			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
@@ -53,14 +52,6 @@ namespace blekenbleu
 				Info(version + (DoEcho ? ": " : ":  not") + " forwarding unconfigured " + MIDIin + " CCs to " + MIDIout);
 			else Info(version);
 
-			int s = size;
-			prop = pluginManager.GetPropertyValue(Ini + "size")?.ToString();
-			if (null == prop || 1 > prop.Length)
-				Info($"Init(): missing {Ini + "size"}; defaulting to {size}");
-			else if (0 >= (s = Int32.Parse(prop)) || 128 < s)
-				Info($"Init(): invalid {Ini + "size"} {prop} = {s}; defaulting to {size}");
-			else size = (byte)s;
-
 			// vJoy axes, vJoy buttons, CC sends
 			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
 			if (null != prop && 1 == prop.Length && ("0" != prop))
@@ -76,7 +67,7 @@ namespace blekenbleu
 									{ 1.27,		127.0/65535,	127.0,		1.0	   }};	// MIDIout
 
 			// Launch Outer before Reader and Properties
-			if (null != MIDIout && 0 < MIDIout.Length)
+			if (0 < MIDIout.Length)
 			{
 				Outer = new OUTdrywet();
 				if (Outer.Init(MIDIout))
@@ -84,37 +75,42 @@ namespace blekenbleu
 				else CCSize = 0;
 			}	else CCSize = 0;
 
-			Properties = new IOproperties();		// MIDI and vJoy property configuration
-			Properties.Init(this, CCSize);			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
-			this.AttachDelegate("CCin", () => CCin);
-			this.AttachDelegate("Ping", () => Ping);
-			this.AttachDelegate("CCsent", () => CCsent);
-			this.AttachDelegate("VJsent", () => VJsent);
+			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
+			Properties = new IOproperties();						// MIDI and vJoy property configuration
+			Properties.Init(this, CCSize);
 			this.AttachDelegate("oops", () => oops);
-			this.AttachDelegate("prop", () => prop);
+			if (3 < Level)
+			{
+				this.AttachDelegate("CCin",		() => CCin);
+				this.AttachDelegate("CCsent",	() => CCsent);
+				this.AttachDelegate("VJsent",	() => VJsent);
+				this.AttachDelegate("Ping",		() => Ping);
+				this.AttachDelegate("prop",		() => prop);
+			}
 
 			if (0 < MIDIin.Length)
 			{
 				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
 				if(Reader.Init(MIDIin, this))
-					Properties.Attach(this);									// AttachDelegate buttons, sliders and knobs
+					Properties.Attach(this);						// AttachDelegate buttons, sliders and knobs
 			}
 			else Info("Init(): " + Ini + "in is undefined" );
 
-			Once = new bool[Properties.SourceCt.Length][];			// null game properties
-			Sent = new ushort[Properties.SourceCt.Length][];		// duplicated send values
-			for (s = 0; s < Properties.SourceCt.Length; s++)
+			Once = new bool[1 + Properties.SourceList.Length][];	// null game properties for SourceList + CC
+			Sent = new ushort[Once.Length][];						// duplicated send values
+			for (int s = 0; s < Once.Length; s++)
 			{
-				Once[s] = new bool[Properties.SourceCt[s]];
-				Sent[s] = new ushort[Properties.SourceCt[s]];
-				for (byte p = 0; p < Properties.SourceCt[s]; p++)
+				if (s < Properties.SourceList.Length)
+					Once[s] = new bool[Properties.SourceList[s].Count];
+				else Once[s] = new bool[Properties.ListCC.Count];
+				Sent[s] = new ushort[Once[s].Length];
+				for (byte p = 0; p < Once[s].Length; p++)
 				{
 					Once[s][p] = true;
 					Sent[s][p] = 222;
 				}
 			}
-		}																		// Init()
-		
+		}															// Init()
 	}
 }

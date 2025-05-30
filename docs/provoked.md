@@ -29,7 +29,6 @@ By June, [that was no longer true](../../../#simhub-v843-breakage).
 - vJoy B05 does not respond to CC43 (lowest leftmost button)  
 
 *22 Jun 2023*  
-- fixed MIDIsize setting error checking
 - fixed button inputs in MIDIio.IOproperties.Init() - wrong name (MIDIvJoybutton vs MIDIvJoyB0)  
   this corrected most 21 Jun errors...
 - added game property inputs to vJoy button and axis

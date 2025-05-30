@@ -2,6 +2,13 @@
 
 **Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
 
+---
+- [C# source code files](docs/source.md)  
+- [devices](docs/devices.md)  
+- [IOproperties.cs Which[] byte array processing](docs/Which.md)  
+- [MIDIio principles of operation](docs/principles.md)  
+- [nanoKONTROL2 MIDI](docs/nanoKONTROL2_MIDIimp.txt)  
+---
 For one each MIDI source, destination, and optionally vJoy destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
@@ -64,23 +71,9 @@ with *values* sent as SimHub *Actions*.
 For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile)
  has a custom effect with ShakeITBSV3Plugin properties from MIDI sliders.
 
-*18 Jun 2023*  
-#### SimHub v8.4.3 breakage  
-- JoystickPlugin properties no longer available during MIDIio `Init()`:
-```
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_X for SourceName[1][0]
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Y for SourceName[1][1]
-[2023-06-18 09:52:41,546] INFO - MIDIio.DoSend(vJoyaxis): null JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0 for SourceName[1][2]
-[2023-06-18 09:52:41,551] INFO - Game successfully loaded
-[2023-06-18 09:52:42,071] INFO - JoystickManager : Found Load_Cell_Interface_LC-USB, SideWinder_Precision_2_Joystick, vJoy_Device, T500_RS_Gear_Shift
-```
----
-- [Changes for SimHub > 8.4.3](docs/provoked.md)   
-- [C# source code files](docs/source.md)  
-- [IOproperties.cs Which[] byte array processing](docs/Which.md)  
-- [MIDIio principles of operation](docs/principles.md)  
-- [nanoKONTROL2 MIDI](docs/nanoKONTROL2_MIDIimp.txt)  
----
+*18 Jun 2023*  **SimHub v8.4.3 breakage**
+- JoystickPlugin properties no longer available during MIDIio `Init()`
+	- [Changes for SimHub > 8.4.3](docs/provoked.md)   
 *1 Feb 2024*  
 - [reduced log verbosity](docs/source.md#midiioini)
 
@@ -106,6 +99,12 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *25 May 2025* `version 0.0.2.3`
 - debug properties: oops, prop, Ping, VJsent, CCin, CCsent, in, out
-- replace fixed size SourceName array by SourceList
+- replace fixed size SourceName array by SourceList and ListCC
 - relocated and debugged Sent[][] anti-duplication
 - simplified Send();  move rescale to Active() and SendIf()
+
+*30 May 2025* `version 0.0.2.4`
+- complete replacing arrays based on MIDIsize with Lists
+- fix `MIDIecho 4` non-MIDI property logging, eliminating duplicates
+- except 'oops', debug properties only for `MIDIecho 4`
+- updated docs, adding [devices](docs/devices.md)

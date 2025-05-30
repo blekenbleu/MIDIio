@@ -12,7 +12,7 @@ namespace blekenbleu
 	/// </summary>
 	internal class INdrywet
 	{
-		private MIDIio M;								// for M.Active()
+		private MIDIio M;								// for M.ActionCC()
 		private static IInputDevice _inputDevice;
 		private static IInputDevice InputDevice { get => _inputDevice; set => _inputDevice = value; }
 
@@ -45,7 +45,7 @@ namespace blekenbleu
 			var midiDevice = (MidiDevice)sender;
 
 			if (e.Event is ControlChangeEvent CC)	// this cute syntax is called pattern matching
-				M.Active((byte)CC.ControlNumber, (byte)CC.ControlValue);
+				M.ActionCC((byte)CC.ControlNumber, (byte)CC.ControlValue);
 			else MIDIio.Log(2, $"Reader() ignoring {e.Event} received from {midiDevice.Name}");
 		}
 
