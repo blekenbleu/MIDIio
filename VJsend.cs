@@ -21,7 +21,7 @@ namespace blekenbleu
 {
 	class VJsend
 	{
-		internal vJoy joystick;						// Declare one joystick (Device id 1) and a position structure.
+		internal vJoy joystick;					// Declare one joystick (Device id 1) and a position structure.
 //		internal vJoy.JoystickState iState;		// for EFFICIENT usage; updating the iState structure for multiple buttons and axes
 		private uint id;
 		private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y,
@@ -35,7 +35,7 @@ namespace blekenbleu
 		internal HID_USAGES[] Usage;
 		private int[] AxVal;
 
-		internal long Init(uint ID)		// return maxval
+		internal long Init(uint ID)				// return maxval
 		{
 			nAxes = 0;
 			maxval = 0;
@@ -43,13 +43,13 @@ namespace blekenbleu
 
 			if (ID <= 0 || ID > 16)
 				return MIDIio.Info($"VJsend(): Invalid device ID;  must be 0 < {ID} <= 16") ? 0 : 0;
-			id = ID;		// Device ID can only be in the range 1-16
+			id = ID;							// Device ID can only be in the range 1-16
 
 			// Create one joystick object and a position structure.
 			joystick = new vJoy();
 //	  		iState = new vJoy.JoystickState();
 
-			// Get the driver attributes (Vendor ID, Product ID, Version Number)
+			// Get driver attributes (Vendor ID, Product ID, Version Number)
 			if (!joystick.vJoyEnabled())
 				return MIDIio.Info($"VJsend(): vJoy driver not enabled: Failed Getting vJoy attributes.") ? 0 : 0;
 

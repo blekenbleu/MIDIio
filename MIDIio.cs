@@ -15,7 +15,6 @@ namespace blekenbleu
 		internal VJsend VJD;
 		internal INdrywet Reader;
 		internal OUTdrywet Outer;
-//		internal static string[] Real { get; } = { My, "JoystickPlugin.", "InputStatus." };
 
 		/// <summary>
 		/// wraps SimHub.Logging.Current.Info(); prefixes MIDIio.My

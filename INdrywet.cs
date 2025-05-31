@@ -1,9 +1,7 @@
 ﻿using System;
-using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Devices;
 //using Melanchall.DryWetMidi.Multimedia;		// replaces .Devices in newer versions than SimHub's
-using SimHub.Plugins;
 
 namespace blekenbleu
 {
