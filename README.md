@@ -3,34 +3,36 @@
 **Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
 
 ---
+- [Changes for SimHub > 8.4.3](docs/provoked.md)  
 - [C# source code files](docs/source.md)  
-- [devices](docs/devices.md)  
-- [IOproperties.cs Which[] byte array processing](docs/Which.md)  
-- [MIDIio principles of operation](docs/principles.md)  
+- [IOproperties.cs:&nbsp; Which[] byte array processing](docs/Which.md)  
+- [MIDI and joystick devices](docs/devices.md)  
 - [nanoKONTROL2 MIDI](docs/nanoKONTROL2_MIDIimp.txt)  
+- [**principles of operation**](docs/principles.md)  
+- [SimHub Events and Actions](docs/sends.md)  
 ---
 For one each MIDI source, destination, and optionally vJoy destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
- SimHub properties and Joystick buttons and axes.  
-MIDIio source values are made available as **SimHub properties**, e.g.  
+ SimHub game, joystick buttons and axes properties.  
+MIDIio source CC values are made available as **SimHub properties**, e.g.  
 for tweaking **ShakeIt Bass Shaker** effects and controlling [**JSONio**](https://github.com/blekenbleu/JSONio):  
 ![](docs/properties.png)  
 
-Similarly, SimHub property values can be rescaled and sent as CCs and vJoy buttons and axes.  
-*Unconfigured* CC messages received are optionally forwarded to destination MIDI,  
-enabling those source MIDI CCs to directly control the destination MIDI.
+Similarly, SimHub property values can be rescaled and sent as CCs, vJoy buttons and axes.  
+*Unconfigured* CC messages received are optionally echoed to destination MIDI,  
+enabling those source MIDI CCs to directly control a destination MIDI device.
 
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,  
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio *also* generates [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis vJoy inputs for games,  
-reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [vJoy](https://github.com/njz3/vJoy).  
+MIDIio can *also* use [**vJoy**](https://github.com/shauleiz/vJoy) to simulate [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis inputs,  
+reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [@njz3](https://github.com/njz3/vJoy).  
 MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can include rescaled SimHub properties,  
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
 
-MIDI CC *value changes* can optionally be configured (by 'MIDICCsends') as SimHub *Events*,  
-with *values* sent as SimHub *Actions*.  
+['MIDIsends'](docs/source.md#midisends) configures MIDI source CC and SimHub property  
+[*value changes* as SimHub *Events*, with *values* sent as SimHub *Actions*](docs/send.md).  
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 [**MIDIio** Source code files, configuration descriptions](docs/source.md)  
@@ -56,9 +58,8 @@ with *values* sent as SimHub *Actions*.
       ![log messages](docs/log.png)
 		*configuration details logged only for*`MIDIlog '7'`    
 
-    - **Configure button `CCn` Source events:**  
+    - **Configure `MIDIioSends` events and actions sources and targets:**  
       ![button event names and actions](docs/events.png)  
-		*Sources and Targets configured by*`MIDICCsends`  
 
     - **MIDIio** *neither is* (nor will become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).  
@@ -73,9 +74,10 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 
 *18 Jun 2023*  **SimHub v8.4.3 breakage**
 - JoystickPlugin properties no longer available during MIDIio `Init()`
-	- [Changes for SimHub > 8.4.3](docs/provoked.md)   
+	- [Changes for SimHub > 8.4.3](docs/provoked.md)  
+
 *1 Feb 2024*  
-- [reduced log verbosity](docs/source.md#midiioini)
+- [reduced log verbosity](docs/source.md#midilog)
 
 *24 May 2025* `version 0.0.1.3`
 - tested vJoy axis with JSONio property;&nbsp; 0 to 100 range expected  
@@ -87,7 +89,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - Release builds generate `MIDIio.zip`
 
 *25 May 2025* `version 0.0.1.5`  
-- CCin, Ping and SentEvent trace properties
+- CCin, [`send` Action Targets and source `event` properties]((docs/sends.md)) configuration logging
 
 *25 May 2025* `version 0.0.1.6`  
 - fix unconfigured source CC logic
@@ -98,7 +100,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - rename `ping` Actions to `send`
 
 *25 May 2025* `version 0.0.2.3`
-- debug properties: oops, prop, Ping, VJsent, CCin, CCsent, in, out
+- debug properties: oops, prop, Ping, CCin, CCsent, VJsent, in, out
 - replace fixed size SourceName array by SourceList and ListCC
 - relocated and debugged Sent[][] anti-duplication
 - simplified Send();  move rescale to Active() and SendIf()
@@ -108,3 +110,8 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - fix `MIDIecho 4` non-MIDI property logging, eliminating duplicates
 - except 'oops', debug properties only for `MIDIecho 4`
 - updated docs, adding [devices](docs/devices.md)
+
+*31 May 2025* `version 0.0.2.6`
+- CC property code refactoring  
+- add vJoy destinations for [`MIDIsends`](docs/sends.md) Actions and Events  
+- [refactor Action and Event handling, adding vJoy](docs/principles.md#midiio-events-and-actions)  

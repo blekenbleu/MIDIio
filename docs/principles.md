@@ -1,93 +1,103 @@
 [*back*](../README.md)
 
-### blekenbleu.MIDIio principles of operation
+## blekenbleu.MIDIio principles of operation
 
-Operation is controlled by [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini); 
+[`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini) configures operation;&nbsp; 
   see [**Exporting property : [ExportProperty]**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
 Search for `midi` in **SimHub Available properties**:
 
 - `ExternalScript.MIDIout`:&nbsp;
-   Case-sensitive name of [MIDI target](https://freevstplugins.net/category/midi-vst/controllers/)
+   Case-sensitive [MIDI target](https://freevstplugins.net/category/midi-vst/controllers/) name  
 
 - `ExternalScript.MIDIin`:&nbsp;
-  Case-sensitive name of [MIDI source](https://en.wikipedia.org/wiki/MIDI_controller)
+  Case-sensitive [MIDI source](https://en.wikipedia.org/wiki/MIDI_controller) name 
 
 - `DataCorePlugin.ExternalScript.MIDIbuttons`, `MIDIknobs`, `MIDIsliders`:&nbsp;  
-   These are *configuration arrays* of [MIDI CC message numbers](https://professionalcomposers.com/midi-cc-list/),  
-   for which MIDIio generates respectively properties *in sequence*, e.g.:  
+   These are [MIDI CC message numbers](https://professionalcomposers.com/midi-cc-list/) *configuration arrays*,  
+   for which MIDIio respectively generates properties *in defined sequence*, e.g.:  
    `MIDIio.knob[0-n]`, `slider[0-n]`, `button[0-n]`,  *whether or not configured CC numbers are sequential*.  
-   These properties track values received from those `MIDIin` CC numbers.  
-   Each configured `button[0-n]` also generates a [**Source** (`Event`) for
-   **SimHub Event mapping**](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
-   MIDIio handles each `MIDIin` message as received and routes properties configured for output in near-real-time.  
+   `MIDIin` CC number received events update these properties.  
+   `MIDIsends` [Event Triggers](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent)
+   are implemented in C# for property *value* (not just `true/false`) changes.  
+   MIDIio handles Non-CC configured SimHub (e.g. joystick) properties (@ 60Hz) in `MIDIio.DataUpdate()`.  
+   MIDIio processes `MIDIin` CC messages on receipt, routing changed values in near-real-time.  
+	- One may in theory assign `slider`, `button` or `knob` names for all 128 CC numbers.  
+
 
 -  `ExternalScript.MIDIecho`:  
-   `> 0`:&nbsp; forwards unconfigured `MIDIin` CC messages to `MIDIout` with no corresponding properties generated  
-   `== 0`:&nbsp; dynamically generates properties `MIDIio.CC[0-127]` for unconfigured CC messages received.  
+   `> 0`:&nbsp; forwards unconfigured `MIDIin` CC messages to `MIDIout`;  
+   properties `MIDIio.CC[0-127]` are dynamically generated for unconfigured CC messages as received.  
    These can be used to identify CC numbers for configuring [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini).  
 
--  `ExternalScript.MIDIsendCC` identify properties that become `MIDIout` messages to address CC.  
-   If first 7 characters of those property names are 'MIDIio.', then those are among `MIDIin` CC properties  
-   `MIDIio.knob[0-n]`, `slider[0-n]`, `button[0-n]`, or `CC[0-127]`, with matching `MIDIin` CC changes sent.  
-	One may in theory assign `slider`, `button` or `knob` names for all 128 CC numbers.  
+### [MIDIio Events and Actions](Which.md)
+-  [`ExternalScript.MIDIsend`](sends.md) enumerates **up to 8** vJoy or `MIDIout` CC SimHub **Action** message destinations.  
+	MIDIio also generates **Event Triggers** for configured source property changes.  
+	Destinations are prefixed by either **A**, **B**, or **C**, appended by a `vJoy Axis`, `vJoy Button` or `CC address number`.  
+	For example, `A0` would be the first vJoy axis, `B1` would be the first vJoy button, `C55` would be CC `55`.  
+   First 7 characters of corresponding property names being 'MIDIio.' are **assumed** `MIDIin` CC property values  
+   `MIDIio.knob[0-n]`, `slider[0-n]`, `button[0-n]`, or `CC[0-127]`, with respective `MIDIin` CC changed values sent.  
+	- Unlike sequentially-asssigned source names,  
+		`MIDIsend` names are suffixed by valid device-specific address numbers.  
 
-- Unlike `MIDIini` property names, destination property names are suffixed by device-specific address numbers  
-  in *any* order, so long as addresses are valid.
+- The first possible `MIDIsend` vJoy button is `B1`;&nbsp; first `MIDIsend` vJoy axis and destination CC are `A0` and `C0`.
 
-- Unlike all other source and destination property names,  
-  the lowest vJoy button is `button1` for device address `1`;&nbsp; other device type names may be suffixed `0`.
-
--  `MIDIio.ping[0-7]` are **SimHub Actions**
-   to be associated with Triggers/Sources in
+-  `MIDIio.send[0-nn]` are **SimHub Actions** for SimHub Triggers/Sources in
    [SimHub Event mapping](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent).  
-   They share destination CC numbers with configured `MIDIsend` properties
-   and are generated to help identify those SimHUb property CC numbers to a `MIDIout` target.  
+   Their destination addresses are configured from `MIDIsends`, passing values from configured SimHUb sources.  
    For example, if *both and only* `MIDIsend0` and `MIDIsend1` are configured for `MIDIio.*`,  
-   then `ping0` and `ping1` SimHub Action **Target**s are generated, and mapping e.g. `CCn` with `ping1`  
-   in **Mapping Picker** enables arbitrary messages to the second configured destination CC number by `MIDIin CCn`.
+   then `send0` and `send1` SimHub Action **Target**s are generated.  
+   SimHub **Mapping Picker** enables arbitrary Event to Action assignments,  
+	but MIDIio Action property *value* associations are set in `MIDIio.ini`.
 
--  `ExternalScript.VJDbutton[0-7]` configure **[vJoy](https://github.com/blekenbleu/vJoySDK) button** changes from specified properties.  
-   If configured names' first 7 characters are 'MIDIio.', then those properties should be among `MIDIio.button[0-n]`.  
+-  `ExternalScript.sendB[n]` configure **[vJoy](https://github.com/blekenbleu/vJoySDK) button** changes from specified properties.  
 
--  `ExternalScript.VJDaxis[0-7]` specify properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp;  
-    selecting among ShakeIt game properties, `MIDIio.slider[0-n]`, `MIDIio.knob[0-n]`, or `MIDIio.CC[0-127]`  
-	sends their rescaled property changes as vJoy axes values.  
+-  `ExternalScript.sendA[n]` specify properties for **[vJoy](https://github.com/blekenbleu/vJoySDK) axes** changes;&nbsp;  
+    selecting among ShakeIt, game, joystick, `MIDIio.slider[0-n]`, `MIDIio.knob[0-n]`, or `MIDIio.CC[0-127]`  
+	sends those rescaled property changes as vJoy axes values.  
 
--  Each source property may get multiple send assignments,  
-   but only one destination assignment on each output device for any single MIDIin property.  
+-  `MIDIio.ini` supports each `MIDIin` assignment to no more than one address  
+	for each of vJoy axis, vJoy button, and `MIDIout`,
+   for a maximum of 3 routings, one per output device.  
+   However, each `MIDIin` source can also be in a single `MIDIsends` assignment..  
 
-**MIDI supports only 128 CC message numbers per channel;&nbsp; MIDIio supports only one device channel.**  
+-  `MIDIio.ini MIDIsends` configuration cannot duplicate source and destination Action and Event assignments.  
+	Of course, SimHub allows for multiple mappings among Events and Actions. 
+
+**MIDI supports only 128 CC message numbers per channel;&nbsp; MIDIio supports only one channel.**  
 For example, configured `ExternalScript.MIDIsend[0-7]` CC messages  
 may be mixed with *unconfigured* `MIDIin` messages with matching CC numbers  
 when `MIDIecho` is configured to `'1'`.  
 
-`MIDIio.*` properties are NEVER forwarded *by default* (`MIDIecho '0'`) or unless specifically configured.  
+`MIDIio.*` properties are NOT forwarded for `MIDIecho '0' unless specifically configured.  
 
 **When restarted, MIDIio in DoEcho `'1'` mode *resends* saved values for *unconfigured* `MIDIin.CC*` properties.**  
-- Configured MIDIout CC messages from before restart are supposed inappropriate for a possibly different game.
-
-- DoEcho `'1'` `MIDIin` CC messages *might* help [re]configure a `MIDIout` target device,  
+- Messages from *configured* MIDIin before restart are NOT resent.
+- DoEcho `'1'` unconfigured CC messages *might* help [re]configure the `MIDIout` target device,  
   which may have also been restarted.
+- DoEcho `'0'` unconfigured CC properties are not preserved across restarts
+
 
 ### Run time operation
 SimHub's licensed update rate is 60Hz.  
 **MIDIio** rescales and sends property change values among 3 destinations, provided those destinations are enabled:  
 `MIDI out`, `vJoy axes`, `vJoy buttons`, where `MIDI out` may be slider, knob or button CCs.  
 Any *destination* property may be configured from one of 6 *source* property types:  
-`game telemetry` (most likely ShakeIt), `JoyStick axes`, `JoyStick buttons`, and `MIDIin` sliders+knobs+buttons.
+`game telemetry` (e.g. ShakeIt or JSONio), `JoyStick axes`, `JoyStick buttons`, and `MIDIin` sliders+knobs+buttons.
 
 **MIDIio** refreshes destinations for all but the first (i.e. non-game) source types even when a game is not running;  
-game property changes are forwarded *only while games run*.  
+game property changes are forwarded *only while games (or replays)  run*.  
 
 To [minimize runtime overhead](Which.md), output (from `SendIf()`) is List driven:  
 -  `SourceList[]` entries index ranges of `vJoy axis`,`vJoy button` and `MIDI CC` destination device addresses  
    for configured game, `JoyStick axis`, and `JoyStick button` source properties.  
 -  `ListCC[]` entries similarly index MIDI source properties destined to addresses for those same destination device.
 
-`SourceArray[,]` and `CCarray[,]` respectively correspond to `SendName[,]` and `CCname[]` source names, where:  
+`SourceList[]` and `ListCC[]` respectively correspond to `SendName[,]` and `CCname[]` source names, where:  
 `CCname[]` has 128 entries for each possible `MIDIin` property, whether or not configured  
-`SourceList.Length` is `SourceType.Lenght - 1`, (omitting CC type)  
-for configured game, JoyStick axis, JoyStick button property Listss.  
+`SourceList.Length` is `SourceType.Length - 1`, (omitting CC type)  
+for configured game, JoyStick axis, JoyStick button property Lists.  
 
 Property Lists configured for any source to any destination are variable,  
 allowing for *relatively* low pain addition of sources and destinations. 
+
+### *v0.0.2.6* adds vJoy destinations to [`MIDIio.ini 'MIDIsends'`](sends.md) events and actions  

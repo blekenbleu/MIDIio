@@ -18,7 +18,7 @@
 - [VJsend.cs](../VJsend.cs) sends button and axis values to a single vJoy device.
 - [VJoyFFBReceiver.cs](../VJoyFFBReceiver.cs) placeholder code for handling vJoy force feedback data.
 
-### MIDIio.ini
+## MIDIio.ini configuration
 - [MIDIio.ini](../NCalcScripts/MIDIio.ini) contains NCalc properties for configuring **MIDIio**.  
   It goes in `SimHub/NCalcScripts/`;&nbsp; contents include:
   - `MIDIin`:&nbsp; MIDI source device name
@@ -27,10 +27,11 @@
   - `MIDIsliders`:&nbsp; MIDI CC numbers `n` whose values get set as `slidern` properties.  
                      handled identically to `MIDIknobs`  
   - [`MIDIbuttons`](#midibuttons):&nbsp; MIDI CC numbers `n` to be set as `CCn` properties and also raise events.  
-  - [`MIDICCsendn`](#midiccsendn) `(0 <=n < 8)`:&nbsp; SimHub property name whose value *changes* are sent to `MIDIout`  
-  - `MIDICCsends`:&nbsp; Index array of configured `MIDICCsendn`, where 0 <= n < 128
+  - [`MIDImaps`](#midimaps):&nbsp; Index array of configured `MIDImapn`, where CC 0 <= n < 128
+  - [`MIDIsends`](#midisends):&nbsp; Index array of configured `MIDIsemd[ABC]n`
   - [`MIDIecho`](#midiecho):&nbsp; `MIDIin` CC message handling
-  - [`MIDIlog`](#midilog):&nbsp; Controls MIDIio's **[System Log](SimHub.txt)** [verbosity](#midilog);&nbsp; 0 is mostly only errors and 7 is maximally verbose.  
+  - [`MIDIlog`](#midilog):&nbsp; Controls MIDIio's **[System Log](SimHub.txt)**
+		[verbosity](#midilog);&nbsp; 0 is mostly only errors and 7 is maximally verbose.  
   - `MIDIvJoy`:&nbsp; Non-zero enables vJoy button and axes outputs  
   - `MIDIvJoyaxiss`:&nbsp; Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes  
                      as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**
@@ -41,9 +42,35 @@
 - `MIDIbuttons` **Source** events can be mapped to **Target** actions in SimHub's **Controls and events**.  
 **SimHub limitation:**&nbsp; event and action handling works only during games or replays
 
-### MIDICCsendn
-- A `MIDIio.sendn` **Target** action is enabled for each configured `MIDICCsendn`.  
-**SimHub limitation:**&nbsp; event and action handling works only during games or replays
+### MIDImaps
+- a string of comma-separated `MIDIout` destination CC numbers '0' <= 'n' < '128', which each want a MIDImapn
+- e.g.: `value='1,4,51,14'`
+- each comma-separated destination wants a corresponding `MIDImapn`
+
+### MIDImapn
+- a `MIDIin` CC or SimHub property name whose changing values are destined for `MIDIout`
+- `MIDIio.ini` configuration example:
+```
+	[ExportProperty]
+	name='MIDImap1'
+	value='MIDIio.slider1'
+```
+
+### MIDIsends
+- a value string of comma-separated destinations for Actions
+	- 'An' for vJoy axis 'n'
+	- 'Bnn' for vJoy button 'nn'
+	- 'Cn' for `MIDIout` for CC number 'n'
+	- each comma-separated destination wants a corresponding `MIDIsend[ABC]n`
+
+### MIDIsend[ABC]n
+- corresponds to an '[ABC]n' substring of `MIDIsends` value
+- examples [**here**](sends.md)
+- A `MIDIio.sendn` **Target** `MIDIio.sendn` Action is enabled for each configured destination in `MIDIsends`.  
+	- its `MIDIio.ini` value string names a source property for destination message values
+    - each value change triggers a corresponding Event
+	- Events to Actions are mapped by SimHub **Controls and events**
+	- **SimHub limitation:**&nbsp; Event and Action handling works only during games or replays
 
 ### MIDIecho
 - most recent messages echoed to  `MIDIout` for unconfigured CCs  
@@ -54,6 +81,7 @@
 `MIDIecho 1`
 - forward unconfigured `MIDIin` CC changed messages to `MIDIout`.
   these get re-sent when relaunches this plugin
+  discovered CC properties are retained across restarts
 
 `MIDIecho 0`
 - reset dynamically generated CC properties when MIDIio `End()`s
@@ -63,7 +91,7 @@
 - 0:&nbsp; log only exceptions not handled by code or things not working, e.g. misconfigured
 - 1:&nbsp; log also I/O failures
 - 3:&nbsp; also unexpected events
-- 7:&nbsp; (verbose) also information, initialization and configuration feedback
+- 7:&nbsp; (verbose) also information, initialization and configuration feedback; enables debug properties
 
 ### Evidence
 Here is some evidence of operational success (*26 May 2025*):  
@@ -80,7 +108,7 @@ Here is some evidence of operational success (*26 May 2025*):
 ![](replay.png)  
 
  *updated 23 Feb 2023 for vJoy*  
- *updated 29 Jun 2023 for SimHub-provoked revisions*  
+ *updated 29 Jun 2023 for [SimHub-provoked revisions](docs/provoked.md)*  
  *updated 1 Feb 2024 for `MIDIlog` explanations*  
  *updated 26 May 2025 for `MIDIlog`, `MIDIbuttons` and `MIDIsend` changes*  
  *updated 28 May 2025 for `MIDIio.cs` refactoring (`Init.cs', `Send.cs`)*  

@@ -47,6 +47,8 @@ namespace blekenbleu
 			}
 		}															// Send()
 
+		internal byte[] stop = new byte[] {2, 2, 2, 2};		// vJoy actions start here
+
 		/// <summary>
 		/// Called by DataUpdate(); calls Send()
 		/// index: 0=game; 1=Joystick Source property types
@@ -61,7 +63,7 @@ namespace blekenbleu
 				for (byte p = 0; p < Properties.SourceList[src].Count; p++)	// property type index
 				{
 					string name = Properties.SourceList[src][p].Name;
-					dev = Properties.SourceList[src][p].Device;
+                    dev = Properties.SourceList[src][p].Device;
 					address = Properties.SourceList[src][p].Addr;
 
 					if (!Once[src][p])
@@ -98,17 +100,32 @@ namespace blekenbleu
                      if (value == Sent[src][p])						// previous value for Source property index p
 						continue;
 
-					prop = name;									// changed values
-					Send(value, dev, address);
-					Sent[src][p] = value;
+                    Sent[src][p] = value;							// changed values
+                    prop = name;
+					if (p < stop[src])								// higher p are for Events
+						Send(value, dev, address);
+					else this.TriggerEvent(Properties.IOevent[src][p - stop[src]]);
 				}
 		}			// SendIf()
 
+
+		// called for SimHub Actions
+		internal void Act(ushort a)
+		{
+			byte src = Properties.ActMap[a][0];
+	 		byte p = Properties.ActMap[a][1];
+			byte dev = Properties.SourceList[src][p].Device;
+			byte addr = Properties.SourceList[src][p].Addr;
+			if (3 == src)
+				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[Properties.CCmap[a]]), dev, addr);
+			else Send(Sent[src][p], dev, addr);
+		}
 
 		/// <summary>
 		/// Called by INdrywet OnEventReceived() for each MIDIin ControlChangeEvent
 		/// track active CCs and save values
 		/// Send CCs to any of 3 DestDev[]s
+		/// trigger configured Events
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
 		internal bool ActionCC(byte CCnumber, byte value)					// returns true if first time
@@ -121,10 +138,8 @@ namespace blekenbleu
 
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < (Properties.Button & which))
-			{
-				Outer.Latest = value;										// drop pass to Ping()
-				this.TriggerEvent(Properties.CCname[CCnumber]);
-			}
+				this.TriggerEvent(eventName: Properties.IOevent[Properties.tmap[CCnumber]][3]);
+
 			if (0 < (56 & which))                                           // call Send()?
 			{
 				for (byte dt = 0; dt < IOproperties.DestDev.Length; dt++)	// at most one Send() per DestDev and CC

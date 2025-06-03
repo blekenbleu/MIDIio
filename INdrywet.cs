@@ -40,11 +40,9 @@ namespace blekenbleu
 		// callback
 		void OnEventReceived(object sender, MidiEventReceivedEventArgs e)
 		{
-			var midiDevice = (MidiDevice)sender;
-
 			if (e.Event is ControlChangeEvent CC)	// this cute syntax is called pattern matching
-				M.ActionCC((byte)CC.ControlNumber, (byte)CC.ControlValue);
-			else MIDIio.Log(2, $"Reader() ignoring {e.Event} received from {midiDevice.Name}");
+				M.ActionCC((byte)CC.ControlNumber, (byte)CC.ControlValue);	// in Send.cs
+			else MIDIio.Log(2, $"Reader() ignoring {e.Event} received from {((MidiDevice)sender).Name}");
 		}
 
 		internal void End()

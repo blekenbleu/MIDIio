@@ -34,16 +34,6 @@ namespace blekenbleu
 		}
 
 		internal bool SendCCval(byte sv, byte input) => (Connected) && SendCC(sv, input);
-		internal byte Latest = 0;								// needs to get set by INdrywet()
-		internal bool Ping(SevenBitNumber num)					// gets called (indirectly, event->action) by INdrywet()
-		{
-			if (SendCCval(num, Latest)) {						// Ping(): drop pass from ActionCC()
-				MIDIio.Ping = $"Ping(): {CCout} CC{num} {Latest}";
-				return true;
-			}
-			else MIDIio.Log(1, CCout + " disabled");
-			return false;
-		}
 
 		internal bool Init(String MIDIout)
 		{

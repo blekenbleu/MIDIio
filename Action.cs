@@ -14,32 +14,41 @@ namespace blekenbleu
 		internal readonly byte CC = 1, Button = 2, Unc = 4;	// Wflag[] input type bits for Which[]
 		// CC source properties, sent in INdrywet.OnEventReceived() by ActionCC()
 		internal List<byte[]> ListCC = new List<byte[]> { };	
+		internal List<byte[]> ActMap = new List<byte[]> { };
+		internal List<string>[] IOevent = new List<string>[3] { new List<string> { }, new List<string> { }, new List<string> { } };
+		internal byte[] tmap = new byte[128];				// map received CCs to Event triggers
+		internal byte[] CCmap;
 
-		void InitCC(MIDIio I, byte CCSize)
+		void InitCC(byte CCsize)
 		{
 			byte ct, j;
 
-			Send = new string[CCSize];
-			for (j = 0; j < CCSize; j++)
+			Send = new string[CCsize];
+			CCmap = new byte[CCsize];
+ 
+			for (j = 0; j < CCsize; j++)
 				Send[j] = "send" + j;
 
-			for (ct = j = 0; j < 128; j++)									// extract unconfigured CC flags
+			for (ct = j = 0; j < 128; j++)
+			{
 				CCname[j] = "CC" + j;
+				tmap[j] = 0;
+			}
 
 			if (MIDIio.DoEcho)
 				for (j = 0; j < 128; j++)									// extract unconfigured CC flags
 				{
-					if (0 < (0x80 & I.Settings.CCvalue[j]))
+					if (0 < (0x80 & M.Settings.CCvalue[j]))
 					{
 						Which[j] = Unc;
 						ct++;
-						I.Settings.CCvalue[j] &= 0x7F;
-						I.Outer.SendCCval(j, I.Settings.CCvalue[j]); 		// reinitialize MIDIout device
+						M.Settings.CCvalue[j] &= 0x7F;
+						M.Outer.SendCCval(j, M.Settings.CCvalue[j]); 		// reinitialize MIDIout device
 					}
 					else Which[j] = 0;
 				}
-			else for (j = 0; j < I.Settings.CCvalue.Length; j++)
-				I.Settings.CCvalue[j] = 0;
+			else for (j = 0; j < M.Settings.CCvalue.Length; j++)
+				M.Settings.CCvalue[j] = 0;
 			if (0 < ct)
 				MIDIio.Log(4, $"IOProperties.InitCC(): {ct} CCs resent after restart");
 
@@ -47,7 +56,7 @@ namespace blekenbleu
 			for (ct = 1; ct < CCtype.Length; ct++)				// skip CCtype[0]: Unconfigured
 			{
 				string type = MIDIio.Ini + CCtype[ct];			// "slider", "knob", "button"
-				string property = I.PluginManager.GetPropertyValue(type + 's')?.ToString();
+				string property = M.PluginManager.GetPropertyValue(type + 's')?.ToString();
 				if (null == property && MIDIio.Info($"Init(): '{type + 's'}' not found"))
 					continue;
 
@@ -70,43 +79,131 @@ namespace blekenbleu
 					}
 					else MIDIio.Info($"Init({type + j}) invalid CC value: {cc}");
 				}
-			}      // ct < CCtype.Length
-        }	// all configured MIDIin properties are now in CCname[] and Which[]
+			}	  // ct < CCtype.Length
+		}	// all configured MIDIin properties are now in CCname[] and Which[]
 
-		void Action(MIDIio I, byte bn, byte CCnumber)
+		internal void EnumActions(MIDIio I, PluginManager pluginManager, string[] actions)
 		{
-			I.AddEvent(CCname[CCnumber]);
-			if (bn < Send.Length)
-				switch (bn)				// configure button property and event
+			for (byte a = 0; a < actions.Length; a++)
+				if (2 > actions[a].Length)
+					MIDIio.Log(0, $"IOproperties.EnumActions({actions[a]}): invalid MIDIsends value");
+				else
 				{
-					case 0:
-						I.AddAction(Send[0],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)0));
-						break;
-					case 1:
-						I.AddAction(Send[1],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)1));
-						break;
-					case 2:
-						I.AddAction(Send[2],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)2));
-						break;
-					case 3:
-						I.AddAction(Send[3],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)3));
-						break;
-					case 4:
-						I.AddAction(Send[4],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)4));
-						break;
-					case 5:
-						I.AddAction(Send[5],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)5));
-						break;
-					case 6:
-						I.AddAction(Send[6],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)6));
-						break;
-					case 7:
-						I.AddAction(Send[7],(a, b) => I.Outer.Ping((Melanchall.DryWetMidi.Common.SevenBitNumber)7));
-						break;
-					default:
-						MIDIio.Info($"Action(): invalid Send[{bn}] for {CCnumber}");
-						break;
+					string s = MIDIio.Ini + "send" + actions[a];
+					string prop = (string)pluginManager.GetPropertyValue(s);
+
+					if (null == prop || 8 > prop.Length)
+						MIDIio.Log(0, $"IOproperties.Action({s}):  dubious property name :" + prop);
+					if (byte.TryParse(actions[a].Substring(1), out byte addr))
+						SendAdd(I, actions[a][0], addr, prop);
+					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
+		}
+
+		void SendAdd(MIDIio I, char ABC, byte addr, string prop)
+		{
+			byte dt = 3;
+			int ct = IOevent[0].Count + IOevent[2].Count + IOevent[2].Count;
+			// to do: plumb CC Event triggers
+			bool CCevent = "MIDIio." == prop.Substring(0, 7);
+            byte cc = 0;
+
+            if (CCevent)
+			{
+				int L;
+	            string prop7 = prop.Substring(7, L = prop.Length - 7);  // lop off 'MIDIio.'
+
+				for (cc = 0; cc < CCname.Length; cc++)
+					if (L == CCname[cc].Length && CCname[cc] == prop7)
+					{
+						Which[cc] |= Button;
+						CCmap[ct] = cc;
+						break;
+					}
+				if (127 < cc)
+					MIDIio.Log(0, $"IOproperties.SendAdd({prop}): not found in CCname[]");
+			}
+			switch (ABC)
+			{
+				case 'A':
+					if (CCevent)
+						tmap[cc] = (byte)IOevent[0].Count;
+					else ActMap.Add(new byte[] { 0, (byte)SourceList[0].Count });	// used by Act()
+					IOevent[dt = 0].Add("Event"+ct);				   // used by TriggerEvent()
+					break;
+				case 'B':
+					if (CCevent)
+						tmap[cc] = (byte)IOevent[1].Count;
+					else ActMap.Add(new byte[] { 1, (byte)SourceList[1].Count });
+					IOevent[dt = 1].Add("Event"+ct);
+					break;		
+				case 'C':
+					if (CCevent)
+						tmap[cc] = (byte)IOevent[2].Count;
+					else ActMap.Add(new byte[] { 2, (byte)SourceList[2].Count });
+					IOevent[dt = 2].Add("Event"+ct);
+					break;
+				default:
+					MIDIio.Info($"IOproperties.SendAdd(): unknown send type '{ABC}'");
+					break;
+			}
+
+			switch (prop.Substring(0, 7))
+			{
+				case "MIDIio.":
+					byte[] devs = new byte[DestDev.Length];
+					devs[dt] = addr;
+					ListCC.Add(devs);
+					break;
+				case "Joystic":										 		// JoyStick
+					SourceList[1].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+					break;
+				case "InputSt":											 	// any SimHub controller
+					SourceList[2].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+					break;
+				default:													// "game"
+					SourceList[0].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+					break;
+			}
+
+			switch (ct)				// configure action and event
+			{
+				case 0:
+					I.AddEvent("Event0");
+					I.AddAction(Send[0],(a, b) => I.Act(0));
+					break;
+				case 1:
+					I.AddEvent("Event1");
+					I.AddAction(Send[1],(a, b) => I.Act(1));
+					break;
+				case 2:
+					I.AddEvent("Event2");
+					I.AddAction(Send[2],(a, b) => I.Act(2));
+					break;
+				case 3:
+					I.AddEvent("Event3");
+					I.AddAction(Send[3],(a, b) => I.Act(3));
+					break;
+				case 4:
+					I.AddEvent("Event4");
+					I.AddAction(Send[4],(a, b) => I.Act(4));
+					break;
+				case 5:
+					I.AddEvent("Event5");
+					I.AddAction(Send[5],(a, b) => I.Act(5));
+					break;
+				case 6:
+					I.AddEvent("Event6");
+					I.AddAction(Send[6],(a, b) => I.Act(6));
+					break;
+				case 7:
+					I.AddEvent("Event7");
+					I.AddAction(Send[7],(a, b) => I.Act(7));
+					break;
+				default:
+					MIDIio.Info($"IOproperties.SendAdd(): Action {ct} out of range");
+					break;
+			}
 		}
 
 		bool NoDup(string prop, ref List<string> plist)
@@ -127,7 +224,7 @@ namespace blekenbleu
 		{
 			byte j, cc, st;
 
-			if (0 < MIDIio.CCSize && MIDIio.Log(4, ""))
+			if (0 < MIDIio.CCsize && MIDIio.Log(4, ""))
 			{
 				string s = "Attach() non-MIDI source properties:\n";
 				List<string> nonMIDI = new List<string>();
@@ -140,16 +237,13 @@ namespace blekenbleu
 				MIDIio.Info(s);
 			}
 
-			for (byte an = cc = 0; cc < 128; cc++)
+			for (cc = 0; cc < 128; cc++)
 				if (0 < (3 & Which[cc]))
 				{
 //					MIDIio.Log(4, $"CCprop({CCname[cc]})"); 
  					CCprop(I, cc);				// set property for configured input
 					if (Button == Which[cc])
-					{
 						Which[cc] |= CC;
-						Action(I, an++, cc);	// AddAction() for buttons
-					}
 				}
 
 			// MIDIin property configuration is now complete

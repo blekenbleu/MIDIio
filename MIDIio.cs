@@ -15,6 +15,7 @@ namespace blekenbleu
 		internal VJsend VJD;
 		internal INdrywet Reader;
 		internal OUTdrywet Outer;
+		bool loop = false;
 
 		/// <summary>
 		/// wraps SimHub.Logging.Current.Info(); prefixes MIDIio.My
@@ -55,8 +56,9 @@ namespace blekenbleu
 		{
 			byte start = (byte)((data.GameRunning && data.OldData != null && data.NewData != null) ? 0 : 1);
 
-			SendIf(pluginManager, start);				// Send non-game property changes anytime (echo)
-//			VJD.Loop();									// for testing: loops thru configured axes and buttons
+			SendIf(pluginManager, start);	// Send non-game property changes anytime (echo)
+			if (loop)
+				VJD.Loop();									// for testing: loops thru configured axes and buttons
 		}
 
 		/// <summary>

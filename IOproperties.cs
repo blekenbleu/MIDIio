@@ -15,8 +15,9 @@ namespace blekenbleu
 
 	internal partial class IOproperties
 	{
+		MIDIio M;
 		internal static readonly string[] DestDev =			// destination devices
-			{ "vJoyaxis", "vJoybutton", "CCsend" };
+			{ "vJoyaxis", "vJoybutton", "map" };
 		private readonly static string[] SourceType =		// SourceList[] property types (first dimension)
 			{"game", "Joystick axis", "Joystick button"};
 
@@ -37,8 +38,6 @@ namespace blekenbleu
 				{
 					Which[cc] &= (byte)(~Unc);						// no longer unconfigured
 					Which[cc] |= CC;								// perhaps already configured as a Button
-					if (1 == dt)									// routed to a vJoy button?
-						Which[cc] |= Button;						// make it so
 
 					if (0 < (56 & Which[cc]))						// already a ListCC[] for this cc?
 					{
@@ -66,8 +65,9 @@ namespace blekenbleu
         /// <summary>
         /// Calls WhichCC() to build MIDI and vJoy routing tables
         /// </summary>
-		internal void Init(MIDIio I, byte CCSize)
+		internal void Init(MIDIio I, byte CCsize)
 		{																	// CC configuration property types
+			M = I;
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
 			Wflag = new byte[] { Unc, CC, CC, Button };						// Which type flag bits
 			Which = new byte[128];				  							// OUTwetdry.Init() resends unconfigured CCs on restart
@@ -77,7 +77,7 @@ namespace blekenbleu
 			byte[][] Darray = new byte[DestDev.Length][];					// destination addresses, extracted from .ini
 			byte dt, j, first = (byte)((null == I.VJD) ? 2 : 0);
 
-			InitCC(I, CCSize);
+			InitCC(CCsize);
 		
 /* SendIf() may send 3 property value source types to each of 3 DestDev[]s  (vJoy axes, vJoy buttons, MIDIout)
  ; SendIf() indexes SourceList[st].
@@ -86,7 +86,7 @@ namespace blekenbleu
  ; Sends from CCs to all 3 DestDev[]s are handled separately in INdrywet.OnEventReceived() by ActionCC
  */
 
-			for (dt = 0; dt < SourceType.Length; dt++)
+			for (dt = 0; dt < SourceList.Length; dt++)
 				SourceList[dt] = new List<Source>();
 
 			for (dt = 0; dt < DestDev.Length; dt++)
@@ -145,10 +145,10 @@ namespace blekenbleu
 						case "MIDIio.":
 							WhichCC(dt, Darray[dt][i], prop);							// CC property names are in CCname[]
 							break;
-						case "Joystic":													// JoyStick axis
+						case "Joystic":													// JoyStick
 							SourceList[1].Add(new Source() { Name = prop, Device = dt, Addr = Darray[dt][i] });
 							break;
-						case "InputSt":													// button(?)
+						case "InputSt":													// any SimHub controller
 							SourceList[2].Add(new Source() { Name = prop, Device = dt, Addr = Darray[dt][i] });
 							break;
 						default:														// "game"
@@ -157,6 +157,9 @@ namespace blekenbleu
 					}
 				}
 			}
+
+			for (dt = 0; dt < SourceList.Length; dt++)
+				M.stop[dt] = (byte)SourceList[dt].Count;										// SourceList[].Count >= stop[] are SimHub Events.
 
 			// optionally log
 			if (MIDIio.Log(4, ""))

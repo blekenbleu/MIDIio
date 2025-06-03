@@ -7,7 +7,7 @@ namespace blekenbleu
 {
 	public partial class MIDIio
 	{
-		internal static byte CCSize = 8;											// hard-coded CC send Action count
+		internal static byte CCsize = 8;											// hard-coded CC send Action count
 		internal static bool DoEcho;
 		private  string MIDIin, MIDIout;
 		private  static long VJDmaxval = 65535;
@@ -72,12 +72,13 @@ namespace blekenbleu
 				Outer = new OUTdrywet();
 				if (Outer.Init(MIDIout))
 					pluginManager.AddProperty("out", this.GetType(), MIDIout);
-				else CCSize = 0;
-			}	else CCSize = 0;
+				else CCsize = 0;
+			}	else CCsize = 0;
 
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
-			Properties.Init(this, CCSize);
+			Properties.Init(this, CCsize);
+
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
 			{
@@ -93,9 +94,14 @@ namespace blekenbleu
 				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
 				if(Reader.Init(MIDIin, this))
-					Properties.Attach(this);						// AttachDelegate buttons, sliders and knobs
+					Properties.Attach(this);						// AttachDelegate source CCs
 			}
-			else Info("Init(): " + Ini + "in is undefined" );
+			else Info("Init(): '" + Ini + "in' is undefined" );
+
+			// set up Events and Actions
+			prop = pluginManager.GetPropertyValue(Ini + "sends")?.ToString();
+			if (null != prop && 1 < prop.Length)
+				Properties.EnumActions(this, pluginManager, prop.Split(',')); 	// add MIDIsends to Properties.SourceList[]
 
 			Once = new bool[1 + Properties.SourceList.Length][];	// null game properties for SourceList + CC
 			Sent = new ushort[Once.Length][];						// duplicated send values
