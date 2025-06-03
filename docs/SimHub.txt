@@ -42,13 +42,13 @@ vJoy Device 1 is now acquired.
 	2- AudioBox USB MIDI Out
 	nanoKONTROL2
 
-[2023-06-22 12:40:20,822] INFO - MIDIio.Properties.SourceName[vJoyaxis]:  
+[2023-06-22 12:40:20,822] INFO - MIDIio.Properties.SourceName[vJoyAxis]:  
 				@ 3: ShakeITBSV3Plugin.Export.proxyLS.FrontLeft
 				@ 0: JoystickPlugin.SideWinder_Precision_2_Joystick_X
 				@ 1: JoystickPlugin.SideWinder_Precision_2_Joystick_Y
 				@ 2: JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0
 				@ 4: knob4
-	Properties.SourceName[vJoybutton]:  
+	Properties.SourceName[vJoyButton]:  
 				@ 13: ShakeITBSV3Plugin.Export.proxyLS.FrontRight
 				@ 2: JoystickPlugin.SideWinder_Precision_2_Joystick_Slider0
 				@ 3: InputStatus.JoystickPlugin.SideWinder_Precision_2_Joystick_B05
@@ -73,7 +73,7 @@ vJoy Device 1 is now acquired.
 	knob1	@ 17
 	knob2	@ 18
 	knob3	@ 19
-	knob4	@ 20  vJoyaxis4
+	knob4	@ 20  vJoyAxis4
 	CC43	@ 43 (Button)  vJoyB00
 	button0	@ 58 (Button)  vJoyB01
 	button1	@ 59 (Button)

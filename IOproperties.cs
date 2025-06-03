@@ -17,7 +17,7 @@ namespace blekenbleu
 	{
 		MIDIio M;
 		internal static readonly string[] DestDev =			// destination devices
-			{ "vJoyaxis", "vJoybutton", "map" };
+			{ "vJoyAxis", "vJoyButton", "map" };
 		private readonly static string[] SourceType =		// SourceList[] property types (first dimension)
 			{"game", "Joystick axis", "Joystick button"};
 
@@ -37,7 +37,7 @@ namespace blekenbleu
 				if (L == CCname[cc].Length && CCname[cc] == prop7)
 				{
 					Which[cc] &= (byte)(~Unc);						// no longer unconfigured
-					Which[cc] |= CC;								// perhaps already configured as a Button
+					Which[cc] |= CC;								// perhaps already configured as a SendEvent
 
 					if (0 < (56 & Which[cc]))						// already a ListCC[] for this cc?
 					{
@@ -69,7 +69,7 @@ namespace blekenbleu
 		{																	// CC configuration property types
 			M = I;
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
-			Wflag = new byte[] { Unc, CC, CC, Button };						// Which type flag bits
+			Wflag = new byte[] { Unc, CC, CC, SendEvent };						// Which type flag bits
 			Which = new byte[128];				  							// OUTwetdry.Init() resends unconfigured CCs on restart
 			// selectively replaced by configured slider0-n, knob0-n, button0-n:
 			CCname = new string[128];				   						// Initialized to CC[0-128]
@@ -114,7 +114,7 @@ namespace blekenbleu
 
 			// collect ListCC[][], Map[], SourceList[] from Darray[]
             string dp;
-			for (dt = 0; dt < DestDev.Length; dt++)									// vJoy axis, vJoy button, CC
+			for (dt = 0; dt < Darray.Length; dt++)										// vJoy axis, vJoy button, CC
 			{
 				if (null == Darray[dt])
 					continue;															// perhaps no properties for this destination
@@ -221,14 +221,14 @@ namespace blekenbleu
 					if (0 < (3 & Which[dt]))
 					{
 						s += $"\n\t{CCname[dt]}\t@ {dt}";
-						if (0 < (Button & Which[dt]))
-							s += " (Button)";
+						if (0 < (SendEvent & Which[dt]))
+							s += " (SendEvent)";
 						for (byte pt = 0; pt < DestDev.Length; pt++)
 							if (0 < ((8 << pt) & Which[dt]))	// 8, 16, 32
 							{
 								byte b = ListCC[Map[dt]][pt];
 
-								if (1 == pt)	// replace vJoybutton with vJoyB0
+								if (1 == pt)	// replace vJoyButton with vJoyB0
 								{
 									s += $"  vJoyB";
 									if (10 > b)

@@ -137,7 +137,7 @@ namespace blekenbleu
 				return false;												// ignore known unchanged values
 
 			Settings.CCvalue[CCnumber] = value;
-			if (0 < (Properties.Button & which))
+			if (0 < (Properties.SendEvent & which))
 				this.TriggerEvent(eventName: Properties.IOevent[Properties.tmap[CCnumber]][3]);
 
 			if (0 < (56 & which))                                           // call Send()?

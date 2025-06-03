@@ -82,7 +82,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 *24 May 2025* `version 0.0.1.3`
 - tested vJoy axis with JSONio property;&nbsp; 0 to 100 range expected  
 - changed example `MIDIio.ini` to use VKB instead of SideWinder HOTAS  
-- test for non-zero `MIDIvJoy` setting (non-NULL `VJD`) before logging missing `MIDIvJoybuttons` or `MIDIvJoyaxiss`  
+- test for non-zero `MIDIvJoy` setting (non-NULL `VJD`) before logging missing `MIDIvJoyButtons` or `MIDIvJoyAxiss`  
 - bug fix:  test for null Darray[0-1] instead of (never) null Darray
 
 *24 May 2025* `version 0.0.1.4`

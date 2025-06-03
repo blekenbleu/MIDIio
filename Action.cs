@@ -11,7 +11,7 @@ namespace blekenbleu
 		// CCn names get replaced by configured CCtype's
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate()
 		internal byte[]	 	Which, Wflag;					// CCtype
-		internal readonly byte CC = 1, Button = 2, Unc = 4;	// Wflag[] input type bits for Which[]
+		internal readonly byte CC = 1, SendEvent = 2, Unc = 4;	// Wflag[] input type bits for Which[]
 		// CC source properties, sent in INdrywet.OnEventReceived() by ActionCC()
 		internal List<byte[]> ListCC = new List<byte[]> { };	
 		internal List<byte[]> ActMap = new List<byte[]> { };
@@ -98,7 +98,9 @@ namespace blekenbleu
 						SendAdd(I, actions[a][0], addr, prop);
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
-		}
+			MIDIio.Log(4, "Leaving EnumActions");
+
+        }
 
 		void SendAdd(MIDIio I, char ABC, byte addr, string prop)
 		{
@@ -116,7 +118,7 @@ namespace blekenbleu
 				for (cc = 0; cc < CCname.Length; cc++)
 					if (L == CCname[cc].Length && CCname[cc] == prop7)
 					{
-						Which[cc] |= Button;
+						Which[cc] |= SendEvent;
 						CCmap[ct] = cc;
 						break;
 					}
@@ -242,7 +244,7 @@ namespace blekenbleu
 				{
 //					MIDIio.Log(4, $"CCprop({CCname[cc]})"); 
  					CCprop(I, cc);				// set property for configured input
-					if (Button == Which[cc])
+					if (SendEvent == Which[cc])
 						Which[cc] |= CC;
 				}
 

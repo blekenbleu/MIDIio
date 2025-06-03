@@ -33,9 +33,9 @@
   - [`MIDIlog`](#midilog):&nbsp; Controls MIDIio's **[System Log](SimHub.txt)**
 		[verbosity](#midilog);&nbsp; 0 is mostly only errors and 7 is maximally verbose.  
   - `MIDIvJoy`:&nbsp; Non-zero enables vJoy button and axes outputs  
-  - `MIDIvJoyaxiss`:&nbsp; Index array of configured `MIDIvJoyaxisx`, where 0 <= x < 8 Axes  
+  - `MIDIvJoyAxiss`:&nbsp; Index array of configured `MIDIvJoyAxisx`, where 0 <= x < 8 Axes  
                      as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**
-  - `MIDIvJoybuttons`:&nbsp; Index array of configured `MIDIvJoyB0x`, where 01 <= x < 16 Buttons  
+  - `MIDIvJoyButtons`:&nbsp; Index array of configured `MIDIvJoyButtonx`, where 01 <= x < 16 Buttons  
                      as reported by `MIDIio.VJsend.Init()` in the **[System Log](SimHub.txt)**  
 
 ### MIDIbuttons

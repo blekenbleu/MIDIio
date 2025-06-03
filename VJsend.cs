@@ -22,7 +22,6 @@ namespace blekenbleu
 	class VJsend
 	{
 		internal vJoy joystick;					// Declare one joystick (Device id 1) and a position structure.
-//		internal vJoy.JoystickState iState;		// for EFFICIENT usage; updating the iState structure for multiple buttons and axes
 		private uint id;
 		private readonly HID_USAGES[] usages = {HID_USAGES.HID_USAGE_X, HID_USAGES.HID_USAGE_Y,
 								   HID_USAGES.HID_USAGE_Z, HID_USAGES.HID_USAGE_RX, HID_USAGES.HID_USAGE_RY,
@@ -47,7 +46,6 @@ namespace blekenbleu
 
 			// Create one joystick object and a position structure.
 			joystick = new vJoy();
-//	  		iState = new vJoy.JoystickState();
 
 			// Get driver attributes (Vendor ID, Product ID, Version Number)
 			if (!joystick.vJoyEnabled())
