@@ -17,75 +17,31 @@ namespace blekenbleu
 	{
 		MIDIio M;
 		internal static readonly string[] DestDev =			// destination devices
-			{ "vJoyAxis", "vJoyButton", "map" };
-		private readonly static string[] SourceType =		// SourceList[] property types (first dimension)
+			{ "vJoyAxis", "vJoyButton", "CC" };
+		private readonly static string[] SourceType =		// SourceList[] source property types
 			{"game", "Joystick axis", "Joystick button"};
 
 		// non-CC source properties, sent in SendIf() by DataUpdate()
 		internal List<Source>[] SourceList = new List<Source>[SourceType.Length];
 
-        /// <summary>
-        /// Called by Init(); adds source property data to CCname[], Which[]
-        /// </summary>
-		private int WhichCC(byte dt, byte DevAddr, string prop)
-		{
-			byte cc;
-			int L;
-			string prop7 = prop.Substring(7, L = prop.Length - 7);	// lop off 'MIDIio.'
-
-			for (cc = 0; cc < CCname.Length; cc++)
-				if (L == CCname[cc].Length && CCname[cc] == prop7)
-				{
-					Which[cc] &= (byte)(~Unc);						// no longer unconfigured
-					Which[cc] |= CC;								// perhaps already configured as a SendEvent
-
-					if (0 < (56 & Which[cc]))						// already a ListCC[] for this cc?
-					{
-						try {
-                        	ListCC[dt][Map[cc]] = DevAddr;
-						}
-						catch {};
-					}
-					else
-					{
-						Map[cc] = (byte)ListCC.Count;
-						byte[] devs = new byte[DestDev.Length];
-						devs[dt] = DevAddr;
-						ListCC.Add(devs);
-					}
-					Which[cc] |= (byte)(8 << dt);					// ActionCC() checks Which[] flags
-					return cc;
-				}
-
-			MIDIio.Info($"WhichCC() unrecognized {DestDev[dt]} property:  {prop}");
-			return -1;
-		}
-
 		// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
         /// <summary>
-        /// Calls WhichCC() to build MIDI and vJoy routing tables
+		/// see InitCC.cs for MIDIin initialization
+		/// other property initializations here
         /// </summary>
 		internal void Init(MIDIio I)
 		{																	// CC configuration property types
 			M = I;
-			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
-			Wflag = new byte[] { Unc, CC, CC, SendEvent };						// Which type flag bits
-			Which = new byte[128];				  							// OUTwetdry.Init() resends unconfigured CCs on restart
-			// selectively replaced by configured slider0-n, knob0-n, button0-n:
-			CCname = new string[128];				   						// Initialized to CC[0-128]
-			Map = new byte[128];
 			byte[][] Darray = new byte[DestDev.Length][];					// destination addresses, extracted from .ini
 			byte dt, j, first = (byte)((null == I.VJD) ? 2 : 0);
 
 			InitCC();
 		
-/* SendIf() may send 3 property value source types to each of 3 DestDev[]s  (vJoy axes, vJoy buttons, MIDIout)
- ; SendIf() indexes SourceList[st].
- ; SourceList[] has 3 property SourceType[]s: (game, JoyStick axis or button)
- ; SendIf(0) is called for SourceList[0] only when games are active.
- ; Sends from CCs to all 3 DestDev[]s are handled separately in INdrywet.OnEventReceived() by ActionCC
+/* SendIf() may send any of 3 property value source types to any of 3 DestDev[]s: (vJoy axes, vJoy buttons, MIDIout)
+ ; SendIf() indexes SourceList[st] for those property SourceType[]s: (game, JoyStick axis or button)
+ ; DataUpdate() calls SendIf(0) for SourceList[0] only when games are active.
+ ; ActionCC() separately handles CC sends to all 3 DestDev[]s asynchronously in INdrywet.OnEventReceived()
  */
-
 			for (dt = 0; dt < SourceList.Length; dt++)
 				SourceList[dt] = new List<Source>();
 
@@ -137,13 +93,14 @@ namespace blekenbleu
 			 		if (null == prop)													// Configured non-Button properties should not be null
 					{
 						if("vJoyButton" != DestDev[dt])
-							MIDIio.Info($"IOproperties.Init(): null Send {DestDev[dt]} property {dp}");
+							MIDIio.Info($"IOproperties.Init(): null DestDev[{DestDev[dt]}] property {dp}");
 						continue;
 					}
 
 					switch (prop.Substring(0, 7))
 					{
 						case "MIDIio.":
+        					// build routing tables for CC sends to MIDI and vJoy
 							WhichCC(dt, Darray[dt][i], prop);							// CC property names are in CCname[]
 							break;
 						case "Joystic":													// JoyStick

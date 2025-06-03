@@ -5,8 +5,14 @@ namespace blekenbleu
 	internal partial class IOproperties
 	{
 		// Unc 0x80 bit is stripped from I.Settings.CCvalue[]s in Init()
-		internal bool CCprop(MIDIio I, int CCnumber)
+		internal bool CCprop(MIDIio I, int CCnumber, bool setUnc)
 		{
+//			MIDIio.Log(4, $"CCprop({CCname[CCnumber]})");
+			if (SendEvent == Which[CCnumber])
+				Which[CCnumber] |= CC;
+			else if (setUnc)
+				Which[CCnumber] |= Unc;
+
 			switch (CCnumber)		// configure CC property and event
 			{
 				case 0:

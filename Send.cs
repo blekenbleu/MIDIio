@@ -47,7 +47,8 @@ namespace blekenbleu
 			}
 		}															// Send()
 
-		internal byte[] stop = new byte[] {2, 2, 2, 2};		// vJoy actions start here
+		// actual values get set in IOproperties.cs;  used in Send.cs
+		internal byte[] stop = new byte[] {2, 2, 2};		// non-MIDIio Events start here in SourceList[]
 
 		/// <summary>
 		/// Called by DataUpdate(); calls Send()
@@ -129,13 +130,13 @@ namespace blekenbleu
 		/// trigger configured Events
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
-		internal bool ActionCC(byte CCnumber, byte value)					// returns true if first time
+		internal void ActionCC(byte CCnumber, byte value)
 		{
 			byte which = Properties.Which[CCnumber];
 
-			CCin = $"ActionCC({CCnumber}, {value})";
+			CCin = $"ActionCC({CCnumber}, {value})";						// debug property
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
-				return false;												// ignore known unchanged values
+				return;														// ignore known unchanged values
 
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < (Properties.SendEvent & which))
@@ -152,17 +153,14 @@ namespace blekenbleu
 						Send(rescaled, dt, address);
 					}
 
-				return false;
+				return;
 			}
 
 			if (DoEcho)
 				Outer.SendCCval(CCnumber, value);
 
-			if (0 < which)
-				return false;
-
-			Properties.Which[CCnumber] = Properties.Unc;					// First time CC number seen
-			return Properties.CCprop(this, CCnumber);						// dynamic CC configuration
+			if (0 == which)
+				Properties.CCprop(this, CCnumber, true);						// dynamic CC configuration
 		}	// ActionCC()
 	}
 }
