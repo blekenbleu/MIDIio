@@ -104,7 +104,7 @@ namespace blekenbleu
                     prop = name;
 					if (p < stop[src])								// higher p are for Events
 						Send(value, dev, address);
-					else this.TriggerEvent(Properties.IOevent[src][p - stop[src]]);
+					else this.TriggerEvent(Ping = Properties.IOevent[src][p - stop[src]]);
 				}
 		}			// SendIf()
 
@@ -112,6 +112,7 @@ namespace blekenbleu
 		// called for SimHub Actions
 		internal void Act(ushort a)
 		{
+			Ping = $"Act({a})";
 			byte src = Properties.ActMap[a][0];
 	 		byte p = Properties.ActMap[a][1];
 			byte dev = Properties.SourceList[src][p].Device;
@@ -138,7 +139,7 @@ namespace blekenbleu
 
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < (Properties.SendEvent & which))
-				this.TriggerEvent(eventName: Properties.IOevent[Properties.tmap[CCnumber]][3]);
+				this.TriggerEvent(Ping = Properties.IOevent[Properties.tmap[CCnumber]][3]);
 
 			if (0 < (56 & which))                                           // call Send()?
 			{

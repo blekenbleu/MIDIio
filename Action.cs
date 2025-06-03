@@ -6,7 +6,7 @@ namespace blekenbleu
 {
 	internal partial class IOproperties
 	{
-		private  string[]	Send;					  		// send[0-7] Actions
+		private  List<string> Send;					  		// send Actions
 		internal byte[]		Map;							// Map CCnumber to ListCC[]
 		// CCn names get replaced by configured CCtype's
 		internal string[]   CCname, CCtype;			   		// for AttachDelegate()
@@ -17,18 +17,16 @@ namespace blekenbleu
 		internal List<byte[]> ActMap = new List<byte[]> { };
 		internal List<string>[] IOevent = new List<string>[3] { new List<string> { }, new List<string> { }, new List<string> { } };
 		internal byte[] tmap = new byte[128];				// map received CCs to Event triggers
-		internal byte[] CCmap;
+		internal List<byte> CCmap;
+		bool first = true;
 
-		void InitCC(byte CCsize)
+		void InitCC()
 		{
 			byte ct, j;
 
-			Send = new string[CCsize];
-			CCmap = new byte[CCsize];
+			Send = new List<string> {};
+			CCmap = new List<byte> {};
  
-			for (j = 0; j < CCsize; j++)
-				Send[j] = "send" + j;
-
 			for (ct = j = 0; j < 128; j++)
 			{
 				CCname[j] = "CC" + j;
@@ -99,16 +97,17 @@ namespace blekenbleu
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
 			MIDIio.Log(4, "Leaving EnumActions");
-
         }
 
 		void SendAdd(MIDIio I, char ABC, byte addr, string prop)
 		{
 			byte dt = 3;
-			int ct = IOevent[0].Count + IOevent[2].Count + IOevent[2].Count;
+			int ct = CCmap.Count;
 			// to do: plumb CC Event triggers
 			bool CCevent = "MIDIio." == prop.Substring(0, 7);
             byte cc = 0;
+
+			CCmap.Add(0);
 
             if (CCevent)
 			{
@@ -125,6 +124,7 @@ namespace blekenbleu
 				if (127 < cc)
 					MIDIio.Log(0, $"IOproperties.SendAdd({prop}): not found in CCname[]");
 			}
+
 			switch (ABC)
 			{
 				case 'A':
@@ -172,38 +172,72 @@ namespace blekenbleu
 			{
 				case 0:
 					I.AddEvent("Event0");
-					I.AddAction(Send[0],(a, b) => I.Act(0));
+					I.AddAction("send0",(a, b) => I.Act(0));
 					break;
 				case 1:
 					I.AddEvent("Event1");
-					I.AddAction(Send[1],(a, b) => I.Act(1));
+					I.AddAction("send1",(a, b) => I.Act(1));
 					break;
 				case 2:
 					I.AddEvent("Event2");
-					I.AddAction(Send[2],(a, b) => I.Act(2));
+					I.AddAction("send2",(a, b) => I.Act(2));
 					break;
 				case 3:
 					I.AddEvent("Event3");
-					I.AddAction(Send[3],(a, b) => I.Act(3));
+					I.AddAction("send3",(a, b) => I.Act(3));
 					break;
 				case 4:
 					I.AddEvent("Event4");
-					I.AddAction(Send[4],(a, b) => I.Act(4));
+					I.AddAction("send4",(a, b) => I.Act(4));
 					break;
 				case 5:
 					I.AddEvent("Event5");
-					I.AddAction(Send[5],(a, b) => I.Act(5));
+					I.AddAction("send5",(a, b) => I.Act(5));
 					break;
 				case 6:
 					I.AddEvent("Event6");
-					I.AddAction(Send[6],(a, b) => I.Act(6));
+					I.AddAction("send6",(a, b) => I.Act(6));
 					break;
 				case 7:
 					I.AddEvent("Event7");
-					I.AddAction(Send[7],(a, b) => I.Act(7));
+					I.AddAction("send7",(a, b) => I.Act(7));
+					break;
+				case 8:
+					I.AddEvent("Event8");
+					I.AddAction("send8",(a, b) => I.Act(8));
+					break;
+				case 9:
+					I.AddEvent("Event9");
+					I.AddAction("send9",(a, b) => I.Act(9));
+					break;
+				case 10:
+					I.AddEvent("Event10");
+					I.AddAction("send10",(a, b) => I.Act(10));
+					break;
+				case 11:
+					I.AddEvent("Event11");
+					I.AddAction("send11",(a, b) => I.Act(11));
+					break;
+				case 12:
+					I.AddEvent("Event12");
+					I.AddAction("send12",(a, b) => I.Act(12));
+					break;
+				case 13:
+					I.AddEvent("Event13");
+					I.AddAction("send13",(a, b) => I.Act(13));
+					break;
+				case 14:
+					I.AddEvent("Event14");
+					I.AddAction("send14",(a, b) => I.Act(14));
+					break;
+				case 15:
+					I.AddEvent("Event15");
+					I.AddAction("send15",(a, b) => I.Act(15));
 					break;
 				default:
-					MIDIio.Info($"IOproperties.SendAdd(): Action {ct} out of range");
+					if (first)
+						MIDIio.Info(MIDIio.oops = $"IOproperties.SendAdd(): Action {ct} out of range");
+					first = false;							// reporting once should suffice
 					break;
 			}
 		}
@@ -226,7 +260,7 @@ namespace blekenbleu
 		{
 			byte j, cc, st;
 
-			if (0 < MIDIio.CCsize && MIDIio.Log(4, ""))
+			if (MIDIio.Log(4, ""))
 			{
 				string s = "Attach() non-MIDI source properties:\n";
 				List<string> nonMIDI = new List<string>();

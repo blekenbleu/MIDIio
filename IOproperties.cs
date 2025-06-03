@@ -65,7 +65,7 @@ namespace blekenbleu
         /// <summary>
         /// Calls WhichCC() to build MIDI and vJoy routing tables
         /// </summary>
-		internal void Init(MIDIio I, byte CCsize)
+		internal void Init(MIDIio I)
 		{																	// CC configuration property types
 			M = I;
 			CCtype = new string[] { "unconfigured", "slider", "knob", "button" };
@@ -77,7 +77,7 @@ namespace blekenbleu
 			byte[][] Darray = new byte[DestDev.Length][];					// destination addresses, extracted from .ini
 			byte dt, j, first = (byte)((null == I.VJD) ? 2 : 0);
 
-			InitCC(CCsize);
+			InitCC();
 		
 /* SendIf() may send 3 property value source types to each of 3 DestDev[]s  (vJoy axes, vJoy buttons, MIDIout)
  ; SendIf() indexes SourceList[st].
@@ -134,9 +134,10 @@ namespace blekenbleu
 
 					string prop = I.PluginManager.GetPropertyValue(dp)?.ToString();
 
-			 		if (null == prop) 													// Configured properties should not be null
+			 		if (null == prop)													// Configured non-Button properties should not be null
 					{
-						MIDIio.Info($"IOproperties.Init(): null Send {DestDev[dt]} property {dp}");
+						if("vJoyButton" != DestDev[dt])
+							MIDIio.Info($"IOproperties.Init(): null Send {DestDev[dt]} property {dp}");
 						continue;
 					}
 
@@ -169,10 +170,12 @@ namespace blekenbleu
 				for (dt = 0; dt < DestDev.Length; dt++)
 				{
 					byte k = 0;
+					string t = "";
+					bool some = false;
 
 					if (0 < dt)
-						s += "\n\t";
-					s +=  $"IOProperties.SourceList[{DestDev[dt]}].Name:  ";
+						t += "\n\t";
+					t +=  $"IOProperties.SourceList[{DestDev[dt]}].Name:  ";
 
 					for (byte pt = 0; pt < 3; pt++)					// property type: game, Joy axis, Joy button, CC
 					{
@@ -182,15 +185,16 @@ namespace blekenbleu
 							if (dt != SourceList[pt][j].Device)
 								continue;
 
+							some = true;
 							string N = SourceList[pt][j].Name;
 
 							if (0 < k++)
-								s += "\n\t\t\t\t";
+								t += "\n\t\t\t\t";
 							else if (0 < SourceList[pt].Count)
-								s += "\n\t\t\t\t";
+								t += "\n\t\t\t\t";
 							if(null != N)
-								s += $"@ {SourceList[pt][j].Addr}: " + N;
-							else s += $"\nnull == SourceList[{pt}][{j}].Name\n\t\t\t\t\t";
+								t += $"@ {SourceList[pt][j].Addr}: " + N;
+							else t += $"\nnull == SourceList[{pt}][{j}].Name\n\t\t\t\t\t";
 						}
 					}
 
@@ -201,18 +205,21 @@ namespace blekenbleu
 						if (0 == ((8 << dt) & Which[j]))
 							continue;
 
+						some = true;
 						string N = CCname[j];
 
 						if (0 < k++)
-							s += "\n\t\t\t\t";
-						else s += "\n\t\t\t\t";
+							t += "\n\t\t\t\t";
+						else t += "\n\t\t\t\t";
                         if (Map[j] < ListCC.Count)
 						{
 							if (null != N)
-								s += "@ " + (ListCC[Map[j]][dt]) + ": " + N;
-							else s += $"\nnull == CCname[{j}]!!\n\t\t\t\t\t";
-						} else  s += $"\nMap[{j}] = {Map[j]} >= ListCC.Count {ListCC.Count}!!\n\t\t\t\t\t";
+								t += "@ " + (ListCC[Map[j]][dt]) + ": " + N;
+							else t += $"\nnull == CCname[{j}]!!\n\t\t\t\t\t";
+						} else  t += $"\nMap[{j}] = {Map[j]} >= ListCC.Count {ListCC.Count}!!\n\t\t\t\t\t";
 					}
+					if (some)
+						s += t;
 				}
 				MIDIio.Info(s + "\n");
 

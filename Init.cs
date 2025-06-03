@@ -7,7 +7,6 @@ namespace blekenbleu
 {
 	public partial class MIDIio
 	{
-		internal static byte CCsize = 8;											// hard-coded CC send Action count
 		internal static bool DoEcho;
 		private  string MIDIin, MIDIout;
 		private  static long VJDmaxval = 65535;
@@ -72,12 +71,11 @@ namespace blekenbleu
 				Outer = new OUTdrywet();
 				if (Outer.Init(MIDIout))
 					pluginManager.AddProperty("out", this.GetType(), MIDIout);
-				else CCsize = 0;
-			}	else CCsize = 0;
+			}
 
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
-			Properties.Init(this, CCsize);
+			Properties.Init(this);
 
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
