@@ -75,7 +75,7 @@ namespace blekenbleu
 
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
-			Properties.Init(this);
+			Properties.Init(this, pluginManager);
 
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
@@ -92,17 +92,12 @@ namespace blekenbleu
 				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
 				if(Reader.Init(MIDIin, this))
-					Properties.Attach(this);						// AttachDelegate source CCs
+					Properties.Attach();						// AttachDelegate source CCs
 			}
 			else Info("Init(): '" + Ini + "in' is undefined" );
 
-			// set up Events and Actions
-			prop = pluginManager.GetPropertyValue(Ini + "sends")?.ToString();
-			if (null != prop && 1 < prop.Length)
-				Properties.EnumActions(this, pluginManager, prop.Split(',')); 	// add MIDIsends to Properties.SourceList[]
-
 			Once = new bool[1 + Properties.SourceList.Length][];	// null game properties for SourceList + CC
-			Sent = new ushort[Once.Length][];						// duplicated send values
+			Sent = new ushort[Once.Length][];						// most recent Send() values
 			for (int s = 0; s < Once.Length; s++)
 			{
 				if (s < Properties.SourceList.Length)

@@ -75,12 +75,12 @@ namespace blekenbleu
 			{
 				MIDIio.CCsent = $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}";
 				if ((0 == MIDIio.Properties.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
-				{
-					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber}" + MIDIio.Properties.CCname[CC.ControlNumber]);
+				{																		// complain only about the first 5
+					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber} " + MIDIio.Properties.CCname[CC.ControlNumber]);
 					mystery++;
 				}
 			}
-			else MIDIio.Log(2, $"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
+			else MIDIio.Log(2, MIDIio.CCsent = $"OnEventSent(): Ignoring {midiDevice.Name} {e.Event} reported for {CCout}");
 		}
 	}
 }

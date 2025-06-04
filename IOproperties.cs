@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
+using SimHub.Plugins;
 
 namespace blekenbleu
 {
@@ -18,10 +19,11 @@ namespace blekenbleu
 		MIDIio M;
 		internal static readonly string[] DestDev =			// destination devices
 			{ "vJoyAxis", "vJoyButton", "CC" };
-		private readonly static string[] SourceType =		// SourceList[] source property types
+		// unlike a MIDIin event's known CCnumber, search SourceList for other input source property value changes
+		private readonly static string[] SourceType =		// (non-CC) SourceList[] source property types
 			{"game", "Joystick axis", "Joystick button"};
 
-		// non-CC source properties, sent in SendIf() by DataUpdate()
+		// called by DataUpdate(), SendIf() searchs SourceList for non-CC source property changed values
 		internal List<Source>[] SourceList = new List<Source>[SourceType.Length];
 
 		// VJD.Init() has already run; now sort "my" CC properties first for sending, even when game is not running
@@ -29,7 +31,7 @@ namespace blekenbleu
 		/// see InitCC.cs for MIDIin initialization
 		/// other property initializations here
         /// </summary>
-		internal void Init(MIDIio I)
+		internal void Init(MIDIio I, PluginManager pluginManager)
 		{																	// CC configuration property types
 			M = I;
 			byte[][] Darray = new byte[DestDev.Length][];					// destination addresses, extracted from .ini
@@ -42,8 +44,8 @@ namespace blekenbleu
  ; DataUpdate() calls SendIf(0) for SourceList[0] only when games are active.
  ; ActionCC() separately handles CC sends to all 3 DestDev[]s asynchronously in INdrywet.OnEventReceived()
  */
-			for (dt = 0; dt < SourceList.Length; dt++)
-				SourceList[dt] = new List<Source>();
+			for (int src = 0; src < SourceList.Length; src++)
+				SourceList[src] = new List<Source>();
 
 			for (dt = 0; dt < DestDev.Length; dt++)
 			{
@@ -134,71 +136,76 @@ namespace blekenbleu
 						t += "\n\t";
 					t +=  $"IOProperties.SourceList[{DestDev[dt]}].Name:  ";
 
-					for (byte pt = 0; pt < 3; pt++)					// property type: game, Joy axis, Joy button, CC
+					for (byte src = 0; src < 3; src++)					// nonCC source property type: game, Joy axis, Joy button
 					{
-						for (j = 0; j < SourceList[pt].Count; j++)
+						for (j = 0; j < SourceList[src].Count; j++)
 						{
 							// test for configured destination device
-							if (dt != SourceList[pt][j].Device)
+							if (dt != SourceList[src][j].Device)
 								continue;
 
 							some = true;
-							string N = SourceList[pt][j].Name;
+							string N = SourceList[src][j].Name;
 
 							if (0 < k++)
 								t += "\n\t\t\t\t";
-							else if (0 < SourceList[pt].Count)
+							else if (0 < SourceList[src].Count)
 								t += "\n\t\t\t\t";
 							if(null != N)
-								t += $"@ {SourceList[pt][j].Addr}: " + N;
-							else t += $"\nnull == SourceList[{pt}][{j}].Name\n\t\t\t\t\t";
+								t += $"@ {SourceList[src][j].Addr}: " + N;
+							else t += $"\nnull == SourceList[{src}][{j}].Name\n\t\t\t\t\t";
 						}
 					}
 
 					// unlike other sources, CC source address is the known at Send() time
-					for (j = 0; j < 128; j++)
+					for (byte cc = 0; cc < 128; cc++)
 					{
 						// test for configured destination device
-						if (0 == ((8 << dt) & Which[j]))
+						if (0 == ((2 << dt) & Which[cc]))
 							continue;
 
 						some = true;
-						string N = CCname[j];
+						string N = CCname[cc];
 
 						if (0 < k++)
 							t += "\n\t\t\t\t";
 						else t += "\n\t\t\t\t";
-                        if (Map[j] < ListCC.Count)
+                        if (Map[cc] < ListCC.Count)
 						{
 							if (null != N)
-								t += "@ " + (ListCC[Map[j]][dt]) + ": " + N;
-							else t += $"\nnull == CCname[{j}]!!\n\t\t\t\t\t";
-						} else  t += $"\nMap[{j}] = {Map[j]} >= ListCC.Count {ListCC.Count}!!\n\t\t\t\t\t";
+								t += "@ " + (ListCC[Map[cc]][dt]) + ": " + N;
+							else t += $"\nnull == CCname[{cc}]!!\n\t\t\t\t\t";
+						} else  t += $"\nMap[{cc}] = {Map[cc]} >= ListCC.Count {ListCC.Count}!!\n\t\t\t\t\t";
 					}
-					if (some)
+					if (some)	// no joystick button sources may be detected
 						s += t;
 				}
 				MIDIio.Info(s + "\n");
 
-				s = "Properties.CCname[]:";
-				for (dt = 0; dt < 128; dt++)
-					if (0 < (3 & Which[dt]))
-					{
-						s += $"\n\t{CCname[dt]}\t@ {dt}";
-						if (0 < (SendEvent & Which[dt]))
-							s += " (SendEvent)";
-						for (byte pt = 0; pt < DestDev.Length; pt++)
-							if (0 < ((8 << pt) & Which[dt]))	// 8, 16, 32
-							{
-								byte b = ListCC[Map[dt]][pt];
+				// set up Events and Actions
+				string props = pluginManager.GetPropertyValue(MIDIio.Ini + "sends")?.ToString();
+				if (null != props && 1 < props.Length)
+					EnumActions(pluginManager, props.Split(',')); 	// add MIDIsends to Properties.SourceList[]
 
-								if (1 == pt)	// replace vJoyButton with vJoyB0
+				s = "Properties.CCname[]:";
+				for (byte cc = 0; cc < 128; cc++)
+					if (0 < (CC & Which[cc]))
+					{
+						s += $"\n\t{CCname[cc]}\t@ {cc}";
+						if (0 < (SendEvent & Which[cc]))
+							s += " (SendEvent)";
+						for (dt = 0; dt < DestDev.Length; dt++)
+							if (0 < ((2 << dt) & Which[cc]))	// 8, 16, 32
+							{
+								byte b = ListCC[Map[cc]][dt];
+
+								if (1 == dt)	// replace vJoyButton with vJoyB0
 								{
 									s += $"  vJoyB";
 									if (10 > b)
 										s += "0";
 								}
-								else s += $"  {DestDev[pt]}";
+								else s += $"  {DestDev[dt]}";
 								s += $"{b}";
 							}
 					}

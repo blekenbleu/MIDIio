@@ -7,84 +7,84 @@ namespace blekenbleu
 	internal partial class IOproperties
 	{
 		bool first = false;
+		internal byte[] CCevent = new byte[128];                              // CC number for applicable events
+		internal List<byte[]> ActMap = new List<byte[]> { };	// SourceType[] index, SourceList[] index
+		internal List<byte>[] IOevent = new List<byte>[4] {		// Event numbers per source
+											new List<byte> {},	// game SourceType events
+											new List<byte> {},	// Joystick axis SourceType events
+											new List<byte> {},	// Joystick button SourceType events
+											new List<byte> {}};	// CC events
 
 		// configure MIDIio.ini MIDIsends Events and Actions
-		void SendAdd(MIDIio I, char ABC, byte addr, string prop)
+		void SendAdd(MIDIio I, char ABC, byte addr, string prop)	// called only in EnumActions() after all non-Event configuration
 		{
-			byte dt = 3;
-			int ct = CCmap.Count;
-			// to do: plumb CC Event triggers
-			bool CCevent = "MIDIio." == prop.Substring(0, 7);
-            byte cc = 0;
+			bool notCC = true;
+			byte dt = 3, cc = 0, src = 0;
+			byte ct = (byte)((null == ActMap) ? 0 : ActMap.Count);// ActMap gets appended for ALL Events
 
-			if (0 == CCmap.Count)
+			if (0 == ct)
 				first = true;
 			else if (!first)
 				return;							// ct out of range
 
-			CCmap.Add(0);						// entries for all events
-
-            if (CCevent)
-			{
-				int L = prop.Length - 7;		// lop off 'MIDIio.'
-	            string prop7 = prop.Substring(7, L);
-
-				for (; cc < CCname.Length; cc++)
-					if (L == CCname[cc].Length && CCname[cc] == prop7)
-					{
-						Which[cc] |= SendEvent;
-						CCmap[ct] = cc;			// this entry for a CC event
-						break;
-					}
-				if (127 < cc)
-				{
-					MIDIio.Log(0, MIDIio.oops = $"IOproperties.SendAdd({prop}): not found in CCname[]");
-					CCevent = false;
-				}
-			}
-
 			switch (ABC)
 			{
 				case 'A':
-					if (CCevent)
-						tmap[cc] = (byte)IOevent[0].Count;
-					else ActMap.Add(new byte[] { 0, (byte)SourceList[0].Count });	// used by Act()
-					IOevent[dt = 0].Add("Event"+ct);				   // used by TriggerEvent()
+					dt = 0;
 					break;
 				case 'B':
-					if (CCevent)
-						tmap[cc] = (byte)IOevent[1].Count;
-					else ActMap.Add(new byte[] { 1, (byte)SourceList[1].Count });
-					IOevent[dt = 1].Add("Event"+ct);
+					dt = 1;
 					break;		
 				case 'C':
-					if (CCevent)
-						tmap[cc] = (byte)IOevent[2].Count;
-					else ActMap.Add(new byte[] { 2, (byte)SourceList[2].Count });
-					IOevent[dt = 2].Add("Event"+ct);
+					dt = 2;
 					break;
 				default:
 					MIDIio.Log(0, MIDIio.oops = $"IOproperties.SendAdd(): unknown send type '{ABC}'");
 					return;
 			}
 
-			switch (prop.Substring(0, 7))
+            if ("MIDIio." == prop.Substring(0, 7))
 			{
-				case "MIDIio.":
+				int L = prop.Length - 7;		// lop off 'MIDIio.'
+	            string prop7 = prop.Substring(7, L);
+
+				for (; cc < CCname.Length; cc++)
+					if (L == CCname[cc].Length && CCname[cc] == prop7)
+						break;
+
+				if (notCC = cc >= CCname.Length)
+					MIDIio.Log(0, MIDIio.oops = $"IOproperties.SendAdd({prop}): not found in CCname[]");
+				else {
+					src = 3;
+					Which[cc] |= SendEvent;
+					if (0 == (CC & Which[cc]))
+						CCprop(cc, false);
+					CCevent[cc]	= ct;												// for CC Event (trigger)
+					IOevent[3].Add(ct);					
 					byte[] devs = new byte[DestDev.Length];
 					devs[dt] = addr;
 					ListCC.Add(devs);
+					ActMap.Add(new byte[] { dt, (byte)SourceList[dt].Count, cc });  // used by Act()
+				}
+			}
+
+			if (notCC)
+				ActMap.Add(new byte[] { dt, (byte)SourceList[dt].Count });			// used by Act()
+
+			switch (prop.Substring(0, 7))
+			{
+				case "Joystic":										 				// JoyStick
+					src = 1;
 					break;
-				case "Joystic":										 		// JoyStick
-					SourceList[1].Add(new Source() { Name = prop, Device = dt, Addr = addr });
-					break;
-				case "InputSt":											 	// any SimHub controller
-					SourceList[2].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+				case "InputSt":
+					src = 2;											 	// any SimHub controller
 					break;
 				default:													// "game"
-					SourceList[0].Add(new Source() { Name = prop, Device = dt, Addr = addr });
 					break;
 			}
+			IOevent[src].Add(ct);										// used by TriggerEvent()
+			if (3 > src)
+				SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
 
 			switch (ct)				// configure action and event
 			{

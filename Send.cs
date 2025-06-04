@@ -18,7 +18,7 @@ namespace blekenbleu
 		/// Called by SendIf() and ActionCC() to send each property change
 		/// dev: (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval
 		///	addr: destination 
-		/// prop: src property name for error log
+		/// prop: src property name for debugging
 		/// </summary>
 		internal void Send(ushort value, byte dev, byte addr)
 		{
@@ -105,7 +105,7 @@ namespace blekenbleu
                     prop = name;
 					if (p < stop[src])								// higher p are for Events
 						Send(value, dev, address);
-					else this.TriggerEvent(Ping = Properties.IOevent[src][p - stop[src]]);
+					else this.TriggerEvent(Ping = "Event"+Properties.IOevent[src][p - stop[src]]);
 				}
 		}			// SendIf()
 
@@ -119,7 +119,7 @@ namespace blekenbleu
 			byte dev = Properties.SourceList[src][p].Device;
 			byte addr = Properties.SourceList[src][p].Addr;
 			if (3 == src)
-				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[Properties.CCmap[a]]), dev, addr);
+				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[Properties.ActMap[a][2]]), dev, addr);
 			else Send(Sent[src][p], dev, addr);
 		}
 
@@ -138,21 +138,24 @@ namespace blekenbleu
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
 				return;														// ignore known unchanged values
 
+			prop = Properties.CCname[CCnumber];								// debug
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < (Properties.SendEvent & which))
-				this.TriggerEvent(Ping = Properties.IOevent[Properties.tmap[CCnumber]][3]);
+				this.TriggerEvent(Ping = "Event" + Properties.CCevent[CCnumber]);
 
-			if (0 < (56 & which))                                           // call Send()?
+			if (0 < (14 & which))                                           // flags 2+4+8:  call Send()?
 			{
-				for (byte dt = 0; dt < IOproperties.DestDev.Length; dt++)	// at most one Send() per DestDev and CC
-					if (0 < ((8 << dt) & which))							// DestDev flag
+				bool sent = false;
+				for (byte dt = 0; dt < Properties.ListCC.Count; dt++)		// at most one Send() per DestDev and CC
+					if (0 < ((2 << dt) & which))							// DestDev flag
 					{
 						byte  address = Properties.ListCC[dt][Properties.Map[CCnumber]];
 						ushort rescaled = (ushort)(0.5 + scale[dt, 3] * value);
-						prop = Properties.CCname[CCnumber];
 						Send(rescaled, dt, address);
+						sent = true;
 					}
-
+				if (!sent)
+					Log(2, oops = $"ActionCC({prop}):  unsent");
 				return;
 			}
 
@@ -160,7 +163,7 @@ namespace blekenbleu
 				Outer.SendCCval(CCnumber, value);
 
 			if (0 == which)
-				Properties.CCprop(this, CCnumber, true);						// dynamic CC configuration
+				Properties.CCprop(CCnumber, true);						// dynamic CC configuration
 		}	// ActionCC()
 	}
 }
