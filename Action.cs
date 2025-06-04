@@ -18,8 +18,8 @@ namespace blekenbleu
 					string prop = (string)pluginManager.GetPropertyValue(s);
 
 					if (null == prop || 8 > prop.Length)
-						MIDIio.Log(0, $"IOproperties.Action({s}):  dubious property name :" + prop);
-					if (byte.TryParse(actions[a].Substring(1), out byte addr))
+						MIDIio.Log(0, MIDIio.oops = $"IOproperties.Action({s}):  dubious property name :" + prop);
+					else if (byte.TryParse(actions[a].Substring(1), out byte addr))
 						SendAdd(M, actions[a][0], addr, prop);
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
@@ -42,7 +42,8 @@ namespace blekenbleu
 		// call CCprop to AttachDelegate() configured MIDIin properties
 		internal void Attach()
 		{
-			byte j, cc, st;
+			byte cc, st;
+			short j;
 
 			if (MIDIio.Log(4, ""))
 			{
@@ -51,9 +52,16 @@ namespace blekenbleu
 
 				// search thru all non-MIDI source
 				for (st = 0; st < 3; st++)
-					for (j = 0; j < SourceList[st].Count; j++)
-						if(NoDup(SourceList[st][j].Name, ref nonMIDI))
-							s += "\t" + SourceList[st][j].Name + "\n";
+					for (j = (byte)(SourceList[st].Count - 1); j >= 0; j--)
+					{
+						string SE;
+
+						if (j >= M.stop[st])
+							SE = " (SendEvent)";
+						else SE = "";
+						if (NoDup(SourceList[st][j].Name, ref nonMIDI))
+							s += "\t" + SourceList[st][j].Name + SE + "\n";
+					}
 				MIDIio.Info(s);
 			}
 
