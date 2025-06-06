@@ -1,10 +1,9 @@
 using SimHub.Plugins;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace blekenbleu
 {
-	internal partial class IOproperties
+	public partial class MIDIio
 	{
 		bool first = false;
 		internal byte[] CCevent = new byte[128];				// CC number for applicable events
@@ -16,7 +15,7 @@ namespace blekenbleu
 											new List<byte> {}};	// CC events
 
 		// configure MIDIio.ini MIDIsends Events and Actions
-		void SendAdd(MIDIio I, char ABC, byte addr, string prop)	// called only in EnumActions() after all non-Event configuration
+		internal void SendAdd(char ABC, byte addr, string prop)	// called only in EnumActions() after all non-Event configuration
 		{
 			bool notCC = true;
 			byte dt = 3, cc = 0, src = 0;
@@ -48,28 +47,28 @@ namespace blekenbleu
 				int L = prop.Length - 7;		// lop off 'MIDIio.'
 				string prop7 = prop.Substring(7, L);
 
-				for (; cc < CCname.Length; cc++)
-					if (L == CCname[cc].Length && CCname[cc] == prop7)
+				for (; cc < Properties.CCname.Length; cc++)
+					if (L == Properties.CCname[cc].Length && Properties.CCname[cc] == prop7)
 						break;
 
-				if (notCC = cc >= CCname.Length)
+				if (notCC = cc >= Properties.CCname.Length)
 					MIDIio.Log(0, MIDIio.oops = $"IOproperties.SendAdd({prop}): not found in CCname[]");
 				else {
 					src = 3;
-					Which[cc] |= SendEvent;
-					if (0 == (CC & Which[cc]))
-						CCprop(cc, false);
+					Properties.Which[cc] |= Properties.SendEvent;
+					if (0 == (Properties.CC & Properties.Which[cc]))
+						Properties.CCprop(cc, false);
 					CCevent[cc]	= ct;												// for CC Event (trigger)
 					IOevent[3].Add(ct);					
-					byte[] devs = new byte[DestDev.Length];
+					byte[] devs = new byte[IOproperties.DestDev.Length];
 					devs[dt] = addr;
-					ListCC.Add(devs);
-					ActMap.Add(new byte[] { dt, (byte)SourceList[dt].Count, cc });  // used by Act()
+					Properties.ListCC.Add(devs);
+					ActMap.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count, cc });  // used by Act()
 				}
 			}
 
 			if (notCC)
-				ActMap.Add(new byte[] { dt, (byte)SourceList[dt].Count });			// used by Act()
+				ActMap.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count });			// used by Act()
 
 			switch (prop.Substring(0, 7))
 			{
@@ -84,73 +83,73 @@ namespace blekenbleu
 			}
 			IOevent[src].Add(ct);													// used by TriggerEvent()
 			if (3 > src)
-				SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+				Properties.SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
 
 			switch (ct)				// configure action and event
 			{
 				case 0:
-					I.AddEvent("Event0");
-					I.AddAction("send0",(a, b) => I.Act(0));
+					this.AddEvent("Event0");
+					this.AddAction("send0",(a, b) => this.Act(0));
 					break;
 				case 1:
-					I.AddEvent("Event1");
-					I.AddAction("send1",(a, b) => I.Act(1));
+					this.AddEvent("Event1");
+					this.AddAction("send1",(a, b) => this.Act(1));
 					break;
 				case 2:
-					I.AddEvent("Event2");
-					I.AddAction("send2",(a, b) => I.Act(2));
+					this.AddEvent("Event2");
+					this.AddAction("send2",(a, b) => this.Act(2));
 					break;
 				case 3:
-					I.AddEvent("Event3");
-					I.AddAction("send3",(a, b) => I.Act(3));
+					this.AddEvent("Event3");
+					this.AddAction("send3",(a, b) => this.Act(3));
 					break;
 				case 4:
-					I.AddEvent("Event4");
-					I.AddAction("send4",(a, b) => I.Act(4));
+					this.AddEvent("Event4");
+					this.AddAction("send4",(a, b) => this.Act(4));
 					break;
 				case 5:
-					I.AddEvent("Event5");
-					I.AddAction("send5",(a, b) => I.Act(5));
+					this.AddEvent("Event5");
+					this.AddAction("send5",(a, b) => this.Act(5));
 					break;
 				case 6:
-					I.AddEvent("Event6");
-					I.AddAction("send6",(a, b) => I.Act(6));
+					this.AddEvent("Event6");
+					this.AddAction("send6",(a, b) => this.Act(6));
 					break;
 				case 7:
-					I.AddEvent("Event7");
-					I.AddAction("send7",(a, b) => I.Act(7));
+					this.AddEvent("Event7");
+					this.AddAction("send7",(a, b) => this.Act(7));
 					break;
 				case 8:
-					I.AddEvent("Event8");
-					I.AddAction("send8",(a, b) => I.Act(8));
+					this.AddEvent("Event8");
+					this.AddAction("send8",(a, b) => this.Act(8));
 					break;
 				case 9:
-					I.AddEvent("Event9");
-					I.AddAction("send9",(a, b) => I.Act(9));
+					this.AddEvent("Event9");
+					this.AddAction("send9",(a, b) => this.Act(9));
 					break;
 				case 10:
-					I.AddEvent("Event10");
-					I.AddAction("send10",(a, b) => I.Act(10));
+					this.AddEvent("Event10");
+					this.AddAction("send10",(a, b) => this.Act(10));
 					break;
 				case 11:
-					I.AddEvent("Event11");
-					I.AddAction("send11",(a, b) => I.Act(11));
+					this.AddEvent("Event11");
+					this.AddAction("send11",(a, b) => this.Act(11));
 					break;
 				case 12:
-					I.AddEvent("Event12");
-					I.AddAction("send12",(a, b) => I.Act(12));
+					this.AddEvent("Event12");
+					this.AddAction("send12",(a, b) => this.Act(12));
 					break;
 				case 13:
-					I.AddEvent("Event13");
-					I.AddAction("send13",(a, b) => I.Act(13));
+					this.AddEvent("Event13");
+					this.AddAction("send13",(a, b) => this.Act(13));
 					break;
 				case 14:
-					I.AddEvent("Event14");
-					I.AddAction("send14",(a, b) => I.Act(14));
+					this.AddEvent("Event14");
+					this.AddAction("send14",(a, b) => this.Act(14));
 					break;
 				case 15:
-					I.AddEvent("Event15");
-					I.AddAction("send15",(a, b) => I.Act(15));
+					this.AddEvent("Event15");
+					this.AddAction("send15",(a, b) => this.Act(15));
 					break;
 				default:
 					if (first)

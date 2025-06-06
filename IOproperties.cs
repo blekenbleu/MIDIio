@@ -17,7 +17,7 @@ namespace blekenbleu
 	internal partial class IOproperties
 	{
 		MIDIio M;
-		internal static readonly string[] DestDev =			// destination devices
+		internal readonly static string[] DestDev =			// destination devices
 			{ "vJoyAxis", "vJoyButton", "CC" };
 		// unlike a MIDIin event's known CCnumber, search SourceList for other input source property value changes
 		private readonly static string[] SourceType =		// (non-CC) SourceList[] source property types

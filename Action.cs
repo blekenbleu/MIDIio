@@ -20,7 +20,7 @@ namespace blekenbleu
 					if (null == prop || 8 > prop.Length)
 						MIDIio.Log(0, MIDIio.oops = $"IOproperties.Action({s}):  dubious property name :" + prop);
 					else if (byte.TryParse(actions[a].Substring(1), out byte addr))
-						SendAdd(M, actions[a][0], addr, prop);
+						M.SendAdd(actions[a][0], addr, prop);
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
 //			MIDIio.Log(4, "Leaving IOproperties.EnumActions()");

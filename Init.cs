@@ -83,7 +83,7 @@ namespace blekenbleu
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
 			Properties.Init(this, pluginManager);
-			Properties.AddAction("Oops",(a, b) => Oops());
+			this.AddAction("Oops",(a, b) => Oops());
 
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
@@ -105,13 +105,15 @@ namespace blekenbleu
 			}
 			else Info("Init(): '" + Ini + "in' is undefined" );
 
-			Once = new bool[1 + Properties.SourceList.Length][];	// null game properties for SourceList + CC
-			Sent = new ushort[Once.Length][];						// most recent Send() values
-			for (int s = 0; s < Once.Length; s++)
+			Once = new bool[1 + Properties.SourceList.Length][];    // null game properties for SourceList + CC
+			int s;
+			for (s = 0; s < Properties.SourceList.Length; s++)
+				Once[s] = new bool[Properties.SourceList[s].Count];
+			Once[s] = new bool[Properties.ListCC.Count];
+		
+			Sent = new ushort[Once.Length][];                       // most recent Send() values
+			for (s = 0; s < Properties.SourceList.Length; s++)
 			{
-				if (s < Properties.SourceList.Length)
-					Once[s] = new bool[Properties.SourceList[s].Count];
-				else Once[s] = new bool[Properties.ListCC.Count];
 				Sent[s] = new ushort[Once[s].Length];
 				for (byte p = 0; p < Once[s].Length; p++)
 				{

@@ -1,4 +1,5 @@
 using SimHub.Plugins;
+using System.Collections.Generic;
 using System;
 
 namespace blekenbleu
@@ -112,7 +113,7 @@ namespace blekenbleu
 					if (p < stop[src])								// higher p are for Events
 						Send(value, dev, address);
 					else if (0 == always) {
-						this.TriggerEvent(Trigger = "Event"+Properties.IOevent[src][p - stop[src]]);
+						this.TriggerEvent(Trigger = "Event"+IOevent[src][p - stop[src]]);
 						Log(4, Trigger = "SendIf():  " + Trigger + " = " + name);
 					}
 				}
@@ -122,15 +123,15 @@ namespace blekenbleu
 		// called for SimHub Actions
 		internal void Act(ushort a)
 		{
-			byte src = Properties.ActMap[a][0];
-	 		byte p = Properties.ActMap[a][1];
+			byte src = ActMap[a][0];
+	 		byte p =   ActMap[a][1];
 			byte dev = Properties.SourceList[src][p].Device;
 			byte addr = Properties.SourceList[src][p].Addr;
 
 			if (3 == src)
 			{
-				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[Properties.ActMap[a][2]]), dev, addr);
-				Action = $"Act({a}):  {Properties.CCname[Properties.ActMap[a][2]]}"; 
+				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[ActMap[a][2]]), dev, addr);
+				Action = $"Act({a}):  {Properties.CCname[ActMap[a][2]]}"; 
 			} else {
 				Send(Sent[src][p], dev, addr);
 				Action = $"Act({a}):  {Properties.SourceList[src][p].Name}";
@@ -155,7 +156,7 @@ namespace blekenbleu
 			Prop = Properties.CCname[CCnumber];								// debug
 			Settings.CCvalue[CCnumber] = value;
 			if (0 < (Properties.SendEvent & which))
-				this.TriggerEvent(Trigger = "Event" + Properties.CCevent[CCnumber]);
+				this.TriggerEvent(Trigger = "Event" + CCevent[CCnumber]);
 
 			if (0 < (14 & which))                                           // flags 2+4+8:  call Send()?
 			{
