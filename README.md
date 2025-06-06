@@ -1,4 +1,4 @@
-### MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick support
+### MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick, Event and Action support
 
 **Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
 
@@ -15,6 +15,12 @@ For one each MIDI source, destination, and optionally vJoy destination device,
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
  SimHub game, joystick buttons and axes properties.  
+
+['MIDIsends'](docs/source.md#midisends) configures vJoy and MIDI output buttons and axes  
+[*value changes* as SimHub *Event triggers*, sending corresponding *values* as SimHub *Action targets*](docs/send.md).  
+![](docs/EventPicker.png)  
+*the* **Oops** *Target can mapped from MIDIio Event triggers... displaying as* **oops** *property* values.
+
 MIDIio source CC values are made available as **SimHub properties**, e.g.  
 for tweaking **ShakeIt Bass Shaker** effects and controlling [**JSONio**](https://github.com/blekenbleu/JSONio):  
 ![](docs/properties.png)  
@@ -31,18 +37,12 @@ reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [@njz3](htt
 MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can include rescaled SimHub properties,  
  e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
 
-['MIDIsends'](docs/source.md#midisends) configures MIDI source CC and SimHub property  
-[*value changes* as SimHub *Events*, with *values* sent as SimHub *Actions*](docs/send.md).  
-
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
-[**MIDIio** Source code files, configuration descriptions](docs/source.md)  
-[principles of operation](docs/principles.md)  
-[June 2023 revisions provoked by SimHub updates](docs/provoked.md)
 
 #### Notes:
 - This plugin **was compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
-  - It has not been comprehensively tested for SimHub changes since then
-  - This allows e.g. forwarding *real* DirectInput properties to MIDIout or vJoy;  
+  - **Controller mapping** has not been comprehensively tested for SimHub changes since then
+  - SimHub properties for *real* DirectInputis can be forwarded by MIDIio to its MIDIout or vJoy devices;  
     **Do NOT** configure *vJoy* properties from `Controllers input`;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's `Midi Controllers Input`** plugin  
 	- MIDIio wants exclusive access to source MIDI device.
@@ -55,19 +55,16 @@ MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can in
 - This plugin has NO interactive user interface.
     - configure by editting [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
     - **check [System log](docs/SimHub.txt) for MIDI and/or vJoy related messages:**  
-      ![log messages](docs/log.png)
-		*configuration details logged only for*`MIDIlog '7'`    
-
-    - **Configure `MIDIioSends` events and actions sources and targets:**  
-      ![button event names and actions](docs/events.png)  
+      ![log messages](docs/log.png)  
+	&emsp;	*configuration details logged only for*`MIDIlog '7'`    
 
     - **MIDIio** *neither is* (nor will become) a "plug and play" solution;  
       configuring MIDI on Windows is [**very much DIY**](https://www.racedepartment.com/threads/simhub-plugin-s-for-output-to-midi-and-vjoy.210079/).  
 - **vJoy button numbering**  
     - Windows' `joy.cpl` and vJoy API consider the first button to be 1,  
-      but SimHub reports that first button as `JoystickPlugin.vJoy_Device_B00`:  
+      but SimHub reports that first joystick *input* button as `B00`;  
+    - MIDIio first vJoy button is configured as `MIDIvJoyB00` in [NCalcScripts/MIDIio.ini](NCalcScripts/MIDIio.ini).  
       ![vJoy](docs/vJoyB.png)  
-    - For consistency within SimHub, first joystick button is configured as `MIDIvJoyB00` in [NCalcScripts/MIDIio.ini](NCalcScripts/MIDIio.ini).  
 
 For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile)
  has a custom effect with ShakeITBSV3Plugin properties from MIDI sliders.
@@ -115,3 +112,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 - CC property code refactoring  
 - add vJoy destinations for [`MIDIsends`](docs/sends.md) Actions and Events  
 - [refactor Action and Event handling, adding vJoy](docs/principles.md#midiio-events-and-actions)  
+
+*6 Jun 2025* `v0.0.3.4`  
+- `MIDIsends` changes for vJoy and MIDI Event triggering and Action targets  
+   broke `MIDIio.ini` configuration backward compatibility.
