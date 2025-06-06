@@ -23,7 +23,7 @@ namespace blekenbleu
 						SendAdd(M, actions[a][0], addr, prop);
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
-			MIDIio.Log(4, "Leaving IOproperties.EnumActions()");
+//			MIDIio.Log(4, "Leaving IOproperties.EnumActions()");
         }
 
 		bool NoDup(string prop, ref List<string> plist)
@@ -39,7 +39,6 @@ namespace blekenbleu
 			return true;
 		}
 
-		// call CCprop to AttachDelegate() configured MIDIin properties
 		internal void Attach()
 		{
 			byte cc, st;
@@ -67,7 +66,7 @@ namespace blekenbleu
 
 			for (cc = 0; cc < 128; cc++)
 				if (0 < (CC & Which[cc]))
- 					CCprop(cc, false);				// set property for configured input
+ 					CCprop(cc, false);				// AttachDelegate() configured input property
 
 			// MIDIin property configuration is now complete
 
@@ -76,7 +75,7 @@ namespace blekenbleu
 				for (j = cc = 0; cc < 128; cc++)
 					if (0 < (Unc & Which[cc]))
 					{
-						CCprop(cc, true);			// restore previous received unconfigured CCs
+						CCprop(cc, true);			// restore previous unconfigured CCs;  AttachDelegate()
 						j++;
 					}
 

@@ -7,7 +7,7 @@ namespace blekenbleu
 	internal partial class IOproperties
 	{
 		bool first = false;
-		internal byte[] CCevent = new byte[128];                              // CC number for applicable events
+		internal byte[] CCevent = new byte[128];				// CC number for applicable events
 		internal List<byte[]> ActMap = new List<byte[]> { };	// SourceType[] index, SourceList[] index
 		internal List<byte>[] IOevent = new List<byte>[4] {		// Event numbers per source
 											new List<byte> {},	// game SourceType events
@@ -43,10 +43,10 @@ namespace blekenbleu
 					return;
 			}
 
-            if ("MIDIio." == prop.Substring(0, 7))
+			if ("MIDIio." == prop.Substring(0, 7))
 			{
 				int L = prop.Length - 7;		// lop off 'MIDIio.'
-	            string prop7 = prop.Substring(7, L);
+				string prop7 = prop.Substring(7, L);
 
 				for (; cc < CCname.Length; cc++)
 					if (L == CCname[cc].Length && CCname[cc] == prop7)
@@ -77,12 +77,12 @@ namespace blekenbleu
 					src = 1;
 					break;
 				case "InputSt":
-					src = 2;											 	// any SimHub controller
+					src = 2;														// any SimHub controller
 					break;
-				default:													// "game"
+				default:															// "game"
 					break;
 			}
-			IOevent[src].Add(ct);										// used by TriggerEvent()
+			IOevent[src].Add(ct);													// used by TriggerEvent()
 			if (3 > src)
 				SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
 

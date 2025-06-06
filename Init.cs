@@ -13,9 +13,16 @@ namespace blekenbleu
 		private  bool[][] Once;
 		private  ushort[][] Sent;													// remember and don't repeat
 		private  double[,] scale;
-		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI";	// configuration source
-		internal static string CCsent = "watch this space", CCin = "watch this space", Ping = "watch this space";
-		internal static string VJsent = "watch this space", oops = "watch this space", prop = "watch this space";
+		internal static readonly string Ini = "DataCorePlugin.ExternalScript.MIDI"; // configuration source
+        static readonly string wts = "watch this space";
+		internal static string CCsent = wts, CCin = wts, Trigger = wts;
+		internal static string VJsent = wts, Prop = wts,  Action = wts;
+		internal static string oops = wts;	// AttachDelegate() always
+
+		internal void Oops()
+		{
+			oops = "Oops():  " + Trigger;
+		}
 
 		/// <summary>
 		/// Called at SimHub start and restarts
@@ -24,20 +31,20 @@ namespace blekenbleu
 		public void Init(PluginManager pluginManager)
 		{
 			// Log() level configuration
-			prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
-			Level = (byte)((null != prop && 0 < prop.Length) ? Int32.Parse(prop) : 0);
+			Prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
+			Level = (byte)((null != Prop && 0 < Prop.Length) ? Int32.Parse(Prop) : 0);
 			Log(4, $"log Level {Level}");
 
 			// Load settings
 			Settings = this.ReadCommonSettings("GeneralSettings", () => new MIDIioSettings());
 
-			prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
-			DoEcho = null != prop && 0 < int.Parse(prop);
+			Prop = pluginManager.GetPropertyValue(Ini + "echo")?.ToString();
+			DoEcho = null != Prop && 0 < int.Parse(Prop);
 			MIDIout = pluginManager.GetPropertyValue(Ini + "out")?.ToString();
 			if (null == MIDIout || 0 == MIDIout.Length)
 			{
 				MIDIout = "";
-				Info((null == prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
+				Info((null == Prop) ? "Init(): missing " + Ini + "out entry!" : "Init(): " + Ini + "out is undefined");
 			}
 			MIDIin = pluginManager.GetPropertyValue(Ini + "in")?.ToString();
 			if (null == MIDIin || 0 == MIDIin.Length)
@@ -52,8 +59,8 @@ namespace blekenbleu
 			else Info(version);
 
 			// vJoy axes, vJoy buttons, CC sends
-			prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
-			if (null != prop && 1 == prop.Length && ("0" != prop))
+			Prop = pluginManager.GetPropertyValue(Ini + "vJoy")?.ToString();
+			if (null != Prop && 1 == Prop.Length && ("0" != Prop))
 			{
 				VJD = new VJsend();				// vJoy
 				VJDmaxval = VJD.Init(1);		// obtain vJoy parameters
@@ -76,15 +83,17 @@ namespace blekenbleu
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
 			Properties.Init(this, pluginManager);
+			Properties.AddAction("Oops",(a, b) => Oops());
 
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
 			{
 				this.AttachDelegate("CCin",		() => CCin);
 				this.AttachDelegate("CCsent",	() => CCsent);
+				this.AttachDelegate("Prop",		() => Prop);
+				this.AttachDelegate("Action",	() => Action);
+				this.AttachDelegate("Trigger",	() => Trigger);
 				this.AttachDelegate("VJsent",	() => VJsent);
-				this.AttachDelegate("Ping",		() => Ping);
-				this.AttachDelegate("prop",		() => prop);
 			}
 
 			if (0 < MIDIin.Length)

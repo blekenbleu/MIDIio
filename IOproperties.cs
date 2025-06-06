@@ -79,15 +79,9 @@ namespace blekenbleu
 
 				for(byte i = 0; i < Darray[dt].Length; i++)
 				{
-					dp = MIDIio.Ini;
-
-					if (1 == dt)
-					{
-						dp += "vJoyB";
-						if (10 > Darray[dt][i])											// match JoyStick button naming style
-							dp += "0";
-					}
-					else dp += DestDev[dt];
+					dp = MIDIio.Ini + DestDev[dt];
+					if (1 == dt && 10 > Darray[1][i])
+						dp += "0";
 					dp += (Darray[dt][i]).ToString();
 
 					string prop = I.PluginManager.GetPropertyValue(dp)?.ToString();
@@ -126,7 +120,7 @@ namespace blekenbleu
 			{
 				string s = "";
 
-				for (dt = 0; dt < DestDev.Length; dt++)
+				for (dt = 0; dt < DestDev.Length; dt++)							// sort by destination device
 				{
 					byte k = 0;
 					string t = "";
@@ -136,24 +130,24 @@ namespace blekenbleu
 						t += "\n\t";
 					t +=  $"IOProperties.SourceList[{DestDev[dt]}].Name:  ";
 
-					for (byte src = 0; src < 3; src++)					// nonCC source property type: game, Joy axis, Joy button
+					for (byte src = 0; src < 3; src++)							// nonCC source properties: game, Joy axis, Joy button
 					{
-						for (j = 0; j < SourceList[src].Count; j++)
-						{
+						for (ushort sd = 0; sd < SourceList[src].Count; sd++)   // source DestDev iteration
+                        {
 							// test for configured destination device
-							if (dt != SourceList[src][j].Device)
+							if (dt != SourceList[src][sd].Device)
 								continue;
 
 							some = true;
-							string N = SourceList[src][j].Name;
+							string N = SourceList[src][sd].Name;
 
 							if (0 < k++)
 								t += "\n\t\t\t\t";
 							else if (0 < SourceList[src].Count)
 								t += "\n\t\t\t\t";
 							if(null != N)
-								t += $"@ {SourceList[src][j].Addr}: " + N;
-							else t += $"\nnull == SourceList[{src}][{j}].Name\n\t\t\t\t\t";
+								t += $"@ {SourceList[src][sd].Addr}: " + N;
+							else t += $"\nnull == SourceList[{src}][{sd}].Name\n\t\t\t\t\t";
 						}
 					}
 
