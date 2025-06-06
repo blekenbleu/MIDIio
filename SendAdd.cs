@@ -7,7 +7,7 @@ namespace blekenbleu
 	{
 		bool first = false;
 		internal byte[] CCevent = new byte[128];				// CC number for applicable events
-		internal List<byte[]> ActMap = new List<byte[]> { };	// SourceType[] index, SourceList[] index
+		internal List<byte[]> MapAct = new List<byte[]> { };	// SourceType[] index, SourceList[] index
 		internal List<byte>[] IOevent = new List<byte>[4] {		// Event numbers per source
 											new List<byte> {},	// game SourceType events
 											new List<byte> {},	// Joystick axis SourceType events
@@ -19,7 +19,7 @@ namespace blekenbleu
 		{
 			bool notCC = true;
 			byte dt = 3, cc = 0, src = 0;
-			byte ct = (byte)((null == ActMap) ? 0 : ActMap.Count);// ActMap gets appended for ALL Events
+			byte ct = (byte)((null == MapAct) ? 0 : MapAct.Count);// MapAct gets appended for ALL Events
 
 			if (0 == ct)
 				first = true;
@@ -63,12 +63,12 @@ namespace blekenbleu
 					byte[] devs = new byte[IOproperties.DestDev.Length];
 					devs[dt] = addr;
 					Properties.ListCC.Add(devs);
-					ActMap.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count, cc });  // used by Act()
+					MapAct.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count, cc });  // used by Act()
 				}
 			}
 
 			if (notCC)
-				ActMap.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count });			// used by Act()
+				MapAct.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count });			// used by Act()
 
 			switch (prop.Substring(0, 7))
 			{

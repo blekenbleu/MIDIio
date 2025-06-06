@@ -92,7 +92,7 @@ namespace blekenbleu
 					if (0 < (14 & Which[cc]))						// already a ListCC[] for this cc?
 					{
 						try {
-                        	ListCC[dt][Map[cc]] = DevAddr;
+                        	ListCC[Map[cc]][dt] = DevAddr;
 						}
 						catch {};
 					}

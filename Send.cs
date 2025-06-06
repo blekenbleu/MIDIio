@@ -112,7 +112,7 @@ namespace blekenbleu
                     Prop = name;
 					if (p < stop[src])								// higher p are for Events
 						Send(value, dev, address);
-					else if (0 == always) {
+					else {
 						this.TriggerEvent(Trigger = "Event"+IOevent[src][p - stop[src]]);
 						Log(4, Trigger = "SendIf():  " + Trigger + " = " + name);
 					}
@@ -123,15 +123,15 @@ namespace blekenbleu
 		// called for SimHub Actions
 		internal void Act(ushort a)
 		{
-			byte src = ActMap[a][0];
-	 		byte p =   ActMap[a][1];
+			byte src = MapAct[a][0];
+	 		byte p =   MapAct[a][1];
 			byte dev = Properties.SourceList[src][p].Device;
 			byte addr = Properties.SourceList[src][p].Addr;
 
 			if (3 == src)
 			{
-				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[ActMap[a][2]]), dev, addr);
-				Action = $"Act({a}):  {Properties.CCname[ActMap[a][2]]}"; 
+				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[MapAct[a][2]]), dev, addr);
+				Action = $"Act({a}):  {Properties.CCname[MapAct[a][2]]}"; 
 			} else {
 				Send(Sent[src][p], dev, addr);
 				Action = $"Act({a}):  {Properties.SourceList[src][p].Name}";
@@ -161,10 +161,10 @@ namespace blekenbleu
 			if (0 < (14 & which))                                           // flags 2+4+8:  call Send()?
 			{
 				bool sent = false;
-				for (byte dt = 0; dt < Properties.ListCC.Count; dt++)		// at most one Send() per DestDev and CC
+				for (byte dt = 0; dt < IOproperties.DestDev.Length; dt++)	// at most one Send() per DestDev and CC
 					if (0 < ((2 << dt) & which))							// DestDev flag
 					{
-						byte  address = Properties.ListCC[dt][Properties.Map[CCnumber]];
+						byte  address = Properties.ListCC[Properties.Map[CCnumber]][dt];
 						ushort rescaled = (ushort)(0.5 + scale[dt, 3] * value);
 						Send(rescaled, dt, address);
 						sent = true;
