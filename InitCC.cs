@@ -11,7 +11,7 @@ namespace blekenbleu
 		internal string[]   CCname;			   					// for AttachDelegate()
 		internal byte[]	 	Which;								// CC type bits
 		internal readonly byte CC = 1, SendEvent = 0x40, Unc = 0x80;	// input type bits for Which[]
-		// CC source properties, sent in INdrywet.OnEventReceived() by ActionCC()
+		// CC source properties, sent in INdrywet.OnEventReceived() by ReceivedCC()
 		internal List<byte[]> ListCC = new List<byte[]> { };	// destination device addresses
 
 		void InitCC()
@@ -45,7 +45,7 @@ namespace blekenbleu
 				MIDIio.Log(4, $"IOProperties.InitCC(): {ct} CCs resent after restart");
 
 			// Collect configured CCname[] and other Which[] properties from MIDIio.ini
-			for (ct = 0; ct < CCtype.Length; ct++)
+			for (ct = 0; 0 < M.MIDIin.Length && ct < CCtype.Length; ct++)
 			{
 				string type = MIDIio.Ini + CCtype[ct];			// "slider", "knob", "button"
 				string property = M.PluginManager.GetPropertyValue(type + 's')?.ToString();
@@ -103,7 +103,7 @@ namespace blekenbleu
 						devs[dt] = DevAddr;
 						ListCC.Add(devs);
 					}
-					Which[cc] |= (byte)(2 << dt);					// ActionCC() checks Which[] flags
+					Which[cc] |= (byte)(2 << dt);					// ReceivedCC() checks Which[] flags
 					return cc;
 				}
 

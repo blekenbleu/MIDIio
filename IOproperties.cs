@@ -42,7 +42,7 @@ namespace blekenbleu
 /* SendIf() may send any of 3 property value source types to any of 3 DestDev[]s: (vJoy axes, vJoy buttons, MIDIout)
  ; SendIf() indexes SourceList[st] for those property SourceType[]s: (game, JoyStick axis or button)
  ; DataUpdate() calls SendIf(0) for SourceList[0] only when games are active.
- ; ActionCC() separately handles CC sends to all 3 DestDev[]s asynchronously in INdrywet.OnEventReceived()
+ ; ReceivedCC() separately handles CC sends to all 3 DestDev[]s asynchronously in INdrywet.OnEventReceived()
  */
 			for (int src = 0; src < SourceList.Length; src++)
 				SourceList[src] = new List<Source>();
@@ -174,11 +174,11 @@ namespace blekenbleu
 					if (some)	// no joystick button sources may be detected
 						s += t;
 				}
-				MIDIio.Info(s + "\n");
+				if (0 < s.Length)
+					MIDIio.Info(s + "\n");
 
-				// set up Events and Actions
 				string props = pluginManager.GetPropertyValue(MIDIio.Ini + "sends")?.ToString();
-				if (null != props && 1 < props.Length)
+				if (null != props && 1 < props.Length)				// set up Events and Actions
 					EnumActions(pluginManager, props.Split(',')); 	// add MIDIsends to Properties.SourceList[]
 
 				s = "Properties.CCname[]:";

@@ -1,6 +1,5 @@
 using SimHub.Plugins;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace blekenbleu
 {
@@ -23,7 +22,6 @@ namespace blekenbleu
 						M.SendAdd(actions[a][0], addr, prop);
 					else MIDIio.Log(0, $"IOproperties.Action({actions[a]}): invalid byte address");
 				}
-//			MIDIio.Log(4, "Leaving IOproperties.EnumActions()");
         }
 
 		bool NoDup(string prop, ref List<string> plist)
@@ -46,12 +44,12 @@ namespace blekenbleu
 
 			if (MIDIio.Log(4, ""))
 			{
-				string s = "Attach() non-MIDI source properties:\n";
+				string s = "";
 				List<string> nonMIDI = new List<string>();
 
 				// search thru all non-MIDI source
 				for (st = 0; st < 3; st++)
-					for (j = (byte)(SourceList[st].Count - 1); j >= 0; j--)
+					for (j = (short)(SourceList[st].Count - 1); j >= 0; j--)
 					{
 						string SE;
 
@@ -61,7 +59,8 @@ namespace blekenbleu
 						if (NoDup(SourceList[st][j].Name, ref nonMIDI))
 							s += "\t" + SourceList[st][j].Name + SE + "\n";
 					}
-				MIDIio.Info(s);
+				if (0 < s.Length)
+					MIDIio.Info("Attach() non-MIDI source properties:\n" + s);
 			}
 
 			for (cc = 0; cc < 128; cc++)

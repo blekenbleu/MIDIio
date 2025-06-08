@@ -7,19 +7,20 @@ namespace blekenbleu
 	{
 		bool first = false;
 		internal byte[] CCevent = new byte[128];				// CC number for applicable events
-		internal List<byte[]> MapAct = new List<byte[]> { };	// SourceType[] index, SourceList[] index
-		internal List<byte>[] IOevent = new List<byte>[4] {		// Event numbers per source
+		// map Action target number to src and index for SourceList[]
+		internal List<byte[]> ActList = new List<byte[]> { };	// Act() target src, SourceList[src] index or CC parms
+		// map SourceList source and index to Event trigger number
+		internal List<byte>[] IOevent = new List<byte>[3] {		// Event numbers per nonCC source
 											new List<byte> {},	// game SourceType events
 											new List<byte> {},	// Joystick axis SourceType events
-											new List<byte> {},	// Joystick button SourceType events
-											new List<byte> {}};	// CC events
+											new List<byte> {}};	// Joystick button SourceType events
 
 		// configure MIDIio.ini MIDIsends Events and Actions
 		internal void SendAdd(char ABC, byte addr, string prop)	// called only in EnumActions() after all non-Event configuration
 		{
 			bool notCC = true;
 			byte dt = 3, cc = 0, src = 0;
-			byte ct = (byte)((null == MapAct) ? 0 : MapAct.Count);// MapAct gets appended for ALL Events
+			byte ct = (byte)((null == ActList) ? 0 : ActList.Count);// ActList gets appended for ALL Events
 
 			if (0 == ct)
 				first = true;
@@ -59,16 +60,9 @@ namespace blekenbleu
 					if (0 == (Properties.CC & Properties.Which[cc]))
 						Properties.CCprop(cc, false);
 					CCevent[cc]	= ct;												// for CC Event (trigger)
-					IOevent[3].Add(ct);					
-					byte[] devs = new byte[IOproperties.DestDev.Length];
-					devs[dt] = addr;
-					Properties.ListCC.Add(devs);
-					MapAct.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count, cc });  // used by Act()
+					ActList.Add(new byte[] { src, cc, dt, addr }); 					// used by Act() (target)
 				}
 			}
-
-			if (notCC)
-				MapAct.Add(new byte[] { dt, (byte)Properties.SourceList[dt].Count });			// used by Act()
 
 			switch (prop.Substring(0, 7))
 			{
@@ -79,11 +73,17 @@ namespace blekenbleu
 					src = 2;														// any SimHub controller
 					break;
 				default:															// "game"
+					if (notCC)
+					src = 0;
 					break;
 			}
-			IOevent[src].Add(ct);													// used by TriggerEvent()
 			if (3 > src)
+			{
+				IOevent[src].Add(ct);													// used by TriggerEvent()
 				Properties.SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+				ActList.Add(new byte[] { src, (byte)Properties.SourceList[dt].Count });			// used by Act()
+			}
+
 
 			switch (ct)				// configure action and event
 			{

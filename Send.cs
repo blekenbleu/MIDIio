@@ -16,7 +16,7 @@ namespace blekenbleu
 	 	; 0 <= ShakeIt property <= 100.0
  */
 		/// <summary>
-		/// Called by SendIf() and ActionCC() to send each property change
+		/// Called by SendIf() and ReceivedCC() to send each property change
 		/// dev: (destination): 0=VJD.Axis; 1=VJD.Button; 2=Outer.SendCCval
 		///	addr: destination 
 		/// Prop: src property name for debugging
@@ -58,7 +58,7 @@ namespace blekenbleu
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
 		private void SendIf(PluginManager pluginManager, byte always)		// 0: game;	1: always
-		{																	// ActionCC handles 3: CC
+		{																	// ReceivedCC handles 3: CC
 			byte dev, address;												// dev: destination type
 			string property;
 
@@ -123,19 +123,24 @@ namespace blekenbleu
 		// called for SimHub Actions
 		internal void Act(ushort a)
 		{
-			byte src = MapAct[a][0];
-	 		byte p =   MapAct[a][1];
-			byte dev = Properties.SourceList[src][p].Device;
-			byte addr = Properties.SourceList[src][p].Addr;
-
-			if (3 == src)
+	 		byte p =   ActList[a][1];									// Properties.SourceList[src][p] or CC
+			byte src = ActList[a][0], dev, addr;
+			if (src < Properties.SourceList.Length && p < Properties.SourceList[src].Count)
 			{
-				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[MapAct[a][2]]), dev, addr);
-				Action = $"Act({a}):  {Properties.CCname[MapAct[a][2]]}"; 
-			} else {
+				dev = Properties.SourceList[src][p].Device;
+				addr = Properties.SourceList[src][p].Addr;
+				if (1 == dev)
+					addr--;		// Configured button 1 addr 0 for Send()
 				Send(Sent[src][p], dev, addr);
 				Action = $"Act({a}):  {Properties.SourceList[src][p].Name}";
-			}
+			} else if (3 == src && 3 < ActList[a].Length) {
+				dev = ActList[a][2];
+				addr = ActList[a][3];
+				if (1 == dev)
+					addr--;		// Configured button 1 addr 0 for Send()
+				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[p]), dev, addr);
+				Action = $"Act({a}):  {Properties.CCname[p]} to {IOproperties.DestDev[dev]} {addr}";
+			} else Log(0, oops = $"Act({a}):  Properties.SourceList[{src}][{p}] does not exist");
 		}
 
 		/// <summary>
@@ -145,11 +150,11 @@ namespace blekenbleu
 		/// trigger configured Events
 		/// https://github.com/blekenbleu/MIDIio/blob/main/docs/Which.md
 		/// </summary>
-		internal void ActionCC(byte CCnumber, byte value)
+		internal void ReceivedCC(byte CCnumber, byte value)
 		{
 			byte which = Properties.Which[CCnumber];
 
-			CCin = $"ActionCC({CCnumber}, {value})";						// debug property
+			CCin = $"ReceivedCC({CCnumber}, {value})";						// debug property
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
 				return;														// ignore known unchanged values
 
@@ -170,7 +175,7 @@ namespace blekenbleu
 						sent = true;
 					}
 				if (!sent)
-					Log(2, oops = $"ActionCC({Prop}):  unsent");
+					Log(2, oops = $"ReceivedCC({Prop}):  unsent");
 				return;
 			}
 
@@ -179,6 +184,6 @@ namespace blekenbleu
 
 			if (0 == which)
 				Properties.CCprop(CCnumber, true);						// dynamic CC configuration
-		}	// ActionCC()
+		}	// ReceivedCC()
 	}
 }

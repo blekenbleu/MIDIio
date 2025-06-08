@@ -8,7 +8,7 @@ namespace blekenbleu
 	public partial class MIDIio
 	{
 		internal static bool DoEcho;
-		private  string MIDIin, MIDIout;
+		internal string MIDIin, MIDIout;
 		private  static long VJDmaxval = 65535;
 		private  bool[][] Once;
 		private  ushort[][] Sent;													// remember and don't repeat
@@ -84,7 +84,6 @@ namespace blekenbleu
 			Properties = new IOproperties();						// MIDI and vJoy property configuration
 			Properties.Init(this, pluginManager);
 			this.AddAction("Oops",(a, b) => Oops());
-
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
 			{
