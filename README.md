@@ -32,17 +32,18 @@ enabling those source MIDI CCs to directly control a destination MIDI device.
 MIDI C# code evolved from SimHub's `User.PluginSdkDemo`,  
 using [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi)'s DLL (already in SimHub).  
 
-MIDIio can *also* use [**vJoy**](https://github.com/shauleiz/vJoy) to simulate [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis inputs,  
-reusing [C# sample code](https://github.com/blekenbleu/vJoySDK) from [@njz3](https://github.com/njz3/vJoy).  
+MIDIio optionally uses [**vJoy**](https://github.com/shauleiz/vJoy) to simulate [DirectInput](https://blekenbleu.github.io/Windows/HID/) Button and Axis inputs,  
+thanks to [C# sample code](https://github.com/blekenbleu/vJoySDK) from [@njz3](https://github.com/njz3/vJoy).  
 MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can include rescaled SimHub properties,  
- e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration).
+ e.g. [**ShakeIt Bass Shaker** effects](https://github.com/SHWotever/SimHub/wiki/ShakeIt-V3-Effects-configuration)
+and [**JSONio** properties](https://github.com/blekenbleu/JSONio).
 
 [Motivation and development How-To's](https://blekenbleu.github.io/MIDI/plugin/)  
 
 #### Notes:
 - This plugin **was compatible with SimHub 8.4.3's `Controllers input` and `Control mapper` plugins**  
-  - **Controller mapping** has not been comprehensively tested for SimHub changes since then
-  - SimHub properties for *real* DirectInputis can be forwarded by MIDIio to its MIDIout or vJoy devices;  
+  - **Controller mapping** has not been tested with newer SimHub versions.
+  - MIDIio can send SimHub **Controllers** properties e.g. for *real* DirectInputs to its MIDIout or vJoy devices;  
     **Do NOT** configure *vJoy* properties from `Controllers input`;&nbsp; that would provoke feedback loops!  
 - This plugin is **incompatible with SimHub's `Midi Controllers Input`** plugin  
 	- MIDIio wants exclusive access to source MIDI device.
@@ -51,7 +52,8 @@ MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can in
   **MIDIio** can automatically set CCn properties  for received CCn messages not already configured,  
   but (unlike SimHub's) from **only its single configured source MIDI device**.  
 - Unconfigured CCs for this device can be sorted by monitoring `CCin` in SimHub **Available properties**.
-- SimHub bundles vJoy DLL v2.2.2.0, while [vJoy driver v2.1.9.1 is available](https://sourceforge.net/projects/vjoystick/).  
+- SimHub bundles [vJoy DLL v2.2.2.0](https://blekenbleu.github.io/Windows/HID/vJoy/), which works for me with [vJoy driver v2.1.9.1](https://sourceforge.net/projects/vjoystick/).  
+    [vJoy driver v2.2.2 is available](https://github.com/BrunnerInnovation/vJoy/releases), but I have not tested it with MIDIio...  
 - This plugin has NO interactive user interface.
     - configure by editting [`NCalcScripts\MIDIio.ini`](blob/main/NCalcScripts/MIDIio.ini), which goes in `SimHub\NCalcScripts\` folder 
     - **check [System log](docs/SimHub.txt) for MIDI and/or vJoy related messages:**  
@@ -63,8 +65,34 @@ MIDI CC and [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/) values can in
 - **vJoy button numbering**  
     - Windows' `joy.cpl` and vJoy API consider the first button to be 1,  
       but SimHub reports that first joystick *input* button as `B00`;  
-    - MIDIio first vJoy button is configured as `MIDIvJoyB00` in [NCalcScripts/MIDIio.ini](NCalcScripts/MIDIio.ini).  
+    - MIDIio configures that first vJoy button *for routing* as `MIDIvJoyB00` in [NCalcScripts/MIDIio.ini](NCalcScripts/MIDIio.ini).  
       ![vJoy](docs/vJoyB.png)  
+	  *However, that first vJoy button* is `B1` in `MIDIsends` for SimHub [Events](https://github.com/SHWotever/SimHub/wiki/NCalc-scripting#exporting-event-trigger--exportevent)
+      and [Actions](https://store.lsr.gg/pages/help-simhub-actions)  
+	Here is a minimal vJoy first button [Event](docs/source.md#midisends) example:
+    ---
+```
+string vJoy = "set value='0' to disable vJoy outputs"
+[ExportProperty]
+name='MIDIvJoy'
+value='1'
+
+string log = "value=0:  Log only errors;  1:I/O failures;  3:Event issues;  7:verbose"
+[ExportProperty]
+name='MIDIlog'
+value='7'
+
+string event = "SimHub Event and Action mapping"
+[ExportProperty]
+name='MIDIsends'
+value='B1'
+
+string button = "first vJoy button for Event and Action mapping"
+[ExportProperty]
+name='MIDIsendB1'
+value='InputStatus.JoystickPlugin.BavarianSimTec_OmegaPRO_v2_B00'
+```
+   ---
 
 For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profiles/blob/main/Any%20Game%20-%20MIDIio_proxyLS.siprofile)
  has a custom effect with ShakeITBSV3Plugin properties from MIDI sliders.
@@ -116,3 +144,7 @@ For testing, [this ShakeIt profile](https://github.com/blekenbleu/SimHub-profile
 *6 Jun 2025* `v0.0.3.4`  
 - `MIDIsends` changes for vJoy and MIDI Event triggering and Action targets  
    broke `MIDIio.ini` configuration backward compatibility.
+
+*8 Jun 2025* `v0.0.3.5`
+- Act() fixes;&nbsp CC input Action parms all in `ActList`  
+- avoid bogus Log entries if only vJoy Event handling  

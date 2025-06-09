@@ -30,7 +30,7 @@ Search for `midi` in **SimHub Available properties**:
    These can be used to identify CC numbers for configuring [`NCalcScripts/MIDIio.ini`](../NCalcScripts/MIDIio.ini).  
 
 ### [MIDIio Events and Actions](Which.md)
--  [`ExternalScript.MIDIsend`](sends.md) enumerates **up to 8** vJoy or `MIDIout` CC SimHub **Action** message destinations.  
+-  [`ExternalScript.MIDIsends`](sends.md) enumerates **up to 8** vJoy or `MIDIout` CC SimHub **Action** message destinations.  
 	MIDIio also generates **Event Triggers** for configured source property changes.  
 	Destinations are prefixed by either **A**, **B**, or **C**, appended by a `vJoy Axis`, `vJoy Button` or `CC address number`.  
 	For example, `A0` would be the first vJoy axis, `B1` would be the first vJoy button, `C55` would be CC `55`.  

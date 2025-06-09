@@ -4,17 +4,23 @@
 - [MIDIio.cs](../MIDIio.cs) class is the SimHub plugin equivalent of main().   
   It interfaces other classes to SimHub, handling properties, events, actions, initializations and cleanups.  
   - `DataUpdate()` invokes `SendIf()`.
-- [Send.cs](../Send.cs) filters, routes, rescales CC and vJoy messages
-  - `SendIf()` filters and routes to `Send()`   
-  - `Active()` updates **MIDIio** properties based on `INdrywet` ControlChangeEvents  
-	- invokes `Send()` for CCs routed as MIDI sends
-  - `Send()` rescales and writes changed values to `VJsend` or `OUTdrywet`.
+- [Attach.cs](../Attach.cs)
+	- `EnumActions()` calls `SendAdd()`
+	- `Attach()` calls `CCprop()` to AttachDelegate() CCnames[]
+- [CCprop.cs](../CCprop.cs) initializes CC input properties for MIDIio.cs.  
 - [Init.cs](../Init.cs) is MIDIio's `Init()`, which sorts `MIDIio.ini`  
-- [MIDIioSettings.cs](../MIDIioSettings.cs) is *only* data to be saved and restored between plugin launches.  
-- [CCProperties.cs](../CCProperties.cs) initializes properties for MIDIio.cs.  
+- [InitCC.cs](../InitCC.cs) `InitCC()` initializes `CCname[]`, `CCvalue[]`, `ListCC[]`, `Map[]`, `Which[]`
+	- `IOproperties.Init()` calls `WhichCC()` or `SourceList[].Add()` to configure destination routings
 - [INdrywet.cs](../INdrywet.cs) handles MIDI messages from `MIDIin`
   using [Melanchall.DryWetMidi](https://github.com/melanchall/drywetmidi)  
+- [MIDIioSettings.cs](../MIDIioSettings.cs) is *only* data to be saved and restored between plugin launches.  
 - [OUTdrywet.cs](../OUTdrywet.cs) sends MIDI messages to `MIDIout`.  
+- [Send.cs](../Send.cs) filters, routes, rescales CC and vJoy messages
+  - `SendIf()` filters and routes to `Send()`   
+  - `ReceivedCC()` updates **MIDIio** properties based on `INdrywet` ControlChangeEvents  
+	- invokes `Send()` for CCs routed as MIDI sends
+  - `Send()` rescales and writes changed values to `VJsend` or `OUTdrywet`.
+- [SendAdd.cs](../SendAdd.cs) configures Actions and Events
 - [VJsend.cs](../VJsend.cs) sends button and axis values to a single vJoy device.
 - [VJoyFFBReceiver.cs](../VJoyFFBReceiver.cs) placeholder code for handling vJoy force feedback data.
 

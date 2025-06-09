@@ -6,18 +6,14 @@ In February, SimHub `Controllers input` plugin created **JoystickPlugin** proper
 By June, [that was no longer true](../../../#simhub-v843-breakage).  
 - `null JoystickPlugin` axis property issues could be addressed by changes to MIDIio.cs,  
   but code inspection revealed
-- add blank lines between Init() log messages
-- calling `DoSend()` twice when data.GameRunning is wasteful  
-  - instead, change `DoSend()` index implementation  
+	- calling `DoSend()` twice when data.GameRunning is wasteful  
+ 	 - instead, change `DoSend()` index implementation  
 - also in `DoSend()`:  
-  - change `t` to `s` (for source)
   - should never need to ignore null game properties
     - they are indexed only when data.GameRunning
   - disable ALL null axis and game source properties when data.GameRunning (0 == index)
   - button input properties will be null until changed
   - threshold property values at 50% to send as Joystick buttons
-- rename vJoy output configuration properties to include "vJoy" instead of "vJD" and e.g. "vJoyB01" instead of "vJDbutton1"
-- Input Joystick B05 affects *SimHub* vJoy B02 instead of configured B03
 
 *21 Jun 2023*:&nbsp; After changes for all but that last,
 - MIDI input is dead..? fixed by replugging nanoKONTROL2
