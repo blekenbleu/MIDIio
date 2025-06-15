@@ -69,20 +69,21 @@ namespace blekenbleu
                     dev = Properties.SourceList[src][p].Device;
 					address = Properties.SourceList[src][p].Addr;
 
-					if (!Once[src][p])
-						continue;											// skip unavailable properties
+//					if (!Once[src][p])
+//						continue;											// skip unavailable properties
 
 					if (null == (property = pluginManager.GetPropertyValue(name)?.ToString()))
 					{
-						if (2 == src || 1 == always)						// null buttons until pressed
+						if (2 == src || 1 == start)						// null buttons until pressed
 							continue;
 
-						if (Once[src][p]) {									// 0 == always:  game running
-							Once[src][p] = false;							// unavailable property
+						if (Once[src][p])
+//						{									// 0 == always:  game running
 							Log(1, oops = $"SendIf({IOproperties.DestDev[dev]}): null "
-								+ "{Prop = name} property from SourceList[{src}][{p}].Name");
+								+ $"{Prop = name} property from SourceList[{src}][{p}].Name");
+							Once[src][p] = false;							// unavailable property
 							continue;
-						}
+//						}
 					}
 					else if (0 == property.Length)
 					{
@@ -114,7 +115,7 @@ namespace blekenbleu
 						Send(value, dev, address);
 					else {
 						this.TriggerEvent(Trigger = "Event"+IOevent[src][p - stop[src]]);
-						Log(4, Trigger = "SendIf():  " + Trigger + " = " + name);
+						Trigger = "SendIf():  " + Trigger + " = " + name;
 					}
 				}
 		}			// SendIf()

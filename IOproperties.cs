@@ -41,7 +41,6 @@ namespace blekenbleu
 		
 /* SendIf() may send any of 3 property value source types to any of 3 DestDev[]s: (vJoy axes, vJoy buttons, MIDIout)
  ; SendIf() indexes SourceList[st] for those property SourceType[]s: (game, JoyStick axis or button)
- ; DataUpdate() calls SendIf(0) for SourceList[0] only when games are active.
  ; ReceivedCC() separately handles CC sends to all 3 DestDev[]s asynchronously in INdrywet.OnEventReceived()
  */
 			for (int src = 0; src < SourceList.Length; src++)
