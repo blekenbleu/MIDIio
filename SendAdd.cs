@@ -48,17 +48,17 @@ namespace blekenbleu
 				int L = prop.Length - 7;		// lop off 'MIDIio.'
 				string prop7 = prop.Substring(7, L);
 
-				for (; cc < Properties.CCname.Length; cc++)
-					if (L == Properties.CCname[cc].Length && Properties.CCname[cc] == prop7)
+				for (; cc < MidiProps.CCname.Length; cc++)
+					if (L == MidiProps.CCname[cc].Length && MidiProps.CCname[cc] == prop7)
 						break;
 
-				if (notCC = cc >= Properties.CCname.Length)
+				if (notCC = cc >= MidiProps.CCname.Length)
 					MIDIio.Log(0, MIDIio.oops = $"IOproperties.SendAdd({prop}): not found in CCname[]");
 				else {
 					src = 3;
-					Properties.Which[cc] |= Properties.SendEvent;
-					if (0 == (Properties.CC & Properties.Which[cc]))
-						Properties.CCprop(cc, false);
+					MidiProps.Which[cc] |= MidiProps.SendEvent;
+					if (0 == (MidiProps.CC & MidiProps.Which[cc]))
+						MidiProps.CCprop(cc, false);
 					CCevent[cc]	= ct;												// for CC Event (trigger)
 					ActList.Add(new byte[] { src, cc, dt, addr }); 					// used by Act() (target)
 				}
@@ -80,8 +80,8 @@ namespace blekenbleu
 			if (3 > src)
 			{
 				IOevent[src].Add(ct);													// used by TriggerEvent()
-				Properties.SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
-				ActList.Add(new byte[] { src, (byte)Properties.SourceList[dt].Count });			// used by Act()
+				MidiProps.SourceList[src].Add(new Source() { Name = prop, Device = dt, Addr = addr });
+				ActList.Add(new byte[] { src, (byte)MidiProps.SourceList[dt].Count });			// used by Act()
 			}
 
 

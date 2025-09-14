@@ -7,7 +7,7 @@ namespace blekenbleu
 	public partial class MIDIio
 	{
 /*
-		; Properties.SourceList[][].Name: non-MIDI property names
+		; MiProperties.SourceList[][].Name: non-MIDI property names
 		; My + CCname[cc] MIDI property names correspond to Settings.CCvalue[cc]
 		;
 		; Accomodate device property range differences:
@@ -63,11 +63,11 @@ namespace blekenbleu
 			string property;
 
 			for (byte src = always; src < 3; src++)
-				for (byte p = 0; p < Properties.SourceList[src].Count; p++)	// property type index
+				for (byte p = 0; p < MidiProps.SourceList[src].Count; p++)	// property type index
 				{
-					string name = Properties.SourceList[src][p].Name;
-                    dev = Properties.SourceList[src][p].Device;
-					address = Properties.SourceList[src][p].Addr;
+					string name = MidiProps.SourceList[src][p].Name;
+                    dev = MidiProps.SourceList[src][p].Device;
+					address = MidiProps.SourceList[src][p].Addr;
 
 //					if (!Once[src][p])
 //						continue;											// skip unavailable properties
@@ -124,24 +124,24 @@ namespace blekenbleu
 		// called for SimHub Actions
 		internal void Act(ushort a)
 		{
-	 		byte p =   ActList[a][1];									// Properties.SourceList[src][p] or CC
+	 		byte p =   ActList[a][1];									// MiProperties.SourceList[src][p] or CC
 			byte src = ActList[a][0], dev, addr;
-			if (src < Properties.SourceList.Length && p < Properties.SourceList[src].Count)
+			if (src < MidiProps.SourceList.Length && p < MidiProps.SourceList[src].Count)
 			{
-				dev = Properties.SourceList[src][p].Device;
-				addr = Properties.SourceList[src][p].Addr;
+				dev = MidiProps.SourceList[src][p].Device;
+				addr = MidiProps.SourceList[src][p].Addr;
 				if (1 == dev)
 					addr--;		// Configured button 1 addr 0 for Send()
 				Send(Sent[src][p], dev, addr);
-				Action = $"Act({a}):  {Properties.SourceList[src][p].Name}";
+				Action = $"Act({a}):  {MidiProps.SourceList[src][p].Name}";
 			} else if (3 == src && 3 < ActList[a].Length) {
 				dev = ActList[a][2];
 				addr = ActList[a][3];
 				if (1 == dev)
 					addr--;		// Configured button 1 addr 0 for Send()
 				Send((ushort)(0.5 + scale[dev, src] * Settings.CCvalue[p]), dev, addr);
-				Action = $"Act({a}):  {Properties.CCname[p]} to {IOproperties.DestDev[dev]} {addr}";
-			} else Log(0, oops = $"Act({a}):  Properties.SourceList[{src}][{p}] does not exist");
+				Action = $"Act({a}):  {MidiProps.CCname[p]} to {IOproperties.DestDev[dev]} {addr}";
+			} else Log(0, oops = $"Act({a}):  MiProperties.SourceList[{src}][{p}] does not exist");
 		}
 
 		/// <summary>
@@ -153,15 +153,15 @@ namespace blekenbleu
 		/// </summary>
 		internal void ReceivedCC(byte CCnumber, byte value)
 		{
-			byte which = Properties.Which[CCnumber];
+			byte which = MidiProps.Which[CCnumber];
 
 			CCin = $"ReceivedCC({CCnumber}, {value})";						// debug property
 			if (0 < which && Settings.CCvalue[CCnumber] == value)
 				return;														// ignore known unchanged values
 
-			Prop = Properties.CCname[CCnumber];								// debug
+			Prop = MidiProps.CCname[CCnumber];								// debug
 			Settings.CCvalue[CCnumber] = value;
-			if (0 < (Properties.SendEvent & which))
+			if (0 < (MidiProps.SendEvent & which))
 				this.TriggerEvent(Trigger = "Event" + CCevent[CCnumber]);
 
 			if (0 < (14 & which))                                           // flags 2+4+8:  call Send()?
@@ -170,7 +170,7 @@ namespace blekenbleu
 				for (byte dt = 0; dt < IOproperties.DestDev.Length; dt++)	// at most one Send() per DestDev and CC
 					if (0 < ((2 << dt) & which))							// DestDev flag
 					{
-						byte  address = Properties.ListCC[Properties.Map[CCnumber]][dt];
+						byte  address = MidiProps.ListCC[MidiProps.Map[CCnumber]][dt];
 						ushort rescaled = (ushort)(0.5 + scale[dt, 3] * value);
 						Send(rescaled, dt, address);
 						sent = true;
@@ -184,7 +184,7 @@ namespace blekenbleu
 				Outer.SendCCval(CCnumber, value);
 
 			if (0 == which)
-				Properties.CCprop(CCnumber, true);						// dynamic CC configuration
+				MidiProps.CCprop(CCnumber, true);						// dynamic CC configuration
 		}	// ReceivedCC()
 	}
 }

@@ -18,6 +18,7 @@ namespace blekenbleu
 		internal static string CCsent = wts, CCin = wts, Trigger = wts;
 		internal static string VJsent = wts, Prop = wts,  Action = wts;
 		internal static string oops = wts;	// AttachDelegate() always
+		internal static MIDIio that;
 
 		internal void Oops()
 		{
@@ -30,6 +31,7 @@ namespace blekenbleu
 		/// <param name="pluginManager"></param>
 		public void Init(PluginManager pluginManager)
 		{
+            that = this;
 			// Log() level configuration
 			Prop = pluginManager.GetPropertyValue(Ini + "log")?.ToString();
 			Level = (byte)((null != Prop && 0 < Prop.Length) ? Int32.Parse(Prop) : 0);
@@ -81,8 +83,8 @@ namespace blekenbleu
 			}
 
 			// send unconfigured DoEchoes, set VJdest[,] SendCt[,], sort Send[, ]
-			Properties = new IOproperties();						// MIDI and vJoy property configuration
-			Properties.Init(this, pluginManager);
+			MidiProps = new IOproperties();						// MIDI and vJoy property configuration
+			MidiProps.Init(this, pluginManager);
 			this.AddAction("Oops",(a, b) => Oops());
 			this.AttachDelegate("oops", () => oops);
 			if (3 < Level)
@@ -100,18 +102,18 @@ namespace blekenbleu
 				pluginManager.AddProperty("in", this.GetType(), MIDIin);
 				Reader = new INdrywet();
 				if(Reader.Init(MIDIin, this))
-					Properties.Attach();						// AttachDelegate source CCs
+					MidiProps.Attach();						// AttachDelegate source CCs
 			}
 			else Info("Init(): '" + Ini + "in' is undefined" );
 
-			Once = new bool[1 + Properties.SourceList.Length][];    // null game properties for SourceList + CC
+			Once = new bool[1 + MidiProps.SourceList.Length][];    // null game properties for SourceList + CC
 			int s;
-			for (s = 0; s < Properties.SourceList.Length; s++)
-				Once[s] = new bool[Properties.SourceList[s].Count];
-			Once[s] = new bool[Properties.ListCC.Count];
+			for (s = 0; s < MidiProps.SourceList.Length; s++)
+				Once[s] = new bool[MidiProps.SourceList[s].Count];
+			Once[s] = new bool[MidiProps.ListCC.Count];
 		
 			Sent = new ushort[Once.Length][];                       // most recent Send() values
-			for (s = 0; s < Properties.SourceList.Length; s++)
+			for (s = 0; s < MidiProps.SourceList.Length; s++)
 			{
 				Sent[s] = new ushort[Once[s].Length];
 				for (byte p = 0; p < Once[s].Length; p++)

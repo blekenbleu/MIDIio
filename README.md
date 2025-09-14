@@ -10,6 +10,7 @@
 - [nanoKONTROL2 MIDI](docs/nanoKONTROL2_MIDIimp.txt)  
 - [**principles of operation**](docs/principles.md)  
 - [SimHub Events and Actions](docs/sends.md)  
+- [user interface?](docs/UserInterface.md)  
 ---
 For one each MIDI source, destination, and optionally vJoy destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob

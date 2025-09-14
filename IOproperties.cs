@@ -178,9 +178,9 @@ namespace blekenbleu
 
 				string props = pluginManager.GetPropertyValue(MIDIio.Ini + "sends")?.ToString();
 				if (null != props && 1 < props.Length)				// set up Events and Actions
-					EnumActions(pluginManager, props.Split(',')); 	// add MIDIsends to Properties.SourceList[]
+					EnumActions(pluginManager, props.Split(',')); 	// add MIDIsends to MiProperties.SourceList[]
 
-				s = "Properties.CCname[]:";
+				s = "MiProperties.CCname[]:";
 				for (byte cc = 0; cc < 128; cc++)
 					if (0 < (CC & Which[cc]))
 					{

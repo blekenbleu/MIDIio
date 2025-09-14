@@ -74,9 +74,9 @@ namespace blekenbleu
 			if (Connected && e.Event is ControlChangeEvent CC)
 			{
 				MIDIio.CCsent = $"OnEventSent():  ControlNumber = {CC.ControlNumber}; ControlValue = {CC.ControlValue}";
-				if ((0 == MIDIio.Properties.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
+				if ((0 == MIDIio.MidiProps.Which[CC.ControlNumber]) && !MIDIio.DoEcho && 5 > mystery)		// unassigned ?
 				{																		// complain only about the first 5
-					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber} " + MIDIio.Properties.CCname[CC.ControlNumber]);
+					MIDIio.Log(2, "OnEventSent(): Mystery CC{CC.ControlNumber} " + MIDIio.MidiProps.CCname[CC.ControlNumber]);
 					mystery++;
 				}
 			}
