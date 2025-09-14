@@ -1,5 +1,5 @@
 ### MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick, Event and Action support
-
+ &emsp; *using [melanchall / drywetmidi](https://github.com/melanchall/drywetmidi)* &emsp; 
 **Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
 
 ---
