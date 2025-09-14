@@ -38,4 +38,5 @@ private void OnEventReceived(object sender, MidiEventReceivedEventArgs e)
 
 ### Visually
 A single page, with collapsing sections
-- each section, a navigable list, as in JSONio
+- each section, a navigable list, as in [**JSONio**](https://github.com/blekenbleu/JSONio)
+- to start, dragged in JSONio xaml and support
