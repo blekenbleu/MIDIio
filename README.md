@@ -12,7 +12,7 @@
 - [SimHub Events and Actions](docs/sends.md)  
 - [user interface?](docs/UserInterface.md)  
 ---
-For one each MIDI source, destination, and optionally vJoy destination device,  
+For one each MIDI source, destination, and optionally [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/index.htm) destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
  [Control Change](https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2) (CC) messages,  
  SimHub game, joystick buttons and axes properties.  
