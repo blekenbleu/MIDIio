@@ -1,6 +1,6 @@
 ### MIDIio [SimHub](https://www.simhubdash.com/) plugin:&nbsp; now with Joystick, Event and Action support
- &emsp; *using [melanchall / drywetmidi](https://github.com/melanchall/drywetmidi)* &emsp; 
-**Note**: &nbsp;  *requires a recent [SimHub](https://www.simhubdash.com/download-2/) (9.X) version*  
+ &emsp; *using [melanchall / drywetmidi](https://github.com/melanchall/drywetmidi)* - [devices API](https://melanchall.github.io/drywetmidi/articles/devices/Overview.html) &emsp; 
+&nbsp;  *requires [SimHub](https://www.simhubdash.com/download-2/)* 9.X+  
 
 ---
 - [Changes for SimHub > 8.4.3](docs/provoked.md)  
@@ -11,6 +11,7 @@
 - [**principles of operation**](docs/principles.md)  
 - [SimHub Events and Actions](docs/sends.md)  
 - [user interface?](docs/UserInterface.md)  
+- [MIDI device finder, CC mapper](docs/map.md)  
 ---
 For one each MIDI source, destination, and optionally [vJoy](https://blekenbleu.github.io/Windows/HID/vJoy/index.htm) destination device,  
  this [SimHub](https://github.com/SHWotever/SimHub) plugin can route configured Button, Slider and Knob
