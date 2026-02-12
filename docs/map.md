@@ -2,17 +2,12 @@
 ### MIDI device finder, CC mapper
 
 MIDIio has UI neither for finding nor mapping MIDI
-- [midi-feeder](https://github.com/blekenbleu/midi-feeder) does not detect Bluetooth MIDI devices
-- [MidiMapper - .NET 6](https://github.com/JeanChristopheVOISIN/MidiMapper)
-- [MIDIFlux - supports Windows MIDI Services](https://github.com/Cozmopolit/MIDIFlux)
-- [MIDI sample -m$](https://github.com/microsoft/windows-universal-samples/tree/main/Samples/MIDI)
-- mapping based on [melanchall / drywetmidi](https://melanchall.github.io/drywetmidi/articles/devices/Overview.html) appears possible...
-	- get all input MIDI [devices](https://melanchall.github.io/drywetmidi/articles/devices/Input-device.html)
- using [`GetAll()`](https://melanchall.github.io/drywetmidi/api/Melanchall.DryWetMidi.Multimedia.InputDevice.html#Melanchall_DryWetMidi_Multimedia_InputDevice_GetAll)
-- however, drywetmidi methods handle events from only [single devices](https://melanchall.github.io/drywetmidi/api/Melanchall.DryWetMidi.Multimedia.InputDevice.html)
-	- consequently multiple [input device](https://melanchall.github.io/drywetmidi/articles/devices/Input-device.html) tasks ... feeding a queue?
-	- [codeproject - DryWetMIDI: Working with MIDI Devices](https://main.codeproject.com/articles/DryWetMIDI-Working-with-MIDI-Devices)
-- [**queue** by `System.Threading.Channels`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.channels):
+- MIDIio uses [melanchall / drywetmidi](https://melanchall.github.io/drywetmidi/articles/devices/Overview.html),
+	for which SimHub's version lacks 
+	[`GetAll()`](https://melanchall.github.io/drywetmidi/api/Melanchall.DryWetMidi.Multimedia.InputDevice.html#Melanchall_DryWetMidi_Multimedia_InputDevice_GetAll)
+- while less nicely documented than drywetmidi, [NAudio MidiInAndOut](https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md) supports multiple MIDI device input
+	- get all input MIDI [devices](https://github.com/blekenbleu/OpenKneeboard-SimHub-plugin-menu/blob/MIDI/MIDI.cs)
+- [**queue** multiple MIDI device inputs by `System.Threading.Channels`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.channels):
   [nuget](https://www.nuget.org/packages/System.Threading.Channels)
 	- [stackexchange example](https://codereview.stackexchange.com/a/295445)  
 	- ["There are very few reasons to prefer the older BufferBlock<T> over the newer Channel<T>"](https://stackoverflow.com/a/76394149)
@@ -20,6 +15,15 @@ MIDIio has UI neither for finding nor mapping MIDI
 	- [Medium:  C# Channels Explained](https://medium.com/@abhirajgawai/c-channels-explained-from-producer-consumer-basics-to-high-performance-net-systems-f8ab610c0639)
 	- [Why Channels Over BlockingCollections](https://dev.to/chakewitz/advanced-c-concurrency-channels-pipelines-and-parallel-processing-218n)
 		- `async/await`, high performance, customizeable
+
+#### discounted multiple MIDI input device alternatives
+- [midi-feeder](https://github.com/blekenbleu/midi-feeder) does not detect Bluetooth MIDI devices
+- [MidiMapper - .NET 6](https://github.com/JeanChristopheVOISIN/MidiMapper)
+- [MIDIFlux - supports Windows MIDI Services](https://github.com/Cozmopolit/MIDIFlux)
+- [MIDI sample -m$](https://github.com/microsoft/windows-universal-samples/tree/main/Samples/MIDI)
+- drywetmidi methods handle events from only [single devices](https://melanchall.github.io/drywetmidi/api/Melanchall.DryWetMidi.Multimedia.InputDevice.html)
+	- consequently multiple [input device](https://melanchall.github.io/drywetmidi/articles/devices/Input-device.html) tasks ... feeding a queue?
+	- [codeproject - DryWetMIDI: Working with MIDI Devices](https://main.codeproject.com/articles/DryWetMIDI-Working-with-MIDI-Devices)
 
 #### sharing input devices
 Currently all M$ Human Interface Devices (HID), including MIDI, can connect to only one application at a time.
