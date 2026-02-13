@@ -7,7 +7,7 @@ MIDIio has UI neither for finding nor mapping MIDI
 	[`GetAll()`](https://melanchall.github.io/drywetmidi/api/Melanchall.DryWetMidi.Multimedia.InputDevice.html#Melanchall_DryWetMidi_Multimedia_InputDevice_GetAll)
 - while less nicely documented than drywetmidi, [NAudio MidiInAndOut](https://github.com/naudio/NAudio/blob/master/Docs/MidiInAndOut.md) supports multiple MIDI device input
 	- get all input MIDI [devices](https://github.com/blekenbleu/OpenKneeboard-SimHub-plugin-menu/blob/MIDI/MIDI.cs)
-- [**queue** multiple MIDI device inputs by `System.Threading.Channels`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.channels):
+### [**queue** multiple MIDI device inputs by `System.Threading.Channels`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.channels):
   [nuget](https://www.nuget.org/packages/System.Threading.Channels)
 	- [stackexchange example](https://codereview.stackexchange.com/a/295445)  
 	- ["There are very few reasons to prefer the older BufferBlock<T> over the newer Channel<T>"](https://stackoverflow.com/a/76394149)
