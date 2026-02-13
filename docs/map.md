@@ -33,9 +33,8 @@ Currently all M$ Human Interface Devices (HID), including MIDI, can connect to o
 - could pass any input device events to a drywetmidi output device,  
 	with a separate output channel for each input device.
 
-#### multi-state WPG
-- use the same .xaml, but change code-behind for assigning buttons and sliders to MIDI or joystick events
-	- [Solution 1: Strategy + Singleton or Solution 2: delegates](https://learn.microsoft.com/en-us/archive/blogs/kirillosenkov/how-to-override-static-methods)
-	- [XAML Events](http://www.diranieh.com/NET_WPF/Events.htm)
-	- [stackoverflow:  WPF custom routed event](https://stackoverflow.com/a/44616505)
+#### multi-state WPF
+- using the same .xaml, change code-behind for linking MIDI or joystick events to invoke WPF button and slider actions
 	- [WPF event routing strategy:  Bubble, Tunnel, or Direct](https://www.tutorialspoint.com/wpf/wpf_routed_events.htm)
+	- [XAML Events](http://www.diranieh.com/NET_WPF/Events.htm)
+	- [Strategy + Singleton or delegates](https://learn.microsoft.com/en-us/archive/blogs/kirillosenkov/how-to-override-static-methods)
